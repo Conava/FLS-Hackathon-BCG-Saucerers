@@ -32,6 +32,10 @@ import {
   postOutlookNarrator,
   postFutureSelf,
   generateProtocol,
+  createManualMealLog,
+  skipProtocolAction,
+  reorderProtocolActions,
+  submitWeeklyCheckIn,
 } from "../client";
 
 // ---------------------------------------------------------------------------
@@ -467,6 +471,211 @@ describe("generateProtocol", () => {
     ];
     expect(call[0]).toBe("/api/proxy/protocol/generate");
     expect(call[1].method).toBe("POST");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// New B4 methods
+// ---------------------------------------------------------------------------
+
+describe("createDailyLog — extended fields", () => {
+  it("includes sleep_quality, workout_type, workout_intensity, water_ml in body", async () => {
+    const logOut = {
+      id: 2,
+      patient_id: "PT0199",
+      date: "2026-04-09",
+      logged_at: "2026-04-09T08:00:00",
+      sleep_quality: 4,
+      workout_type: "run",
+      workout_intensity: "med",
+      water_ml: 1500,
+    };
+    vi.stubGlobal("fetch", mockFetch(logOut));
+
+    await createDailyLog({
+      date: "2026-04-09",
+      sleep_hours: 7.5,
+      sleep_quality: 4,
+      workout_type: "run",
+      workout_intensity: "med",
+      water_ml: 1500,
+    });
+
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    expect(call[0]).toBe("/api/proxy/daily-log");
+    expect(call[1].method).toBe("POST");
+
+    const body = JSON.parse(call[1].body as string) as Record<string, unknown>;
+    expect(body.sleep_quality).toBe(4);
+    expect(body.workout_type).toBe("run");
+    expect(body.workout_intensity).toBe("med");
+    expect(body.water_ml).toBe(1500);
+  });
+});
+
+describe("createManualMealLog", () => {
+  it("POSTs to /api/proxy/meal-log/manual with the correct body", async () => {
+    const response = {
+      ai_meta: {
+        model: "manual",
+        prompt_name: "manual",
+        request_id: "req-manual",
+        token_in: 0,
+        token_out: 0,
+        latency_ms: 0,
+      },
+      meal_log_id: 99,
+      photo_uri: "manual://abc-uuid",
+      analysis: {
+        classification: "manual",
+        macros: { kcal: 400, protein_g: 30, carbs_g: 50, fat_g: 10, fiber_g: 5 },
+        longevity_swap: "",
+        swap_rationale: "",
+      },
+    };
+    vi.stubGlobal("fetch", mockFetch(response));
+
+    await createManualMealLog({
+      name: "Chicken Salad",
+      kcal: 400,
+      protein_g: 30,
+      carbs_g: 50,
+      fat_g: 10,
+      fiber_g: 5,
+      notes: "Lunch",
+    });
+
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    expect(call[0]).toBe("/api/proxy/meal-log/manual");
+    expect(call[1].method).toBe("POST");
+
+    const body = JSON.parse(call[1].body as string) as Record<string, unknown>;
+    expect(body.name).toBe("Chicken Salad");
+    expect(body.kcal).toBe(400);
+    expect(body.protein_g).toBe(30);
+    expect(body.fiber_g).toBe(5);
+    expect(body.notes).toBe("Lunch");
+  });
+
+  it("works without optional notes field", async () => {
+    const response = {
+      ai_meta: {
+        model: "manual",
+        prompt_name: "manual",
+        request_id: "req-2",
+        token_in: 0,
+        token_out: 0,
+        latency_ms: 0,
+      },
+      meal_log_id: 100,
+      photo_uri: "manual://xyz",
+      analysis: {
+        classification: "manual",
+        macros: {},
+        longevity_swap: "",
+        swap_rationale: "",
+      },
+    };
+    vi.stubGlobal("fetch", mockFetch(response));
+
+    await createManualMealLog({ name: "Apple", kcal: 80, protein_g: 0, carbs_g: 20, fat_g: 0, fiber_g: 2 });
+
+    const [url] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
+    expect(url).toBe("/api/proxy/meal-log/manual");
+  });
+});
+
+describe("skipProtocolAction", () => {
+  it("POSTs to /api/proxy/protocol/skip-action with action_id and reason", async () => {
+    const response = {
+      id: 10,
+      protocol_id: 1,
+      category: "sleep",
+      title: "Go to bed by 22:30",
+      completed_today: false,
+      skipped_today: true,
+      skip_reason: "Travelling",
+    };
+    vi.stubGlobal("fetch", mockFetch(response));
+
+    await skipProtocolAction(10, "Travelling");
+
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    expect(call[0]).toBe("/api/proxy/protocol/skip-action");
+    expect(call[1].method).toBe("POST");
+
+    const body = JSON.parse(call[1].body as string) as Record<string, unknown>;
+    expect(body.action_id).toBe(10);
+    expect(body.reason).toBe("Travelling");
+  });
+});
+
+describe("reorderProtocolActions", () => {
+  it("POSTs to /api/proxy/protocol/reorder with action_ids array", async () => {
+    vi.stubGlobal("fetch", mockFetch(null, 204));
+
+    // Mock 204 with null body — override to handle null json()
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 204,
+        json: () => Promise.resolve(null),
+        text: () => Promise.resolve(""),
+      }),
+    );
+
+    await reorderProtocolActions([3, 1, 2]);
+
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    expect(call[0]).toBe("/api/proxy/protocol/reorder");
+    expect(call[1].method).toBe("POST");
+
+    const body = JSON.parse(call[1].body as string) as Record<string, unknown>;
+    expect(body.action_ids).toEqual([3, 1, 2]);
+  });
+});
+
+describe("submitWeeklyCheckIn", () => {
+  it("POSTs to /api/proxy/survey with kind 'weekly' and answers", async () => {
+    const response = {
+      id: 5,
+      patient_id: "PT0199",
+      kind: "weekly",
+      submitted_at: "2026-04-09T12:00:00",
+      answers: { energy: 4, sleep: 3, mood: 5 },
+    };
+    vi.stubGlobal("fetch", mockFetch(response));
+
+    await submitWeeklyCheckIn({ energy: 4, sleep: 3, mood: 5 });
+
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    expect(call[0]).toBe("/api/proxy/survey");
+    expect(call[1].method).toBe("POST");
+
+    const body = JSON.parse(call[1].body as string) as {
+      kind: string;
+      answers: Record<string, unknown>;
+    };
+    expect(body.kind).toBe("weekly");
+    expect(body.answers.energy).toBe(4);
+    expect(body.answers.sleep).toBe(3);
+    expect(body.answers.mood).toBe(5);
   });
 });
 

@@ -17,11 +17,13 @@ import type {
   InsightsListOut,
   FutureSelfResponse,
   ProtocolOut,
+  ProtocolActionOut,
   CompleteActionResponse,
   DailyLogListOut,
   DailyLogOut,
   MealLogListOut,
   MealLogUploadResponse,
+  ManualMealLogInput,
   ChatChunk,
   EHRRecordListOut,
   RecordsQAResponse,
@@ -175,13 +177,26 @@ export async function getDailyLogs(params: {
   return request<DailyLogListOut>(`daily-log?${qs.toString()}`);
 }
 
-/** POST /v1/patients/{patient_id}/daily-log — create a log entry. */
+/**
+ * POST /v1/patients/{patient_id}/daily-log — create a log entry.
+ *
+ * Extended with structured sleep quality (B1), workout type/intensity (B1),
+ * and water intake in millilitres (B4).
+ */
 export async function createDailyLog(body: {
   date: string;
   mood_score?: number | null;
   sleep_hours?: number | null;
+  /** Sleep quality score 1–5 (B1). */
+  sleep_quality?: number | null;
   workout_minutes?: number | null;
+  /** Workout type: walk|run|bike|strength|yoga|other (B1). */
+  workout_type?: string | null;
+  /** Workout intensity: low|med|high (B1). */
+  workout_intensity?: string | null;
   water_glasses?: number | null;
+  /** Water intake in millilitres (B4). */
+  water_ml?: number | null;
   alcohol_units?: number | null;
 }): Promise<DailyLogOut> {
   return request<DailyLogOut>("daily-log", {
@@ -446,5 +461,81 @@ export async function getGDPRExport(): Promise<GDPRExportOut> {
 export async function requestGDPRDelete(): Promise<GDPRDeleteAck> {
   return request<GDPRDeleteAck>("gdpr", {
     method: "DELETE",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Manual Meal Log (B2/B4)
+// ---------------------------------------------------------------------------
+
+/**
+ * POST /v1/patients/{patient_id}/meal-log/manual — log a meal without a photo.
+ *
+ * Stores the entry in the `meal_log` table using a `manual://<uuid>` sentinel
+ * photo_uri so it appears alongside photo entries in the meal history.
+ */
+export async function createManualMealLog(
+  body: ManualMealLogInput,
+): Promise<MealLogUploadResponse> {
+  return request<MealLogUploadResponse>("meal-log/manual", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Protocol Skip + Reorder (B3/B4)
+// ---------------------------------------------------------------------------
+
+/**
+ * POST /v1/patients/{patient_id}/protocol/skip-action — skip an action with reason.
+ *
+ * Sets `skipped_today=true` and records the reason. Does not affect the streak
+ * or outlook score — skipped is distinct from missed.
+ */
+export async function skipProtocolAction(
+  actionId: number,
+  reason: string,
+): Promise<ProtocolActionOut> {
+  return request<ProtocolActionOut>("protocol/skip-action", {
+    method: "POST",
+    body: JSON.stringify({ action_id: actionId, reason }),
+  });
+}
+
+/**
+ * POST /v1/patients/{patient_id}/protocol/reorder — persist a new action order.
+ *
+ * Sends the full ordered list of action IDs; the backend writes `sort_order =
+ * index` for each. Returns 204 No Content on success — the caller should
+ * apply optimistic state locally and roll back on error.
+ */
+export async function reorderProtocolActions(
+  actionIds: number[],
+): Promise<void> {
+  await request<unknown>("protocol/reorder", {
+    method: "POST",
+    body: JSON.stringify({ action_ids: actionIds }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Weekly Check-in (B4)
+// ---------------------------------------------------------------------------
+
+/**
+ * POST /v1/patients/{patient_id}/survey — submit the weekly check-in.
+ *
+ * Reuses the existing `submitSurvey` shape with `kind: "weekly"`.
+ * Accepts the three standard weekly questions: energy, sleep, mood (all 1–5).
+ */
+export async function submitWeeklyCheckIn(answers: {
+  energy: number;
+  sleep: number;
+  mood: number;
+}): Promise<SurveyResponseOut> {
+  return request<SurveyResponseOut>("survey", {
+    method: "POST",
+    body: JSON.stringify({ kind: "weekly", answers }),
   });
 }

@@ -190,10 +190,40 @@ export const ProtocolActionOutSchema = z
     dimension: z.string().nullish(),
     rationale: z.string().nullish(),
     target: z.string().nullish(),
+    /** B3: ordering support */
+    sort_order: z.number().int().nullish(),
+    /** B3: skip-with-reason support */
+    skipped_today: z.boolean().optional(),
+    skip_reason: z.string().nullish(),
   })
   .passthrough();
 
 export type ProtocolActionOut = z.infer<typeof ProtocolActionOutSchema>;
+
+/**
+ * Request body for skipping a protocol action with a reason (B3).
+ * Hits POST /api/proxy/protocol/skip-action.
+ */
+export const ProtocolSkipInputSchema = z
+  .object({
+    action_id: z.number().int(),
+    reason: z.string(),
+  })
+  .passthrough();
+
+export type ProtocolSkipInput = z.infer<typeof ProtocolSkipInputSchema>;
+
+/**
+ * Request body for reordering protocol actions (B3).
+ * Hits POST /api/proxy/protocol/reorder.
+ */
+export const ProtocolReorderInputSchema = z
+  .object({
+    action_ids: z.array(z.number().int()),
+  })
+  .passthrough();
+
+export type ProtocolReorderInput = z.infer<typeof ProtocolReorderInputSchema>;
 
 export const ProtocolOutSchema = z
   .object({
@@ -232,10 +262,39 @@ export const DailyLogOutSchema = z
     workout_minutes: z.number().int().nullish(),
     water_glasses: z.number().int().nullish(),
     alcohol_units: z.number().int().nullish(),
+    /** B1: structured sleep quality (1–5) */
+    sleep_quality: z.number().int().min(1).max(5).nullish(),
+    /** B1: workout type (walk|run|bike|strength|yoga|other) */
+    workout_type: z.string().nullish(),
+    /** B1: workout intensity (low|med|high) */
+    workout_intensity: z.string().nullish(),
+    /** B4: water intake in millilitres */
+    water_ml: z.number().int().nullish(),
   })
   .passthrough();
 
 export type DailyLogOut = z.infer<typeof DailyLogOutSchema>;
+
+/**
+ * Input shape for creating a daily log entry (B4).
+ * All fields except `date` are optional.
+ */
+export const DailyLogCreateInputSchema = z
+  .object({
+    date: z.string(),
+    mood_score: z.number().int().nullish(),
+    sleep_hours: z.number().nullish(),
+    sleep_quality: z.number().int().min(1).max(5).nullish(),
+    workout_minutes: z.number().int().nullish(),
+    workout_type: z.string().nullish(),
+    workout_intensity: z.string().nullish(),
+    water_glasses: z.number().int().nullish(),
+    water_ml: z.number().int().nullish(),
+    alcohol_units: z.number().int().nullish(),
+  })
+  .passthrough();
+
+export type DailyLogCreateInput = z.infer<typeof DailyLogCreateInputSchema>;
 
 export const DailyLogListOutSchema = z
   .object({
@@ -266,13 +325,35 @@ export const MealLogOutSchema = z
     id: z.number().int(),
     patient_id: z.string(),
     logged_at: z.string(),
-    photo_uri: z.string(),
+    /**
+     * May be null for manual entries that haven't been assigned a URI yet,
+     * or a `manual://<uuid>` sentinel for B2 manual meal logs.
+     */
+    photo_uri: z.string().nullish(),
     analysis: MealAnalysisSchema,
     notes: z.string().nullish(),
   })
   .passthrough();
 
 export type MealLogOut = z.infer<typeof MealLogOutSchema>;
+
+/**
+ * Input shape for manually logging a meal without a photo (B2/B4).
+ * Hits POST /api/proxy/meal-log/manual.
+ */
+export const ManualMealLogInputSchema = z
+  .object({
+    name: z.string(),
+    kcal: z.number(),
+    protein_g: z.number(),
+    carbs_g: z.number(),
+    fat_g: z.number(),
+    fiber_g: z.number(),
+    notes: z.string().optional(),
+  })
+  .passthrough();
+
+export type ManualMealLogInput = z.infer<typeof ManualMealLogInputSchema>;
 
 export const MealLogListOutSchema = z
   .object({
@@ -287,7 +368,8 @@ export const MealLogUploadResponseSchema = z
   .object({
     ai_meta: AIMetaSchema,
     meal_log_id: z.number().int(),
-    photo_uri: z.string(),
+    /** May be a `manual://<uuid>` sentinel for B2 manual meal log entries. */
+    photo_uri: z.string().nullish(),
     analysis: MealAnalysisSchema,
     disclaimer: z.string().optional(),
   })
