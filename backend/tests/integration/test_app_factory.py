@@ -66,6 +66,7 @@ async def test_app_openapi_lists_expected_routes(client: AsyncClient) -> None:
     paths = set(response.json()["paths"].keys())
 
     expected = {
+        # Slice 1 — foundation routes
         "/healthz",
         "/v1/patients/{patient_id}",
         "/v1/patients/{patient_id}/vitality",
@@ -73,6 +74,23 @@ async def test_app_openapi_lists_expected_routes(client: AsyncClient) -> None:
         "/v1/patients/{patient_id}/insights",
         "/v1/patients/{patient_id}/appointments/",
         "/v1/patients/{patient_id}/gdpr/export",
+        # Slice 2 — Wave 3 routers
+        "/v1/patients/{patient_id}/records/qa",
+        "/v1/patients/{patient_id}/coach/chat",
+        "/v1/patients/{patient_id}/protocol/generate",
+        "/v1/patients/{patient_id}/protocol",
+        "/v1/patients/{patient_id}/protocol/complete-action",
+        "/v1/patients/{patient_id}/survey",
+        "/v1/patients/{patient_id}/survey/history",
+        "/v1/patients/{patient_id}/daily-log",
+        "/v1/patients/{patient_id}/meal-log",
+        "/v1/patients/{patient_id}/insights/outlook-narrator",
+        "/v1/patients/{patient_id}/insights/future-self",
+        "/v1/patients/{patient_id}/outlook",
+        "/v1/patients/{patient_id}/notifications/smart",
+        "/v1/patients/{patient_id}/clinical-review",
+        "/v1/patients/{patient_id}/referral",
+        "/v1/patients/{patient_id}/messages",
     }
     missing = expected - paths
     assert not missing, f"OpenAPI spec is missing paths: {missing}"
