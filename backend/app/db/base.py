@@ -31,6 +31,11 @@ async def create_all(engine: AsyncEngine) -> None:
     ``CREATE TABLE IF NOT EXISTS`` so repeated calls on an existing schema are
     safe but won't apply column changes.
 
+    Before creating tables, this installs the ``vector`` extension
+    (``CREATE EXTENSION IF NOT EXISTS vector``) in the same transaction so
+    that the ``pgvector`` ``Vector`` column type is always available — even
+    on a freshly provisioned Cloud SQL instance.
+
     Args:
         engine: The ``AsyncEngine`` to run DDL against.  Typically obtained via
             ``app.db.session.get_engine()``.
@@ -44,4 +49,5 @@ async def create_all(engine: AsyncEngine) -> None:
         await create_all(engine)
     """
     async with engine.begin() as conn:
+        await conn.exec_driver_sql("CREATE EXTENSION IF NOT EXISTS vector")
         await conn.run_sync(SQLModel.metadata.create_all)
