@@ -1,0 +1,15 @@
+patient_id,analyzed_at,photo_uri,protein_g,carbs_g,fat_g,fiber_g,calories_kcal,description,longevity_swap
+PT0199,2026-03-28T12:30:00,manual://d9077b55-0aac-5b25-af0d-2d17ac4328ee,35,42,14,9,430,Grilled salmon bowl with quinoa and steamed broccoli,Swap white rice for quinoa to flatten glucose response
+PT0199,2026-03-29T12:30:00,manual://220edc41-abab-52bf-8010-a75549d39433,28,52,10,14,410,Lentil and vegetable soup with whole-grain sourdough,Lentils instead of pasta — +12g fiber per serving
+PT0199,2026-03-30T12:30:00,manual://ca9ddc9e-3cc4-526e-9aba-76c779ecc2dc,25,32,16,8,365,"Greek yogurt with walnuts, blueberries and chia seeds",Full-fat yogurt and nuts slow down carb absorption
+PT0199,2026-03-31T12:30:00,manual://6b331a6d-bff2-548b-bfc3-d3bed3759783,38,38,12,11,415,"Chicken, chickpea and spinach curry",Chickpeas deliver resistant starch and plant protein
+PT0199,2026-04-01T12:30:00,manual://3be0cbbe-3104-59b6-ae43-4e797f9a1c01,32,40,15,10,420,Pan-seared mackerel with roasted sweet potato and kale,Omega-3s from mackerel improve insulin sensitivity
+PT0199,2026-04-02T12:30:00,manual://d3868b85-25f1-5db7-80a8-d9d767fef35e,30,48,11,9,405,Tempeh stir-fry with bok choy and brown rice,Tempeh fermented soy has lower glycemic impact than tofu
+PT0199,2026-04-03T12:30:00,manual://d779a7cb-e498-5859-a478-59d83974a78e,27,45,13,12,400,Steel-cut oats with almond butter and chia,Steel-cut oats release glucose slower than instant oats
+PT0199,2026-04-04T12:30:00,manual://12ba1f96-ff8c-5f18-a6c8-44bcb1606b90,36,35,11,10,385,Baked cod with roasted chickpeas and mixed salad,Legumes and white fish keep post-meal glucose flat
+PT0199,2026-04-05T12:30:00,manual://87f11776-de36-5ea7-b926-abd41d133e28,26,30,18,8,375,Avocado and egg on rye bread with rocket,Rye bread has lower GI than white wheat bread
+PT0199,2026-04-06T12:30:00,manual://7852d41c-5f9e-516a-8aff-6debbcc2b281,28,50,12,13,420,Black bean and sweet potato bowl with tahini dressing,Black beans raise satiety and blunt glycemic spike
+PT0199,2026-04-07T12:30:00,manual://614e53a5-1593-565f-8670-b2b24c13ae56,40,28,10,8,360,"Poached chicken with edamame, cucumber and sesame","High protein, low-carb keeps HbA1c trending down"
+PT0199,2026-04-08T12:30:00,manual://8a34de97-cbae-5bed-aa23-b74d7fa57568,30,55,10,15,430,Spiced lentil dal with cauliflower and basmati rice,Lentils add 15g fiber which slows gastric emptying
+PT0199,2026-04-09T12:30:00,manual://33c2f748-9eef-52a8-adb7-34730c1cef02,32,25,16,7,375,Sardines on rye with sliced tomato and olive oil,Sardines are rich in EPA/DHA for cardiovascular benefit
+PT0199,2026-04-10T12:30:00,manual://4cc4d7ff-6ec4-575a-b855-e628e4c3f9bf,29,18,17,6,340,Roasted vegetable and feta frittata with side salad,Egg-based meals spike glucose less than cereal breakfasts
