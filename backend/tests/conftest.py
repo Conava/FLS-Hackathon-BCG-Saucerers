@@ -21,13 +21,27 @@ back, so every test starts with a clean DB without recreating the schema.
 # mypy: ignore-errors
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+# ---------------------------------------------------------------------------
+# Rootless Docker auto-detection
+# ---------------------------------------------------------------------------
+# uv run does not inherit the shell's DOCKER_HOST, so on rootless-Docker hosts
+# (common on Linux without Docker Desktop) `docker.from_env()` falls back to
+# /var/run/docker.sock which doesn't exist.  We detect the XDG socket at
+# module-load time — before any fixture runs — so every downstream call to
+# docker.from_env() finds the right socket without requiring shell config.
+import os as _os
 
-import pytest
-import pytest_asyncio
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlmodel import SQLModel
-from testcontainers.postgres import PostgresContainer
+_rootless_sock = f"/run/user/{_os.getuid()}/docker.sock"
+if not _os.environ.get("DOCKER_HOST") and _os.path.exists(_rootless_sock):
+    _os.environ["DOCKER_HOST"] = f"unix://{_rootless_sock}"
+
+from collections.abc import AsyncIterator  # noqa: E402
+
+import pytest  # noqa: E402
+import pytest_asyncio  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine  # noqa: E402
+from sqlmodel import SQLModel  # noqa: E402
+from testcontainers.postgres import PostgresContainer  # noqa: E402
 
 
 def pytest_configure(config: pytest.Config) -> None:
