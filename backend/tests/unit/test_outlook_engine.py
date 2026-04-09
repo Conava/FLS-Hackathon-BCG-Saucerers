@@ -1,19 +1,32 @@
 """Unit tests for the outlook engine — pure math, no DB, no LLM.
 
-Tests cover all the edge cases specified in docs/05-data-model.md:
-- Zero streak → flat projection (no streak bonus)
-- Broken streak → curve flattens (projected ≥ current_score), never drops
-- 7+ day streak → streak boost is applied
-- Score ≥ 90 → diminishing-returns region
-- Adherence = 0.0 vs 1.0 → adherence modulates the streak weight
-- Contract: projected_score >= current_score for all horizons always holds
+Tests cover all edge cases specified in docs/10-vitality-formula.md §5:
+
+  Capped-ceiling multiplicative model:
+    Outlook(h) = current + (ceiling − current) × adherence × streak_mult × horizon_factor(h)
+    ceiling = 95.0
+    horizon_factor = {3: 0.25, 6: 0.50, 12: 0.70}
+    streak_mult(s) = 1 − exp(−s / 30)
+
+  Edge cases:
+  - streak_days ≤ 0                        → flat at current_score
+  - protocol_adherence == 0.0              → flat at current_score
+  - current_score == 100                   → all horizons return 100 (gap=0, above ceiling)
+  - current_score > CEILING (e.g. 97)      → gap clamped to 0 → flat at current_score
+  - Monotonicity: longer streak             → higher or equal projected score
+  - Monotonicity: higher adherence          → higher or equal projected score
+  - Horizon ordering: h=3 ≤ h=6 ≤ h=12    → later horizons capture more of the gap
+  - Rebecca worked example                  → matches doc §6.8 golden values
+  - Very long streak at ceiling approaches CEILING=95, not 100
 """
 
 from __future__ import annotations
 
+import math
+
 import pytest
 
-from app.services.outlook_engine import compute_outlook
+from app.services.outlook_engine import CEILING, compute_outlook
 
 HORIZONS = [3, 6, 12]
 
@@ -43,7 +56,9 @@ class TestReturnShape:
             protocol_adherence=0.8,
         )
         for horizon, value in result.items():
-            assert isinstance(value, float), f"horizon {horizon}: expected float, got {type(value)}"
+            assert isinstance(value, float), (
+                f"horizon {horizon}: expected float, got {type(value)}"
+            )
 
     def test_patient_id_does_not_affect_result(self) -> None:
         """compute_outlook is pure: patient_id is not used in math."""
@@ -105,7 +120,7 @@ class TestNeverDropsBelowCurrentScore:
 
 
 # ---------------------------------------------------------------------------
-# Zero streak → flat projection
+# T4 test case 1: streak_days == 0 → flat at current_score
 # ---------------------------------------------------------------------------
 
 
@@ -118,6 +133,17 @@ class TestZeroStreak:
             patient_id="PT0001",
             current_score=current,
             streak_days=0,
+            protocol_adherence=1.0,
+        )
+        for horizon in HORIZONS:
+            assert result[horizon] == pytest.approx(current)
+
+    def test_negative_streak_returns_current_score(self) -> None:
+        current = 55.0
+        result = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=-5,
             protocol_adherence=1.0,
         )
         for horizon in HORIZONS:
@@ -136,186 +162,22 @@ class TestZeroStreak:
 
 
 # ---------------------------------------------------------------------------
-# Broken streak: streak_days=0 after some positive value
+# T4 test case 2: protocol_adherence == 0.0 → flat at current_score
 # ---------------------------------------------------------------------------
 
 
-class TestBrokenStreak:
-    """When streak is broken, projections should not exceed the pre-break values
-    — but crucially they must stay >= current_score (flattens, never drops)."""
+class TestZeroAdherence:
+    """Zero adherence suppresses all gain even with an active streak."""
 
-    def test_broken_streak_does_not_exceed_active_streak(self) -> None:
-        """Active streak with same parameters should project higher than broken."""
-        current = 60.0
-        adherence = 0.9
-        active = compute_outlook(
-            patient_id="PT0001",
-            current_score=current,
-            streak_days=14,
-            protocol_adherence=adherence,
-        )
-        broken = compute_outlook(
-            patient_id="PT0001",
-            current_score=current,
-            streak_days=0,
-            protocol_adherence=adherence,
-        )
-        for horizon in HORIZONS:
-            # Active streak must project at least as high as broken streak
-            assert active[horizon] >= broken[horizon], (
-                f"horizon {horizon}: active {active[horizon]} < broken {broken[horizon]}"
-            )
-
-    def test_broken_streak_holds_at_current_score(self) -> None:
-        """Broken streak means hold the current score — the 'flattens' contract."""
-        current = 77.5
-        result = compute_outlook(
-            patient_id="PT0001",
-            current_score=current,
-            streak_days=0,
-            protocol_adherence=0.5,
-        )
-        for horizon in HORIZONS:
-            # Flat at current — no drop, no rise
-            assert result[horizon] == pytest.approx(current)
-
-
-# ---------------------------------------------------------------------------
-# Seven-plus day streak: reward applied
-# ---------------------------------------------------------------------------
-
-
-class TestSevenPlusDayStreak:
-    """A 7+ day streak should produce projections above current_score."""
-
-    def test_seven_day_streak_raises_projection(self) -> None:
-        current = 60.0
-        result = compute_outlook(
-            patient_id="PT0001",
-            current_score=current,
-            streak_days=7,
-            protocol_adherence=1.0,
-        )
-        # At least some horizon should be above current (streak bonus applied)
-        assert any(result[h] > current for h in HORIZONS), (
-            "7-day streak with full adherence should raise at least one horizon above current"
-        )
-
-    def test_longer_streak_projects_higher_than_shorter(self) -> None:
-        """More streak days → higher projection at shorter horizons."""
-        current = 65.0
-        short = compute_outlook(
-            patient_id="PT0001",
-            current_score=current,
-            streak_days=3,
-            protocol_adherence=0.8,
-        )
-        long_ = compute_outlook(
-            patient_id="PT0001",
-            current_score=current,
-            streak_days=21,
-            protocol_adherence=0.8,
-        )
-        # Longer streak must project >= shorter at every horizon
-        for horizon in HORIZONS:
-            assert long_[horizon] >= short[horizon], (
-                f"horizon {horizon}: 21-day streak {long_[horizon]} < 3-day {short[horizon]}"
-            )
-
-    def test_streak_boost_increases_with_adherence(self) -> None:
-        """Higher adherence → higher projection, all else equal."""
-        current = 60.0
-        low = compute_outlook(
-            patient_id="PT0001",
-            current_score=current,
-            streak_days=10,
-            protocol_adherence=0.2,
-        )
-        high = compute_outlook(
-            patient_id="PT0001",
-            current_score=current,
-            streak_days=10,
-            protocol_adherence=1.0,
-        )
-        for horizon in HORIZONS:
-            assert high[horizon] >= low[horizon], (
-                f"horizon {horizon}: high adherence {high[horizon]} < low adherence {low[horizon]}"
-            )
-
-
-# ---------------------------------------------------------------------------
-# Score ≥ 90: diminishing returns
-# ---------------------------------------------------------------------------
-
-
-class TestDiminishingReturns:
-    """When current_score >= 90 the boost should be visibly smaller."""
-
-    def test_high_score_projection_stays_bounded_at_100(self) -> None:
-        """No projected score may exceed 100."""
-        result = compute_outlook(
-            patient_id="PT0001",
-            current_score=95.0,
-            streak_days=30,
-            protocol_adherence=1.0,
-        )
-        for horizon, projected in result.items():
-            assert projected <= 100.0, f"horizon {horizon}: projected {projected} > 100"
-
-    def test_high_score_boost_smaller_than_low_score_boost(self) -> None:
-        """Boost for score=92 should be smaller than boost for score=60 (same streak)."""
-        streak, adherence = 14, 1.0
-        low_base = compute_outlook(
-            patient_id="PT0001",
-            current_score=60.0,
-            streak_days=streak,
-            protocol_adherence=adherence,
-        )
-        high_base = compute_outlook(
-            patient_id="PT0001",
-            current_score=92.0,
-            streak_days=streak,
-            protocol_adherence=adherence,
-        )
-        # absolute boost = projected - current
-        for horizon in HORIZONS:
-            low_boost = low_base[horizon] - 60.0
-            high_boost = high_base[horizon] - 92.0
-            assert high_boost <= low_boost, (
-                f"horizon {horizon}: high-score boost {high_boost} > low-score boost {low_boost}"
-            )
-
-    def test_score_100_returns_100_for_all_horizons(self) -> None:
-        """Score already at 100 → projection is 100 at all horizons."""
-        result = compute_outlook(
-            patient_id="PT0001",
-            current_score=100.0,
-            streak_days=30,
-            protocol_adherence=1.0,
-        )
-        for horizon in HORIZONS:
-            assert result[horizon] == pytest.approx(100.0)
-
-
-# ---------------------------------------------------------------------------
-# Adherence = 0.0 vs 1.0
-# ---------------------------------------------------------------------------
-
-
-class TestAdherenceEdgeCases:
-    """Zero adherence suppresses the streak bonus; full adherence maximises it."""
-
-    def test_zero_adherence_with_active_streak_returns_flat(self) -> None:
-        """adherence=0.0 means no benefit even from a long streak."""
+    def test_zero_adherence_with_long_streak_is_flat(self) -> None:
         current = 70.0
         result = compute_outlook(
             patient_id="PT0001",
             current_score=current,
-            streak_days=20,
+            streak_days=60,
             protocol_adherence=0.0,
         )
         for horizon in HORIZONS:
-            # Zero adherence → projection must equal current (no benefit)
             assert result[horizon] == pytest.approx(current), (
                 f"horizon {horizon}: expected flat {current}, got {result[horizon]}"
             )
@@ -341,35 +203,318 @@ class TestAdherenceEdgeCases:
 
 
 # ---------------------------------------------------------------------------
-# Horizon ordering: 3-month ≥ 6-month ≥ 12-month delta
+# T4 test case 3: current_score == 100 → all horizons return 100
+# ---------------------------------------------------------------------------
+
+
+class TestScoreAt100:
+    """Score already at 100 → reachable_gap = 0 → projection stays at 100."""
+
+    def test_score_100_returns_100_for_all_horizons(self) -> None:
+        result = compute_outlook(
+            patient_id="PT0001",
+            current_score=100.0,
+            streak_days=30,
+            protocol_adherence=1.0,
+        )
+        for horizon in HORIZONS:
+            # gap = max(0, 95 - 100) = 0, so gain = 0
+            # projected = max(100, min(max(100,95), 100 + 0)) = 100
+            assert result[horizon] == pytest.approx(100.0)
+
+
+# ---------------------------------------------------------------------------
+# T4 test case 4: current_score > CEILING → gap clamped to 0, flat at current
+# ---------------------------------------------------------------------------
+
+
+class TestScoreAboveCeiling:
+    """When current_score > CEILING, reachable_gap is clamped to 0 — no gain."""
+
+    def test_score_above_ceiling_stays_at_current(self) -> None:
+        current = 97.0  # above CEILING=95
+        result = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=30,
+            protocol_adherence=1.0,
+        )
+        for horizon in HORIZONS:
+            # reachable_gap = max(0, 95-97) = 0 → gain = 0
+            # projected = max(97, min(max(97,95), 97)) = 97
+            assert result[horizon] == pytest.approx(current), (
+                f"horizon {horizon}: score above ceiling should stay at {current}, "
+                f"got {result[horizon]}"
+            )
+
+    def test_score_exactly_at_ceiling_stays_at_ceiling(self) -> None:
+        """Score at exactly CEILING → gap is 0 → flat at CEILING."""
+        current = 95.0
+        result = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=30,
+            protocol_adherence=1.0,
+        )
+        for horizon in HORIZONS:
+            assert result[horizon] == pytest.approx(CEILING)
+
+
+# ---------------------------------------------------------------------------
+# T4 test case 5: Monotonicity — longer streak → higher or equal projection
+# ---------------------------------------------------------------------------
+
+
+class TestMonotonicityStreak:
+    """Longer streak at same adherence yields higher or equal projected score."""
+
+    def test_longer_streak_projects_higher_than_shorter(self) -> None:
+        current = 65.0
+        adherence = 0.8
+        short = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=3,
+            protocol_adherence=adherence,
+        )
+        long_ = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=21,
+            protocol_adherence=adherence,
+        )
+        for horizon in HORIZONS:
+            assert long_[horizon] >= short[horizon], (
+                f"horizon {horizon}: 21-day streak {long_[horizon]} < "
+                f"3-day {short[horizon]}"
+            )
+
+    def test_broken_streak_does_not_exceed_active_streak(self) -> None:
+        current = 60.0
+        adherence = 0.9
+        active = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=14,
+            protocol_adherence=adherence,
+        )
+        broken = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=0,
+            protocol_adherence=adherence,
+        )
+        for horizon in HORIZONS:
+            assert active[horizon] >= broken[horizon], (
+                f"horizon {horizon}: active {active[horizon]} < broken {broken[horizon]}"
+            )
+
+    def test_very_long_streak_monotone_with_medium(self) -> None:
+        current = 50.0
+        adherence = 0.7
+        medium = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=30,
+            protocol_adherence=adherence,
+        )
+        long_ = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=90,
+            protocol_adherence=adherence,
+        )
+        for horizon in HORIZONS:
+            assert long_[horizon] >= medium[horizon]
+
+
+# ---------------------------------------------------------------------------
+# T4 test case 6: Monotonicity — higher adherence → higher or equal projection
+# ---------------------------------------------------------------------------
+
+
+class TestMonotonicityAdherence:
+    """Higher adherence at same streak yields higher or equal projected score."""
+
+    def test_higher_adherence_projects_higher(self) -> None:
+        current = 60.0
+        streak = 10
+        low = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=streak,
+            protocol_adherence=0.2,
+        )
+        high = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=streak,
+            protocol_adherence=1.0,
+        )
+        for horizon in HORIZONS:
+            assert high[horizon] >= low[horizon], (
+                f"horizon {horizon}: high adherence {high[horizon]} < "
+                f"low adherence {low[horizon]}"
+            )
+
+    @pytest.mark.parametrize("adherence_low,adherence_high", [
+        (0.1, 0.5),
+        (0.5, 0.9),
+        (0.3, 1.0),
+    ])
+    def test_adherence_ordering_parametric(
+        self, adherence_low: float, adherence_high: float
+    ) -> None:
+        current = 65.0
+        streak = 14
+        result_low = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=streak,
+            protocol_adherence=adherence_low,
+        )
+        result_high = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=streak,
+            protocol_adherence=adherence_high,
+        )
+        for horizon in HORIZONS:
+            assert result_high[horizon] >= result_low[horizon]
+
+
+# ---------------------------------------------------------------------------
+# T4 test case 7: Horizon ordering — projections[3] ≤ projections[6] ≤ projections[12]
 # ---------------------------------------------------------------------------
 
 
 class TestHorizonOrdering:
-    """Decay should make the near-term projection relatively higher than long-term."""
+    """Later horizons capture more of the gap: h=3 ≤ h=6 ≤ h=12."""
 
-    def test_3m_delta_gte_6m_delta(self) -> None:
-        """Decay tempers long-horizon optimism: 3m boost ≥ 6m boost."""
+    def test_3m_lte_6m_lte_12m(self) -> None:
+        """horizon_factor grows from 3→6→12; later horizons must project higher."""
         current = 65.0
         result = compute_outlook(
             patient_id="PT0001",
             current_score=current,
             streak_days=14,
             protocol_adherence=0.9,
+        )
+        assert result[3] <= result[6], (
+            f"3m {result[3]} > 6m {result[6]}"
+        )
+        assert result[6] <= result[12], (
+            f"6m {result[6]} > 12m {result[12]}"
+        )
+
+    def test_deltas_increase_with_horizon(self) -> None:
+        """Absolute gain (projected - current) is also increasing with horizon."""
+        current = 60.0
+        result = compute_outlook(
+            patient_id="PT0001",
+            current_score=current,
+            streak_days=20,
+            protocol_adherence=0.75,
         )
         delta_3 = result[3] - current
         delta_6 = result[6] - current
-        assert delta_3 >= delta_6, f"3m delta {delta_3} < 6m delta {delta_6}"
+        delta_12 = result[12] - current
+        assert delta_3 <= delta_6, f"delta_3={delta_3} > delta_6={delta_6}"
+        assert delta_6 <= delta_12, f"delta_6={delta_6} > delta_12={delta_12}"
 
-    def test_6m_delta_gte_12m_delta(self) -> None:
-        """Decay: 6m boost ≥ 12m boost."""
-        current = 65.0
+
+# ---------------------------------------------------------------------------
+# T4 test case 8: Rebecca worked example (docs/10-vitality-formula.md §6.8)
+# ---------------------------------------------------------------------------
+
+
+class TestRebeccaWorkedExample:
+    """Golden values from the doc's worked example.
+
+    Inputs: current=79.3, streak_days=14, adherence=0.85
+    streak_mult = 1 − exp(−14/30) ≈ 0.373
+    gap = 95.0 − 79.3 = 15.7
+    h=3:  gain = 15.7 × 0.85 × 0.373 × 0.25 ≈ 1.25  → projected ≈ 80.5
+    h=6:  gain = 15.7 × 0.85 × 0.373 × 0.50 ≈ 2.49  → projected ≈ 81.8
+    h=12: gain = 15.7 × 0.85 × 0.373 × 0.70 ≈ 3.49  → projected ≈ 82.8
+    """
+
+    def test_rebecca_golden_values(self) -> None:
+        result = compute_outlook(
+            patient_id="PT0199",
+            current_score=79.3,
+            streak_days=14,
+            protocol_adherence=0.85,
+        )
+        assert result[3] == pytest.approx(80.5, abs=0.3)
+        assert result[6] == pytest.approx(81.8, abs=0.3)
+        assert result[12] == pytest.approx(82.8, abs=0.3)
+
+    def test_rebecca_all_projections_above_current(self) -> None:
+        result = compute_outlook(
+            patient_id="PT0199",
+            current_score=79.3,
+            streak_days=14,
+            protocol_adherence=0.85,
+        )
+        for horizon, projected in result.items():
+            assert projected > 79.3, (
+                f"horizon {horizon}: expected gain above 79.3, got {projected}"
+            )
+
+    def test_rebecca_horizon_ordering(self) -> None:
+        result = compute_outlook(
+            patient_id="PT0199",
+            current_score=79.3,
+            streak_days=14,
+            protocol_adherence=0.85,
+        )
+        assert result[3] < result[6] < result[12]
+
+
+# ---------------------------------------------------------------------------
+# T4 test case 9: Very long streak approaches CEILING=95, never exceeds it
+# ---------------------------------------------------------------------------
+
+
+class TestVeryLongStreakCeiling:
+    """streak_days=1000, adherence=1.0, current=50 → approaches but ≤ CEILING=95."""
+
+    def test_very_long_streak_bounded_by_ceiling(self) -> None:
         result = compute_outlook(
             patient_id="PT0001",
-            current_score=current,
-            streak_days=14,
-            protocol_adherence=0.9,
+            current_score=50.0,
+            streak_days=1000,
+            protocol_adherence=1.0,
         )
-        delta_6 = result[6] - current
-        delta_12 = result[12] - current
-        assert delta_6 >= delta_12, f"6m delta {delta_6} < 12m delta {delta_12}"
+        for horizon, projected in result.items():
+            assert projected <= CEILING, (
+                f"horizon {horizon}: projected {projected} exceeds CEILING={CEILING}"
+            )
+
+    def test_very_long_streak_approaches_ceiling(self) -> None:
+        """At streak=1000 days streak_mult ≈ 1.0; 12m projection should be close to ceiling."""
+        result = compute_outlook(
+            patient_id="PT0001",
+            current_score=50.0,
+            streak_days=1000,
+            protocol_adherence=1.0,
+        )
+        # At streak→∞, streak_mult→1.0; h=12 gain = (95-50)*1.0*1.0*0.70 = 31.5 → 81.5
+        # (still not at ceiling because horizon_factor for 12m is only 0.70)
+        expected_12 = 50.0 + (95.0 - 50.0) * 1.0 * (1.0 - math.exp(-1000 / 30)) * 0.70
+        assert result[12] == pytest.approx(expected_12, abs=0.01)
+        assert result[12] > 50.0
+
+    def test_high_score_with_long_streak_cannot_exceed_ceiling(self) -> None:
+        """Even at current=94.9 (just below ceiling), result is ≤ CEILING."""
+        result = compute_outlook(
+            patient_id="PT0001",
+            current_score=94.9,
+            streak_days=1000,
+            protocol_adherence=1.0,
+        )
+        for horizon, projected in result.items():
+            assert projected <= CEILING, (
+                f"horizon {horizon}: projected {projected} exceeds CEILING={CEILING}"
+            )
