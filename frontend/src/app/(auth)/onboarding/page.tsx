@@ -1,8 +1,10 @@
-/** Onboarding screen — placeholder. Real implementation in Task 8. */
+/**
+ * Onboarding page — server component frame.
+ * Renders the client-side OnboardingStepper.
+ * No tab bar (handled by the auth layout).
+ */
+import { OnboardingStepper } from "./stepper";
+
 export default function OnboardingPage() {
-  return (
-    <main>
-      <h1>Onboarding</h1>
-    </main>
-  );
+  return <OnboardingStepper />;
 }
