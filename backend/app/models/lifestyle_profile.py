@@ -43,3 +43,10 @@ class LifestyleProfile(SQLModel, table=True):
     sleep_satisfaction: int | None = Field(default=None)          # 1–10
     mental_wellbeing_who5: int | None = Field(default=None)       # WHO-5 score 0–100
     self_rated_health: int | None = Field(default=None)           # 1–10
+
+    # Protocol generator hard constraints (docs/06-ai-layer.md)
+    time_budget_minutes_per_day: int | None = Field(default=None)   # max total protocol time
+    out_of_pocket_budget_eur_per_month: float | None = Field(default=None)
+    dietary_restrictions: str | None = Field(default=None)          # free-text
+    known_allergies: str | None = Field(default=None)               # free-text
+    injuries_or_limitations: str | None = Field(default=None)       # free-text

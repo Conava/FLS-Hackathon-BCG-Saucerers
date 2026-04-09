@@ -1,7 +1,7 @@
 """GDPR compliance router.
 
 Implements the right-of-access (Art. 15) export and right-to-erasure (Art. 17)
-delete stub for the Longevity+ MVP.
+delete for the Longevity+ MVP.
 
 Both endpoints are:
   - Authenticated via ``api_key_auth`` (shared-secret API key).
@@ -10,11 +10,16 @@ Both endpoints are:
     and never implies that *medical* records have been permanently destroyed
     without archival review.
 
-Delete is a STUB in this slice:
-  The ``DELETE /patients/{patient_id}/gdpr`` endpoint returns a 200 with
-  ``status="scheduled"`` and does not modify any data.  Actual deletion
-  requires an async job queue and legal-retention review, both deferred to a
-  future sprint.  This is documented here and in the OpenAPI description.
+Delete (Art. 17 — partial implementation):
+  The ``DELETE /patients/{patient_id}/gdpr`` endpoint:
+  1. Deletes all ``MealLog`` rows for the patient (hard delete).
+  2. Removes all meal photo files via ``PhotoStorage.delete_all_for_patient``.
+  3. Returns 200 with ``status="scheduled"`` — a wellness-framed acknowledgement.
+
+  Full data erasure (Patient, EHRRecord, WearableDay, etc.) requires an async
+  job queue and legal-retention review, both deferred to a future sprint.  This
+  partial implementation satisfies the T26 Scenario 5 acceptance criterion:
+  "GDPR delete-my-data removes photos too."
 """
 
 from __future__ import annotations
@@ -24,9 +29,12 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.photo_storage import PhotoStorage, get_photo_storage
+from app.core.config import Settings
 from app.core.security import api_key_auth
 from app.db.session import get_session
 from app.repositories.ehr_repo import EHRRepository
+from app.repositories.meal_log_repo import MealLogRepository
 from app.repositories.patient_repo import PatientRepository
 from app.repositories.wearable_repo import WearableRepository
 from app.schemas.gdpr import GDPRDeleteAck, GDPRExportOut
@@ -49,6 +57,22 @@ _LP_PID = "patient_id"
 
 #: Wellness-framed delete acknowledgement message (Art. 17).
 _DELETE_MESSAGE = "Your wellness data will be removed."
+
+
+def get_photo_storage_dep() -> PhotoStorage:
+    """FastAPI dependency that returns the configured PhotoStorage backend.
+
+    Reads ``photo_storage_backend`` from ``Settings`` to decide which backend
+    to use.  In tests, this dependency is overridden via ``app.dependency_overrides``
+    to inject a ``LocalFsPhotoStorage`` pointing at the test temporary directory.
+
+    Returns:
+        The appropriate ``PhotoStorage`` implementation.
+    """
+    return get_photo_storage(Settings())
+
+
+_PhotoStorageDep = Annotated[PhotoStorage, Depends(get_photo_storage_dep)]
 
 
 async def _fetch_lifestyle(session: AsyncSession, patient_id: str) -> Any:
@@ -133,28 +157,39 @@ async def gdpr_export(
     "/",
     response_model=GDPRDeleteAck,
     tags=["gdpr"],
-    summary="Request data erasure for a patient (GDPR Art. 17 — stub)",
+    summary="Request data erasure for a patient (GDPR Art. 17)",
 )
 async def gdpr_delete(
     patient_id: str,
     session: _Session,
     _auth: _Auth,
+    photo_storage: _PhotoStorageDep,
 ) -> GDPRDeleteAck:
     """Acknowledge a data-erasure request for *patient_id*.
 
-    STUB — no data is deleted in this slice.  The response is wellness-framed
-    per the product requirement: "Your wellness data will be removed."
+    Performs the following deletions synchronously:
 
-    The ``status="scheduled"`` value communicates that erasure is an async
-    process subject to legal retention obligations — it does not confirm that
-    records have been permanently destroyed.
+    1. **MealLog rows** — all rows for the patient are hard-deleted via
+       ``MealLogRepository.delete_for_patient``.
+    2. **Meal photo files** — every stored photo file is removed via
+       ``PhotoStorage.delete_all_for_patient`` (``LocalFsPhotoStorage`` in dev,
+       ``GcsPhotoStorage`` in prod).
+
+    Full patient record erasure (Patient, EHRRecord, WearableDay, etc.)
+    requires an async job queue and legal-retention review, both deferred to a
+    future sprint.  The ``status="scheduled"`` response communicates that
+    erasure is an async process subject to legal obligations.
+
+    The response is wellness-framed per the product requirement:
+    "Your wellness data will be removed."
 
     Raises HTTP 404 if the patient does not exist.
 
     Args:
-        patient_id: Path parameter, e.g. ``PT0282``.
-        session:    Injected ``AsyncSession``.
-        _auth:      ``api_key_auth`` result.
+        patient_id:    Path parameter, e.g. ``PT0282``.
+        session:       Injected ``AsyncSession``.
+        _auth:         ``api_key_auth`` result.
+        photo_storage: Injected ``PhotoStorage`` backend (overridable in tests).
     """
     patient_repo = PatientRepository(session)
     patient = await patient_repo.get(patient_id=patient_id)
@@ -163,6 +198,16 @@ async def gdpr_delete(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Patient {patient_id!r} not found.",
         )
+
+    # Step 1: Delete all MealLog rows for this patient.
+    meal_log_repo = MealLogRepository(session)
+    await meal_log_repo.delete_for_patient(patient_id=patient_id)
+    await session.commit()
+
+    # Step 2: Delete all photo files for this patient via PhotoStorage.
+    # ``delete_all_for_patient`` sweeps the entire patient namespace, so
+    # we don't need to iterate individual URIs from the (now-deleted) rows.
+    photo_storage.delete_all_for_patient(patient_id)
 
     return GDPRDeleteAck(
         status="scheduled",

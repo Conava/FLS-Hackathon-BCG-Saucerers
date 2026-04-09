@@ -132,7 +132,7 @@ The checkboxes below track the product scope commitment, not implementation comp
 
 **Backend slice 1 — done:** unified patient profile ingestion, vitality score + sub-scores, EHR/wearable/insights/appointments/GDPR read endpoints, API-key auth, CI.
 
-**Backend slice 2 — next:** Gemini integration, RAG + embeddings, coach, Protocol/DailyLog/MealLog/Outlook/Survey endpoints.
+**Backend slice 2 — done:** Full `/v1` API — 26 endpoints, LLM abstraction (FakeLLMProvider/GeminiProvider), pgvector RAG, SSE coach streaming, protocol generator, meal vision, outlook engine + narrator, future-self simulator, survey loop (onboarding/weekly/quarterly), DailyLog, MealLog with photo storage (local + GCS), notifications (LLM-generated copy), clinical review, referral, messages. GDPR delete now removes MealLog rows and photo files. Committed `backend/openapi.json`.
 
 **Frontend — not yet started.** The mockup (`mockup/index.html`) is the UI contract.
 
@@ -158,11 +158,11 @@ From our product thinking:
 
 ## Nice-to-have (build if time permits after core flow works)
 
-- [ ] **Clinician review card** — "Dr. Lehmann reviewed your result"
-- [ ] **Referral program** — journey stage 10 surface
-- [ ] **Messages to care team** — thin inbox UI
-- [ ] **Weekly micro-survey prompt** — contextual card on Today
-- [ ] **Signals drill-down** — four-dimension cards under Vitality Score
+- [x] **Clinician review card** — backend stub persists `ClinicalReview` rows; `GET/POST /v1/patients/{pid}/clinical-review`
+- [x] **Referral program** — backend stub persists `Referral` rows; `GET/POST /v1/patients/{pid}/referral`
+- [x] **Messages to care team** — `GET/POST /v1/patients/{pid}/messages`
+- [x] **Weekly micro-survey prompt** — survey router supports `kind=weekly`; `POST /v1/patients/{pid}/survey`
+- [ ] **Signals drill-down** — four-dimension cards under Vitality Score (frontend only)
 - [ ] **At-home test-kit checkout** (microbiome / food-intolerance)
 
 ## Deferred (mentioned in pitch, not built)

@@ -73,16 +73,16 @@ FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 
 # Routes that require auth (excludes /healthz)
 PROTECTED_ROUTES = [
-    "/patients/PT0282",
-    "/patients/PT0282/vitality",
-    "/patients/PT0282/records",
-    "/patients/PT0282/wearable",
-    "/patients/PT0282/insights",
-    "/patients/PT0282/appointments/",
-    "/patients/PT0282/gdpr/export",
+    "/v1/patients/PT0282",
+    "/v1/patients/PT0282/vitality",
+    "/v1/patients/PT0282/records",
+    "/v1/patients/PT0282/wearable",
+    "/v1/patients/PT0282/insights",
+    "/v1/patients/PT0282/appointments/",
+    "/v1/patients/PT0282/gdpr/export",
 ]
 
-PROTECTED_DELETE_ROUTES: list[str] = ["/patients/PT0282/gdpr/"]
+PROTECTED_DELETE_ROUTES: list[str] = ["/v1/patients/PT0282/gdpr/"]
 
 
 # ---------------------------------------------------------------------------
@@ -174,7 +174,7 @@ class TestAnnaDashboard:
         e2e_client: AsyncClient,
     ) -> None:
         """GET /patients/PT0282 → 200 with Anna in the name."""
-        resp = await e2e_client.get("/patients/PT0282", headers=HEADERS)
+        resp = await e2e_client.get("/v1/patients/PT0282", headers=HEADERS)
         assert resp.status_code == 200, resp.text
         data = resp.json()
         assert "Anna" in data["name"], f"Expected 'Anna' in name, got: {data['name']}"
@@ -185,7 +185,7 @@ class TestAnnaDashboard:
         e2e_client: AsyncClient,
     ) -> None:
         """GET /patients/PT0282/vitality → score in [0,100], 5 subscores, trend, disclaimer."""
-        resp = await e2e_client.get("/patients/PT0282/vitality", headers=HEADERS)
+        resp = await e2e_client.get("/v1/patients/PT0282/vitality", headers=HEADERS)
         assert resp.status_code == 200, resp.text
         data = resp.json()
 
@@ -210,7 +210,7 @@ class TestAnnaDashboard:
     ) -> None:
         """GET /patients/PT0282/records?type=lab_panel → exact cholesterol values."""
         resp = await e2e_client.get(
-            "/patients/PT0282/records",
+            "/v1/patients/PT0282/records",
             headers=HEADERS,
             params={"type": "lab_panel"},
         )
@@ -233,7 +233,7 @@ class TestAnnaDashboard:
         e2e_client: AsyncClient,
     ) -> None:
         """GET /patients/PT0282/insights → cardiovascular insight with lipid signal."""
-        resp = await e2e_client.get("/patients/PT0282/insights", headers=HEADERS)
+        resp = await e2e_client.get("/v1/patients/PT0282/insights", headers=HEADERS)
         assert resp.status_code == 200, resp.text
         data = resp.json()
 
@@ -256,7 +256,7 @@ class TestAnnaDashboard:
     ) -> None:
         """GET /patients/PT0282/wearable?days=7 → non-empty list (up to 7 days)."""
         resp = await e2e_client.get(
-            "/patients/PT0282/wearable",
+            "/v1/patients/PT0282/wearable",
             headers=HEADERS,
             params={"days": 7},
         )
@@ -272,7 +272,7 @@ class TestAnnaDashboard:
         e2e_client: AsyncClient,
     ) -> None:
         """GET /patients/PT0282/appointments/ → at least 2 appointments for Anna."""
-        resp = await e2e_client.get("/patients/PT0282/appointments/", headers=HEADERS)
+        resp = await e2e_client.get("/v1/patients/PT0282/appointments/", headers=HEADERS)
         assert resp.status_code == 200, resp.text
         data = resp.json()
         assert data["patient_id"] == "PT0282"
@@ -338,7 +338,7 @@ class TestIngestIdempotency:
     ) -> None:
         """Vitality score for PT0282 must be the same before and after a second ingest."""
         # Fetch vitality before second ingest (data already ingested by fixture).
-        resp1 = await e2e_client.get("/patients/PT0282/vitality", headers=HEADERS)
+        resp1 = await e2e_client.get("/v1/patients/PT0282/vitality", headers=HEADERS)
         assert resp1.status_code == 200, resp1.text
         score_before = resp1.json()["score"]
         subscores_before = resp1.json()["subscores"]
@@ -351,7 +351,7 @@ class TestIngestIdempotency:
             await session.commit()
 
         # Fetch vitality after second ingest.
-        resp2 = await e2e_client.get("/patients/PT0282/vitality", headers=HEADERS)
+        resp2 = await e2e_client.get("/v1/patients/PT0282/vitality", headers=HEADERS)
         assert resp2.status_code == 200, resp2.text
         score_after = resp2.json()["score"]
         subscores_after = resp2.json()["subscores"]
@@ -391,7 +391,7 @@ class TestCrossPatientIsolation:
 
         # The PT0001 record via the PT0282 path must return 404, not 200.
         resp = await e2e_client.get(
-            f"/patients/PT0282/records/{pt0001_record_id}",
+            f"/v1/patients/PT0282/records/{pt0001_record_id}",
             headers=HEADERS,
         )
         assert resp.status_code == 404, (
@@ -412,13 +412,13 @@ class TestCrossPatientIsolation:
 
         # Routes that must return 404 (patient existence check enforced).
         must_404_routes = [
-            f"/patients/{ghost_id}",
-            f"/patients/{ghost_id}/vitality",
-            f"/patients/{ghost_id}/records",
-            f"/patients/{ghost_id}/wearable",
-            f"/patients/{ghost_id}/insights",
-            f"/patients/{ghost_id}/appointments/",
-            f"/patients/{ghost_id}/gdpr/export",
+            f"/v1/patients/{ghost_id}",
+            f"/v1/patients/{ghost_id}/vitality",
+            f"/v1/patients/{ghost_id}/records",
+            f"/v1/patients/{ghost_id}/wearable",
+            f"/v1/patients/{ghost_id}/insights",
+            f"/v1/patients/{ghost_id}/appointments/",
+            f"/v1/patients/{ghost_id}/gdpr/export",
         ]
         for route in must_404_routes:
             resp = await e2e_client.get(route, headers=HEADERS)
@@ -443,7 +443,7 @@ class TestCrossPatientIsolation:
 
         # PT0282's record via PT0001 path must return 404.
         resp = await e2e_client.get(
-            f"/patients/PT0001/records/{pt0282_record_id}",
+            f"/v1/patients/PT0001/records/{pt0282_record_id}",
             headers=HEADERS,
         )
         assert resp.status_code == 404, (
@@ -512,7 +512,7 @@ class TestGDPRStubs:
         e2e_client: AsyncClient,
     ) -> None:
         """GET /patients/PT0282/gdpr/export → 200 with patient/records/wearable/lifestyle."""
-        resp = await e2e_client.get("/patients/PT0282/gdpr/export", headers=HEADERS)
+        resp = await e2e_client.get("/v1/patients/PT0282/gdpr/export", headers=HEADERS)
         assert resp.status_code == 200, resp.text
         data = resp.json()
 
@@ -534,7 +534,7 @@ class TestGDPRStubs:
         e2e_client: AsyncClient,
     ) -> None:
         """DELETE /patients/PT0282/gdpr/ → 200 with status='scheduled' + wellness message."""
-        resp = await e2e_client.delete("/patients/PT0282/gdpr/", headers=HEADERS)
+        resp = await e2e_client.delete("/v1/patients/PT0282/gdpr/", headers=HEADERS)
         assert resp.status_code == 200, resp.text
         data = resp.json()
 

@@ -1,0 +1,4524 @@
+{
+  "components": {
+    "schemas": {
+      "AIMeta": {
+        "description": "Non-PHI observability metadata for a single LLM call.\n\nLogged as a structured JSON line alongside every AI response.\nContains no patient-identifiable information \u2014 only model-level signals.",
+        "properties": {
+          "latency_ms": {
+            "description": "End-to-end LLM call latency in milliseconds",
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "description": "LLM model identifier, e.g. 'gemini-2.5-flash'",
+            "title": "Model",
+            "type": "string"
+          },
+          "prompt_name": {
+            "description": "Prompt template name, e.g. 'coach'",
+            "title": "Prompt Name",
+            "type": "string"
+          },
+          "request_id": {
+            "description": "Unique request identifier for log correlation",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "token_in": {
+            "description": "Input token count (prompt)",
+            "title": "Token In",
+            "type": "integer"
+          },
+          "token_out": {
+            "description": "Output token count (completion)",
+            "title": "Token Out",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model",
+          "prompt_name",
+          "request_id",
+          "token_in",
+          "token_out",
+          "latency_ms"
+        ],
+        "title": "AIMeta",
+        "type": "object"
+      },
+      "AppointmentCreateIn": {
+        "description": "Request body for booking a new appointment.\n\nAll fields except ``price_eur`` and ``covered_percent`` are required.\nWellness framing applies: use clinical-service language in ``title``\n(e.g. \"Assessment\", \"Consultation\") rather than diagnostic verbs.",
+        "properties": {
+          "covered_percent": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Insurance coverage percentage (0\u2013100)",
+            "title": "Covered Percent"
+          },
+          "duration_minutes": {
+            "description": "Duration in minutes",
+            "exclusiveMinimum": 0.0,
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "location": {
+            "description": "Clinic or virtual location",
+            "title": "Location",
+            "type": "string"
+          },
+          "price_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Out-of-pocket price in EUR",
+            "title": "Price Eur"
+          },
+          "provider": {
+            "description": "Healthcare provider name",
+            "title": "Provider",
+            "type": "string"
+          },
+          "starts_at": {
+            "description": "Requested appointment start time (UTC, naive)",
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "title": {
+            "description": "Appointment title / service name",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "provider",
+          "location",
+          "starts_at",
+          "duration_minutes"
+        ],
+        "title": "AppointmentCreateIn",
+        "type": "object"
+      },
+      "AppointmentListOut": {
+        "description": "List of upcoming appointments for a patient.",
+        "properties": {
+          "appointments": {
+            "description": "Upcoming appointments ordered by start time ascending",
+            "items": {
+              "$ref": "#/components/schemas/AppointmentOut"
+            },
+            "title": "Appointments",
+            "type": "array"
+          },
+          "patient_id": {
+            "description": "Patient identifier",
+            "title": "Patient Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "title": "AppointmentListOut",
+        "type": "object"
+      },
+      "AppointmentOut": {
+        "description": "Response schema for a single appointment.",
+        "properties": {
+          "covered_percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Insurance coverage percentage (0\u2013100)",
+            "title": "Covered Percent"
+          },
+          "duration_minutes": {
+            "description": "Duration in minutes",
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Appointment identifier (stub: string slug)",
+            "title": "Id",
+            "type": "string"
+          },
+          "location": {
+            "description": "Clinic or virtual location",
+            "title": "Location",
+            "type": "string"
+          },
+          "price_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Out-of-pocket price in EUR",
+            "title": "Price Eur"
+          },
+          "provider": {
+            "description": "Healthcare provider name",
+            "title": "Provider",
+            "type": "string"
+          },
+          "starts_at": {
+            "description": "Appointment start time (UTC)",
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "title": {
+            "description": "Appointment title / service name",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "provider",
+          "location",
+          "starts_at",
+          "duration_minutes"
+        ],
+        "title": "AppointmentOut",
+        "type": "object"
+      },
+      "Body_upload_meal_log_v1_patients__patient_id__meal_log_post": {
+        "properties": {
+          "image": {
+            "contentMediaType": "application/octet-stream",
+            "title": "Image",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "image"
+        ],
+        "title": "Body_upload_meal_log_v1_patients__patient_id__meal_log_post",
+        "type": "object"
+      },
+      "Citation": {
+        "description": "A single EHR record citation returned with a Q&A answer.\n\n``snippet`` is a short excerpt from the source record (\u2264200 chars)\nthat substantiates the answer.  The client renders this in a citation chip.",
+        "properties": {
+          "record_id": {
+            "description": "Primary key of the EHRRecord that was cited",
+            "title": "Record Id",
+            "type": "integer"
+          },
+          "snippet": {
+            "description": "Short excerpt from the source record (\u2264200 chars)",
+            "title": "Snippet",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_id",
+          "snippet"
+        ],
+        "title": "Citation",
+        "type": "object"
+      },
+      "ClinicalReviewIn": {
+        "description": "Inbound payload for ``POST /v1/patients/{pid}/clinical-review``.",
+        "properties": {
+          "notes": {
+            "description": "Free-text notes describing the wellness concern",
+            "title": "Notes",
+            "type": "string"
+          },
+          "patient_id": {
+            "description": "Patient flagged for review",
+            "title": "Patient Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "patient_id",
+          "notes"
+        ],
+        "title": "ClinicalReviewIn",
+        "type": "object"
+      },
+      "ClinicalReviewResponse": {
+        "description": "API response for a persisted ClinicalReview row.\n\nExposes both ``notes`` (the schema field name from the request) and\n``reason`` (the model field name) so that callers can reference either.\n``status`` is always ``\"pending\"`` on creation.",
+        "properties": {
+          "created_at": {
+            "description": "Timestamp when the review was created (naive UTC)",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Clinical review primary key",
+            "title": "Id",
+            "type": "integer"
+          },
+          "notes": {
+            "description": "Wellness concern notes (mirrors reason)",
+            "title": "Notes",
+            "type": "string"
+          },
+          "patient_id": {
+            "description": "Patient the review belongs to",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Reason stored on the review row",
+            "title": "Reason",
+            "type": "string"
+          },
+          "status": {
+            "description": "Review status: 'pending' | 'in_review' | 'resolved'",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "notes",
+          "reason",
+          "status",
+          "created_at"
+        ],
+        "title": "ClinicalReviewResponse",
+        "type": "object"
+      },
+      "CoachChatRequest": {
+        "description": "Inbound payload for the AI Health Coach streaming endpoint.\n\n``history`` is a list of prior turns supplied by the client so the LLM\ncan maintain conversation continuity without server-side session state.\nEach entry is a free-form dict with at minimum ``role`` and ``content`` keys.",
+        "properties": {
+          "history": {
+            "description": "Prior conversation turns. Each dict must contain 'role' (user|assistant) and 'content' (str). Maximum 50 turns recommended.",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "message": {
+            "description": "The user's current message to the coach",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "CoachChatRequest",
+        "type": "object"
+      },
+      "CompleteActionRequest": {
+        "description": "Inbound payload for marking a protocol action as completed.",
+        "properties": {
+          "action_id": {
+            "description": "Primary key of the ProtocolAction to complete",
+            "title": "Action Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "action_id"
+        ],
+        "title": "CompleteActionRequest",
+        "type": "object"
+      },
+      "CompleteActionResponse": {
+        "description": "Response after marking a protocol action as completed.",
+        "properties": {
+          "action_id": {
+            "description": "Primary key of the completed action",
+            "title": "Action Id",
+            "type": "integer"
+          },
+          "completed_at": {
+            "description": "Timestamp the action was marked complete",
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "streak_days": {
+            "description": "Updated consecutive-days streak after this completion",
+            "title": "Streak Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "action_id",
+          "streak_days",
+          "completed_at"
+        ],
+        "title": "CompleteActionResponse",
+        "type": "object"
+      },
+      "DailyLogIn": {
+        "description": "Inbound payload for ``POST /v1/patients/{pid}/daily-log``.\n\nAll metric fields are optional \u2014 patients log what they have.\n``date`` defaults to today when omitted.",
+        "properties": {
+          "alcohol_units": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Alcohol units consumed (1 unit \u2248 10 ml pure ethanol)",
+            "title": "Alcohol Units"
+          },
+          "date": {
+            "description": "Calendar date for this log entry (YYYY-MM-DD)",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "mood_score": {
+            "anyOf": [
+              {
+                "maximum": 10.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Self-reported mood score 1\u201310",
+            "title": "Mood Score"
+          },
+          "sleep_hours": {
+            "anyOf": [
+              {
+                "maximum": 24.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Hours of sleep the previous night",
+            "title": "Sleep Hours"
+          },
+          "water_glasses": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Number of ~250 ml glasses of water consumed",
+            "title": "Water Glasses"
+          },
+          "workout_minutes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Minutes of intentional movement or exercise",
+            "title": "Workout Minutes"
+          }
+        },
+        "required": [
+          "date"
+        ],
+        "title": "DailyLogIn",
+        "type": "object"
+      },
+      "DailyLogListOut": {
+        "description": "API response schema for a list of daily log entries.",
+        "properties": {
+          "logs": {
+            "description": "Daily log entries ordered by date descending",
+            "items": {
+              "$ref": "#/components/schemas/DailyLogOut"
+            },
+            "title": "Logs",
+            "type": "array"
+          },
+          "patient_id": {
+            "description": "Patient the logs belong to",
+            "title": "Patient Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "title": "DailyLogListOut",
+        "type": "object"
+      },
+      "DailyLogOut": {
+        "description": "API response schema for a single persisted daily log entry.",
+        "properties": {
+          "alcohol_units": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Alcohol units consumed",
+            "title": "Alcohol Units"
+          },
+          "date": {
+            "description": "Calendar date for this log entry",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "id": {
+            "description": "Daily log primary key",
+            "title": "Id",
+            "type": "integer"
+          },
+          "logged_at": {
+            "description": "Timestamp when this entry was created (naive UTC)",
+            "format": "date-time",
+            "title": "Logged At",
+            "type": "string"
+          },
+          "mood_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Self-reported mood score 1\u201310",
+            "title": "Mood Score"
+          },
+          "patient_id": {
+            "description": "Patient this log belongs to",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "sleep_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Hours of sleep",
+            "title": "Sleep Hours"
+          },
+          "water_glasses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Glasses of water consumed",
+            "title": "Water Glasses"
+          },
+          "workout_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Minutes of movement",
+            "title": "Workout Minutes"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "date",
+          "logged_at"
+        ],
+        "title": "DailyLogOut",
+        "type": "object"
+      },
+      "EHRRecordListOut": {
+        "description": "Paginated list of EHR records for a patient.",
+        "properties": {
+          "patient_id": {
+            "description": "Patient the records belong to",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/EHRRecordOut"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "total": {
+            "description": "Total number of records (unpaged count)",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "patient_id",
+          "total"
+        ],
+        "title": "EHRRecordListOut",
+        "type": "object"
+      },
+      "EHRRecordOut": {
+        "description": "Response schema for a single EHR record.",
+        "properties": {
+          "id": {
+            "description": "Auto-incremented record PK",
+            "title": "Id",
+            "type": "integer"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "description": "Record-type-specific structured payload",
+            "title": "Payload",
+            "type": "object"
+          },
+          "record_type": {
+            "description": "Record category: condition | medication | visit | lab_panel",
+            "title": "Record Type",
+            "type": "string"
+          },
+          "recorded_at": {
+            "description": "When this record was created/measured",
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "source": {
+            "description": "Adapter that produced this record, e.g. 'csv'",
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "record_type",
+          "recorded_at",
+          "payload",
+          "source"
+        ],
+        "title": "EHRRecordOut",
+        "type": "object"
+      },
+      "FutureSelfRequest": {
+        "description": "Inbound payload for the Future Self Simulator endpoint.\n\n``sliders`` maps lifestyle dimension names to adjustment values\n(e.g. ``{\"sleep_improvement\": 2, \"exercise_frequency\": 4}``).\nThe service uses these to project a modified bio-age and trajectory.",
+        "properties": {
+          "patient_id": {
+            "description": "Patient to project the future self for",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "sliders": {
+            "additionalProperties": true,
+            "description": "Slider adjustments keyed by lifestyle dimension. Values are numeric adjustment amounts.",
+            "title": "Sliders",
+            "type": "object"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "title": "FutureSelfRequest",
+        "type": "object"
+      },
+      "FutureSelfResponse": {
+        "description": "Response from the Future Self Simulator endpoint.\n\nInherits ``disclaimer`` and ``ai_meta`` from ``AIResponseEnvelope``.\n``bio_age`` is the projected biological age given the slider adjustments.\n``narrative`` is a paragraph comparing the current and improved trajectories.",
+        "properties": {
+          "ai_meta": {
+            "$ref": "#/components/schemas/AIMeta",
+            "description": "Non-PHI observability metadata for the LLM call"
+          },
+          "bio_age": {
+            "description": "Projected biological age (years) given the slider-adjusted lifestyle",
+            "title": "Bio Age",
+            "type": "integer"
+          },
+          "disclaimer": {
+            "default": "This is wellness guidance, not medical advice.",
+            "description": "Mandatory wellness framing \u2014 this guidance is not medical advice.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "narrative": {
+            "description": "Wellness-framed paragraph comparing current trajectory vs improved, e.g. 'Here's you at 70 on current trajectory vs improved'",
+            "title": "Narrative",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ai_meta",
+          "bio_age",
+          "narrative"
+        ],
+        "title": "FutureSelfResponse",
+        "type": "object"
+      },
+      "GDPRDeleteAck": {
+        "description": "Acknowledgement of a data-erasure request (GDPR Art. 17).\n\n``status`` is always ``\"scheduled\"`` \u2014 deletion is asynchronous and\nsubject to legal retention obligations. The message is wellness-framed.",
+        "properties": {
+          "message": {
+            "description": "Human-readable acknowledgement (wellness-framed)",
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "const": "scheduled",
+            "default": "scheduled",
+            "description": "Erasure request status \u2014 always 'scheduled' in this slice",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "GDPRDeleteAck",
+        "type": "object"
+      },
+      "GDPRExportOut": {
+        "description": "Bundled personal data export for a patient (GDPR Art. 15 response).",
+        "properties": {
+          "exported_at": {
+            "description": "Timestamp of this export (naive UTC, matches DB columns)",
+            "format": "date-time",
+            "title": "Exported At",
+            "type": "string"
+          },
+          "lifestyle": {
+            "description": "Lifestyle survey data (structure varies by adapter)",
+            "title": "Lifestyle"
+          },
+          "patient": {
+            "$ref": "#/components/schemas/PatientProfileOut",
+            "description": "Demographic profile"
+          },
+          "patient_id": {
+            "description": "Patient identifier",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "records": {
+            "description": "All EHR records held for this patient",
+            "items": {
+              "$ref": "#/components/schemas/EHRRecordOut"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "wearable": {
+            "description": "All wearable telemetry held for this patient",
+            "items": {
+              "$ref": "#/components/schemas/WearableDayOut"
+            },
+            "title": "Wearable",
+            "type": "array"
+          }
+        },
+        "required": [
+          "patient_id",
+          "patient"
+        ],
+        "title": "GDPRExportOut",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "description": "Liveness response body.",
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "InsightOut": {
+        "description": "A single wellness insight derived from patient data.\n\nFields follow wellness framing: ``signals`` describes what was observed;\n``prevention_signals`` lists actionable lifestyle suggestions;\n``kind`` categorises the insight (e.g. 'lipid', 'sleep', 'activity').",
+        "properties": {
+          "disclaimer": {
+            "default": "Wellness signal, not medical advice.",
+            "description": "Mandatory wellness framing statement",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "kind": {
+            "description": "Insight category, e.g. 'lipid', 'sleep', 'activity', 'cardiac'",
+            "title": "Kind",
+            "type": "string"
+          },
+          "message": {
+            "description": "Human-readable wellness message (wellness-framed, no diagnostic verbs)",
+            "title": "Message",
+            "type": "string"
+          },
+          "prevention_signals": {
+            "description": "Actionable wellness suggestions",
+            "items": {
+              "type": "string"
+            },
+            "title": "Prevention Signals",
+            "type": "array"
+          },
+          "severity": {
+            "description": "Signal severity level: low | moderate | high",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "signals": {
+            "description": "Supporting data points that triggered this insight",
+            "items": {
+              "type": "string"
+            },
+            "title": "Signals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "severity",
+          "message"
+        ],
+        "title": "InsightOut",
+        "type": "object"
+      },
+      "InsightsListOut": {
+        "description": "Aggregated insights response for a patient.",
+        "properties": {
+          "insights": {
+            "description": "Ordered list of wellness insights (highest severity first)",
+            "items": {
+              "$ref": "#/components/schemas/InsightOut"
+            },
+            "title": "Insights",
+            "type": "array"
+          },
+          "patient_id": {
+            "description": "Patient the insights belong to",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "prevention_signals": {
+            "description": "Aggregated actionable wellness suggestions across all insights",
+            "items": {
+              "type": "string"
+            },
+            "title": "Prevention Signals",
+            "type": "array"
+          },
+          "risk_flags": {
+            "description": "Top-level wellness signal identifiers",
+            "items": {
+              "type": "string"
+            },
+            "title": "Risk Flags",
+            "type": "array"
+          },
+          "signals": {
+            "description": "Aggregated supporting observations across all insights",
+            "items": {
+              "type": "string"
+            },
+            "title": "Signals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "title": "InsightsListOut",
+        "type": "object"
+      },
+      "MealAnalysis": {
+        "description": "Structured output from the Meal Vision LLM call.\n\nMirrors the contract in docs/06-ai-layer.md:\n- ``classification``: plain-English meal description\n- ``macros``: dictionary with kcal, protein_g, carbs_g, fat_g keys\n- ``longevity_swap``: one-line swap suggestion; empty string if already optimal",
+        "properties": {
+          "classification": {
+            "description": "Plain-English meal description, e.g. 'grilled salmon, white rice, broccoli'",
+            "title": "Classification",
+            "type": "string"
+          },
+          "longevity_swap": {
+            "description": "One-line longevity swap suggestion, e.g. 'Replace white rice with quinoa for more protein and fibre.' Empty string if the meal is already well-optimised.",
+            "title": "Longevity Swap",
+            "type": "string"
+          },
+          "macros": {
+            "additionalProperties": true,
+            "description": "Macro nutrient breakdown. Expected keys: kcal (int), protein_g (float), carbs_g (float), fat_g (float). Optional: fiber_g (float).",
+            "title": "Macros",
+            "type": "object"
+          },
+          "swap_rationale": {
+            "description": "One line explaining the longevity benefit of the swap. Empty string if longevity_swap is empty.",
+            "title": "Swap Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "classification",
+          "macros",
+          "longevity_swap",
+          "swap_rationale"
+        ],
+        "title": "MealAnalysis",
+        "type": "object"
+      },
+      "MealLogListOut": {
+        "description": "API response schema for a list of meal log entries.",
+        "properties": {
+          "logs": {
+            "description": "Meal log entries ordered by logged_at descending",
+            "items": {
+              "$ref": "#/components/schemas/MealLogOut"
+            },
+            "title": "Logs",
+            "type": "array"
+          },
+          "patient_id": {
+            "description": "Patient the meal logs belong to",
+            "title": "Patient Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "title": "MealLogListOut",
+        "type": "object"
+      },
+      "MealLogOut": {
+        "description": "API response schema for a single persisted meal log entry.",
+        "properties": {
+          "analysis": {
+            "$ref": "#/components/schemas/MealAnalysis",
+            "description": "Structured macro analysis from the Meal Vision model"
+          },
+          "id": {
+            "description": "Meal log primary key",
+            "title": "Id",
+            "type": "integer"
+          },
+          "logged_at": {
+            "description": "Timestamp when the meal was logged (naive UTC)",
+            "format": "date-time",
+            "title": "Logged At",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional free-text notes from the patient",
+            "title": "Notes"
+          },
+          "patient_id": {
+            "description": "Patient this meal log belongs to",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "photo_uri": {
+            "description": "Storage URI for the meal photo",
+            "title": "Photo Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "logged_at",
+          "photo_uri",
+          "analysis"
+        ],
+        "title": "MealLogOut",
+        "type": "object"
+      },
+      "MealLogUploadResponse": {
+        "description": "Response from the meal photo upload endpoint.\n\nInherits ``disclaimer`` and ``ai_meta`` from ``AIResponseEnvelope``.\nReturns the persisted meal log ID, the photo storage URI, and the analysis.",
+        "properties": {
+          "ai_meta": {
+            "$ref": "#/components/schemas/AIMeta",
+            "description": "Non-PHI observability metadata for the LLM call"
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/MealAnalysis",
+            "description": "Structured macro analysis returned by the Meal Vision model"
+          },
+          "disclaimer": {
+            "default": "This is wellness guidance, not medical advice.",
+            "description": "Mandatory wellness framing \u2014 this guidance is not medical advice.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "meal_log_id": {
+            "description": "Primary key of the persisted MealLog row",
+            "title": "Meal Log Id",
+            "type": "integer"
+          },
+          "photo_uri": {
+            "description": "Storage URI for the uploaded photo (local:// or gs://)",
+            "title": "Photo Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ai_meta",
+          "meal_log_id",
+          "photo_uri",
+          "analysis"
+        ],
+        "title": "MealLogUploadResponse",
+        "type": "object"
+      },
+      "MessageIn": {
+        "description": "Inbound payload for ``POST /v1/messages``.",
+        "properties": {
+          "content": {
+            "description": "Message body text",
+            "title": "Content",
+            "type": "string"
+          },
+          "patient_id": {
+            "description": "Patient this message is addressed to or from",
+            "title": "Patient Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "patient_id",
+          "content"
+        ],
+        "title": "MessageIn",
+        "type": "object"
+      },
+      "MessageListOut": {
+        "description": "API response schema for a list of in-app messages.",
+        "properties": {
+          "messages": {
+            "description": "Messages ordered by sent_at ascending (chronological order)",
+            "items": {
+              "$ref": "#/components/schemas/MessageOut"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "patient_id": {
+            "description": "Patient the messages belong to",
+            "title": "Patient Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "title": "MessageListOut",
+        "type": "object"
+      },
+      "MessageOut": {
+        "description": "API response schema for a single persisted message.\n\nMaps ``Message.created_at`` \u2192 ``sent_at`` and ``Message.sender`` \u2192\n``direction`` (``\"patient\"`` \u2192 ``\"inbound\"``; other \u2192 ``\"outbound\"``).",
+        "properties": {
+          "content": {
+            "description": "Message body text",
+            "title": "Content",
+            "type": "string"
+          },
+          "direction": {
+            "description": "Message direction: 'inbound' (patient \u2192 app) or 'outbound' (app \u2192 patient)",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "id": {
+            "description": "Message primary key",
+            "title": "Id",
+            "type": "integer"
+          },
+          "patient_id": {
+            "description": "Patient this message belongs to",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "sent_at": {
+            "description": "Timestamp when the message was sent (naive UTC)",
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "content",
+          "sent_at",
+          "direction"
+        ],
+        "title": "MessageOut",
+        "type": "object"
+      },
+      "OutlookNarratorRequest": {
+        "description": "Inbound payload for the Outlook Narrator AI endpoint.",
+        "properties": {
+          "horizon_months": {
+            "default": 6,
+            "description": "Forecast horizon in calendar months (1\u201324)",
+            "maximum": 24.0,
+            "minimum": 1.0,
+            "title": "Horizon Months",
+            "type": "integer"
+          },
+          "patient_id": {
+            "description": "Patient to narrate the outlook for",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "top_drivers": {
+            "description": "Top 1\u20132 vitality driver categories to mention in the narrative",
+            "items": {
+              "type": "string"
+            },
+            "title": "Top Drivers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "title": "OutlookNarratorRequest",
+        "type": "object"
+      },
+      "OutlookNarratorResponse": {
+        "description": "Response from the Outlook Narrator endpoint.\n\nInherits ``disclaimer`` and ``ai_meta`` from ``AIResponseEnvelope``.\n``narrative`` is a single sentence summarising the outlook trajectory\nwith wellness framing \u2014 no diagnostic language.",
+        "properties": {
+          "ai_meta": {
+            "$ref": "#/components/schemas/AIMeta",
+            "description": "Non-PHI observability metadata for the LLM call"
+          },
+          "disclaimer": {
+            "default": "This is wellness guidance, not medical advice.",
+            "description": "Mandatory wellness framing \u2014 this guidance is not medical advice.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "narrative": {
+            "description": "One wellness-framed sentence, e.g. 'Hold your streak and your Outlook reaches 74 by October \u2014 mostly from sleep consistency.'",
+            "title": "Narrative",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ai_meta",
+          "narrative"
+        ],
+        "title": "OutlookNarratorResponse",
+        "type": "object"
+      },
+      "OutlookOut": {
+        "description": "API response schema for a persisted VitalityOutlook entry.\n\n``projected_score`` is the streak-math extrapolation of the current\nvitality trajectory over ``horizon_months``.\n``narrative`` is the one-sentence LLM narration cached from the last\nOutlook Narrator call.",
+        "properties": {
+          "computed_at": {
+            "description": "Timestamp when this outlook was computed (naive UTC)",
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "horizon_months": {
+            "description": "Forecast horizon in calendar months",
+            "title": "Horizon Months",
+            "type": "integer"
+          },
+          "narrative": {
+            "description": "One-sentence wellness-framed narrative of the outlook trajectory",
+            "title": "Narrative",
+            "type": "string"
+          },
+          "projected_score": {
+            "description": "Projected vitality score at the horizon (0\u2013100)",
+            "title": "Projected Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "horizon_months",
+          "projected_score",
+          "narrative",
+          "computed_at"
+        ],
+        "title": "OutlookOut",
+        "type": "object"
+      },
+      "PatientProfileOut": {
+        "description": "Response schema for a patient's demographic profile.\n\nAll field names follow wellness framing: no diagnostic verbs.\nOptional fields are ``None`` when data is unavailable (documented gap\nin the CSV source \u2014 no date_of_birth, some anthropometric values absent).",
+        "properties": {
+          "age": {
+            "description": "Age in years",
+            "title": "Age",
+            "type": "integer"
+          },
+          "bmi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Body Mass Index (kg/m\u00b2)",
+            "title": "Bmi"
+          },
+          "country": {
+            "description": "Country of residence (ISO-3166 alpha-2 or full name)",
+            "title": "Country",
+            "type": "string"
+          },
+          "height_cm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Height in centimetres",
+            "title": "Height Cm"
+          },
+          "name": {
+            "description": "Patient display name",
+            "title": "Name",
+            "type": "string"
+          },
+          "patient_id": {
+            "description": "Unique patient identifier, e.g. PT0282",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Biological sex (male/female/other)",
+            "title": "Sex"
+          },
+          "smoking_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Smoking status (never/former/current)",
+            "title": "Smoking Status"
+          },
+          "weight_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Weight in kilograms",
+            "title": "Weight Kg"
+          }
+        },
+        "required": [
+          "patient_id",
+          "name",
+          "age",
+          "country"
+        ],
+        "title": "PatientProfileOut",
+        "type": "object"
+      },
+      "ProtocolActionOut": {
+        "description": "API response schema for a single persisted protocol action.",
+        "properties": {
+          "category": {
+            "description": "Action category",
+            "title": "Category",
+            "type": "string"
+          },
+          "completed_today": {
+            "default": false,
+            "description": "Whether the action has been completed today",
+            "title": "Completed Today",
+            "type": "boolean"
+          },
+          "dimension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Longevity dimension (optional \u2014 not stored on ProtocolAction model)",
+            "title": "Dimension"
+          },
+          "id": {
+            "description": "Protocol action primary key",
+            "title": "Id",
+            "type": "integer"
+          },
+          "protocol_id": {
+            "description": "Parent protocol primary key",
+            "title": "Protocol Id",
+            "type": "integer"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "One-line rationale",
+            "title": "Rationale"
+          },
+          "streak_days": {
+            "default": 0,
+            "description": "Consecutive days this action has been completed",
+            "title": "Streak Days",
+            "type": "integer"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Measurable target (optional \u2014 model stores this as target_value)",
+            "title": "Target"
+          },
+          "title": {
+            "description": "Action title",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "protocol_id",
+          "category",
+          "title"
+        ],
+        "title": "ProtocolActionOut",
+        "type": "object"
+      },
+      "ProtocolOut": {
+        "description": "API response schema for a full persisted protocol with its actions.",
+        "properties": {
+          "actions": {
+            "description": "Ordered list of protocol actions",
+            "items": {
+              "$ref": "#/components/schemas/ProtocolActionOut"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "created_at": {
+            "description": "Timestamp when the protocol was generated (maps to Protocol.created_at)",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Protocol primary key",
+            "title": "Id",
+            "type": "integer"
+          },
+          "patient_id": {
+            "description": "Patient this protocol belongs to",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Protocol-level rationale paragraph (optional \u2014 not stored on Protocol model)",
+            "title": "Rationale"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "created_at"
+        ],
+        "title": "ProtocolOut",
+        "type": "object"
+      },
+      "RecordsQARequest": {
+        "description": "Inbound payload for the EHR records Q&A endpoint.",
+        "properties": {
+          "question": {
+            "description": "The patient's natural-language question about their records",
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "RecordsQARequest",
+        "type": "object"
+      },
+      "RecordsQAResponse": {
+        "description": "Response from the EHR records Q&A endpoint.\n\nInherits ``disclaimer`` and ``ai_meta`` from ``AIResponseEnvelope``.\nThe answer is strictly grounded in the retrieved records \u2014 no hallucination.\nIf no relevant record exists, the model must answer \"I don't have that information.\"",
+        "properties": {
+          "ai_meta": {
+            "$ref": "#/components/schemas/AIMeta",
+            "description": "Non-PHI observability metadata for the LLM call"
+          },
+          "answer": {
+            "description": "The model's answer, strictly grounded in retrieved EHR records",
+            "title": "Answer",
+            "type": "string"
+          },
+          "citations": {
+            "description": "EHR records that substantiate the answer, ordered by relevance",
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "disclaimer": {
+            "default": "This is wellness guidance, not medical advice.",
+            "description": "Mandatory wellness framing \u2014 this guidance is not medical advice.",
+            "title": "Disclaimer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ai_meta",
+          "answer"
+        ],
+        "title": "RecordsQAResponse",
+        "type": "object"
+      },
+      "ReferralIn": {
+        "description": "Inbound payload for ``POST /v1/patients/{pid}/referral``.",
+        "properties": {
+          "patient_id": {
+            "description": "Patient the referral is for",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Wellness-framed reason for the referral",
+            "title": "Reason",
+            "type": "string"
+          },
+          "specialty": {
+            "description": "Medical specialty for the referral, e.g. 'cardiology', 'dermatology'",
+            "title": "Specialty",
+            "type": "string"
+          }
+        },
+        "required": [
+          "patient_id",
+          "specialty",
+          "reason"
+        ],
+        "title": "ReferralIn",
+        "type": "object"
+      },
+      "ReferralResponse": {
+        "description": "API response for a persisted Referral row.\n\nSurfaces the original ``specialty`` and ``reason`` from the request\nalongside the generated ``code`` and the standard ``status`` /\n``created_at`` fields.",
+        "properties": {
+          "code": {
+            "description": "Unique shareable referral code",
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Timestamp when the referral was created (naive UTC)",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Referral primary key",
+            "title": "Id",
+            "type": "integer"
+          },
+          "patient_id": {
+            "description": "Patient the referral belongs to",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Wellness-framed referral reason",
+            "title": "Reason",
+            "type": "string"
+          },
+          "specialty": {
+            "description": "Target medical specialty",
+            "title": "Specialty",
+            "type": "string"
+          },
+          "status": {
+            "description": "Referral status: 'pending' | 'sent' | 'completed'",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "code",
+          "specialty",
+          "reason",
+          "status",
+          "created_at"
+        ],
+        "title": "ReferralResponse",
+        "type": "object"
+      },
+      "SmartNotificationRequest": {
+        "description": "Inbound payload for ``POST /v1/patients/{pid}/notifications/smart``.\n\n``trigger_kind`` identifies the event that prompted the notification\n(e.g. ``streak_at_risk``, ``protocol_due``, ``weekly_check_in``).\n``context`` carries the event-specific data the LLM uses to personalise\nthe notification copy.",
+        "properties": {
+          "context": {
+            "additionalProperties": true,
+            "description": "Event-specific context data passed to the LLM for personalisation",
+            "title": "Context",
+            "type": "object"
+          },
+          "trigger_kind": {
+            "description": "Notification trigger identifier, e.g. 'streak_at_risk' | 'protocol_due' | 'weekly_check_in'",
+            "title": "Trigger Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trigger_kind"
+        ],
+        "title": "SmartNotificationRequest",
+        "type": "object"
+      },
+      "SmartNotificationResponse": {
+        "description": "Response from the Smart Notification endpoint.\n\nInherits ``disclaimer`` and ``ai_meta`` from ``AIResponseEnvelope``.\n``title``, ``body``, and ``cta`` are the three notification copy fields\ngenerated by the LLM and surfaced to the client.",
+        "properties": {
+          "ai_meta": {
+            "$ref": "#/components/schemas/AIMeta",
+            "description": "Non-PHI observability metadata for the LLM call"
+          },
+          "body": {
+            "description": "Notification body text with personalised wellness framing",
+            "title": "Body",
+            "type": "string"
+          },
+          "cta": {
+            "description": "Call-to-action label, e.g. 'Log activity' or 'View protocol'",
+            "title": "Cta",
+            "type": "string"
+          },
+          "disclaimer": {
+            "default": "This is wellness guidance, not medical advice.",
+            "description": "Mandatory wellness framing \u2014 this guidance is not medical advice.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "title": {
+            "description": "Short notification title (\u226460 chars recommended)",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ai_meta",
+          "title",
+          "body",
+          "cta"
+        ],
+        "title": "SmartNotificationResponse",
+        "type": "object"
+      },
+      "SurveyHistoryOut": {
+        "description": "API response schema for the list of a patient's survey submissions.",
+        "properties": {
+          "patient_id": {
+            "description": "Patient the history belongs to",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "responses": {
+            "description": "Survey responses ordered by submitted_at descending",
+            "items": {
+              "$ref": "#/components/schemas/SurveyResponseOut"
+            },
+            "title": "Responses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "title": "SurveyHistoryOut",
+        "type": "object"
+      },
+      "SurveyKind": {
+        "description": "Survey variant discriminator.\n\n- ``onboarding``: filled once when the patient first joins\n- ``weekly``: short check-in submitted each week\n- ``quarterly``: deeper review submitted every three months",
+        "enum": [
+          "onboarding",
+          "weekly",
+          "quarterly"
+        ],
+        "title": "SurveyKind",
+        "type": "string"
+      },
+      "SurveyResponseOut": {
+        "description": "API response schema for a single persisted survey submission.",
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "description": "The submitted answers",
+            "title": "Answers",
+            "type": "object"
+          },
+          "id": {
+            "description": "Survey response primary key",
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SurveyKind",
+            "description": "Survey variant"
+          },
+          "patient_id": {
+            "description": "Patient the survey belongs to",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "submitted_at": {
+            "description": "Timestamp when the survey was submitted (naive UTC)",
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "kind",
+          "submitted_at"
+        ],
+        "title": "SurveyResponseOut",
+        "type": "object"
+      },
+      "SurveySubmitRequest": {
+        "description": "Inbound payload for ``POST /v1/patients/{pid}/survey``.",
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "description": "Survey answers as key-value pairs. Keys are LifestyleProfile column names where applicable.",
+            "title": "Answers",
+            "type": "object"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SurveyKind",
+            "description": "Survey variant: onboarding | weekly | quarterly"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "SurveySubmitRequest",
+        "type": "object"
+      },
+      "TrendPoint": {
+        "description": "A single data point in the 7-day vitality trend.",
+        "properties": {
+          "date": {
+            "description": "Calendar date for this score",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "score": {
+            "description": "Computed vitality score (0\u2013100) for the day",
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "date",
+          "score"
+        ],
+        "title": "TrendPoint",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VitalityOut": {
+        "description": "Response schema for the heuristic vitality score.\n\nIncludes the composite score, domain-level subscores, a 7-day trend,\nrisk flags (wellness-framed \u2014 no diagnostic verbs), and a mandatory\ndisclaimer that this is a wellness signal, not a medical assessment.",
+        "properties": {
+          "computed_at": {
+            "description": "Timestamp when score was computed",
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "disclaimer": {
+            "default": "Wellness signal, not medical advice.",
+            "description": "Mandatory wellness framing statement",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "risk_flags": {
+            "description": "Wellness-framed signal identifiers, e.g. 'elevated_ldl'",
+            "items": {
+              "type": "string"
+            },
+            "title": "Risk Flags",
+            "type": "array"
+          },
+          "score": {
+            "description": "Composite wellness score (0\u2013100)",
+            "title": "Score",
+            "type": "number"
+          },
+          "subscores": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Domain subscores keyed by: sleep, activity, metabolic, cardio, lifestyle",
+            "title": "Subscores",
+            "type": "object"
+          },
+          "trend": {
+            "description": "Per-day score over the last N days (typically 7)",
+            "items": {
+              "$ref": "#/components/schemas/TrendPoint"
+            },
+            "title": "Trend",
+            "type": "array"
+          }
+        },
+        "required": [
+          "score",
+          "subscores",
+          "computed_at"
+        ],
+        "title": "VitalityOut",
+        "type": "object"
+      },
+      "WearableDayOut": {
+        "description": "Response schema for a single day of wearable telemetry data.",
+        "properties": {
+          "active_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Minutes of active movement",
+            "title": "Active Minutes"
+          },
+          "calories_burned_kcal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estimated calories burned (kcal)",
+            "title": "Calories Burned Kcal"
+          },
+          "date": {
+            "description": "Calendar date for this measurement",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "deep_sleep_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Percentage of sleep in deep stage",
+            "title": "Deep Sleep Pct"
+          },
+          "hrv_rmssd_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "HRV RMSSD in milliseconds",
+            "title": "Hrv Rmssd Ms"
+          },
+          "patient_id": {
+            "description": "Patient identifier",
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "resting_hr_bpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resting heart rate (bpm)",
+            "title": "Resting Hr Bpm"
+          },
+          "sleep_duration_hrs": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Total sleep duration (hours)",
+            "title": "Sleep Duration Hrs"
+          },
+          "sleep_quality_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sleep quality score (0\u2013100)",
+            "title": "Sleep Quality Score"
+          },
+          "spo2_avg_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Average SpO2 percentage",
+            "title": "Spo2 Avg Pct"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Daily step count",
+            "title": "Steps"
+          }
+        },
+        "required": [
+          "patient_id",
+          "date"
+        ],
+        "title": "WearableDayOut",
+        "type": "object"
+      },
+      "WearableSeriesOut": {
+        "description": "Time-series of wearable data for a patient.",
+        "properties": {
+          "days": {
+            "description": "Daily measurements ordered descending by date",
+            "items": {
+              "$ref": "#/components/schemas/WearableDayOut"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "patient_id": {
+            "description": "Patient identifier",
+            "title": "Patient Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "title": "WearableSeriesOut",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Clinical-grade longevity MVP backend \u2014 wellness signals, not medical advice.",
+    "title": "Longevity+ API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/healthz": {
+      "get": {
+        "description": "Returns {status: ok} with no authentication required.",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liveness probe",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}": {
+      "get": {
+        "description": "Return the demographic profile for *patient_id*.\n\nRaises HTTP 404 if the patient does not exist \u2014 never returns empty data\nto avoid leaking information about which patient IDs are valid.\n\nArgs:\n    patient_id: Path parameter, e.g. ``PT0282``.\n    session:    Injected ``AsyncSession`` (per-request).\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).",
+        "operationId": "get_patient_profile_v1_patients__patient_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientProfileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Fetch a patient's demographic profile",
+        "tags": [
+          "patients",
+          "patients"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/appointments/": {
+      "get": {
+        "description": "Return upcoming appointments for *patient_id*.\n\nThe appointment list is sourced from the injected ``AppointmentSource``\n(today: static stub; future: Doctolib adapter).  Raises HTTP 404 if the\npatient does not exist to maintain consistent cross-patient isolation.\n\nArgs:\n    patient_id: Path parameter, e.g. ``PT0282``.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n    source:     Resolved ``AppointmentSource`` instance.",
+        "operationId": "list_appointments_v1_patients__patient_id__appointments__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List upcoming appointments for a patient",
+        "tags": [
+          "appointments",
+          "appointments"
+        ]
+      },
+      "post": {
+        "description": "Book a new appointment for *patient_id* via the configured ``AppointmentSource``.\n\nValidates that the patient exists (404 if not) to maintain consistent\ncross-patient isolation.  The booking is delegated to the injected\n``AppointmentSource``; today this is the in-memory ``StaticAppointmentSource``\nstub; a real scheduling adapter (e.g. Doctolib) drops in with no router\nchanges.\n\nArgs:\n    patient_id:       Path parameter, e.g. ``PT0100``.\n    body:             Booking request body (``AppointmentCreateIn``).\n    session:          Injected ``AsyncSession``.\n    _auth:            ``api_key_auth`` result.\n    source:           Resolved ``AppointmentSource`` instance.\n\nReturns:\n    The booked ``AppointmentOut`` with an assigned ``id``.\n\nRaises:\n    HTTP 404: If ``patient_id`` does not exist in the database.",
+        "operationId": "book_appointment_v1_patients__patient_id__appointments__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Book a new appointment for a patient",
+        "tags": [
+          "appointments",
+          "appointments"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/clinical-review": {
+      "post": {
+        "description": "Create a clinician review request and persist it.\n\nThe endpoint:\n1. Validates that the patient exists \u2014 returns 404 if not.\n2. Maps ``ClinicalReviewIn.notes`` to the service's ``reason`` parameter.\n3. Delegates to ``ClinicalReviewService.create`` which persists a\n   ``ClinicalReview`` row with ``status=\"pending\"``.\n4. Returns a response that includes both ``notes`` and ``reason`` for\n   API compatibility.\n\nIsolation guarantee:\n    The ``patient_id`` path parameter is the sole scope key.  The service\n    enforces ``patient_id`` scoping at the repository layer.\n\nArgs:\n    patient_id: Path parameter \u2014 the patient being flagged, e.g. ``PT0282``.\n    body:       Request body with ``notes`` describing the wellness concern.\n    session:    Injected ``AsyncSession`` (per-request).\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).\n\nReturns:\n    ``ClinicalReviewResponse`` with id, patient_id, notes, reason, status,\n    and created_at.\n\nRaises:\n    HTTPException 404: If ``patient_id`` does not exist in the database.",
+        "operationId": "post_clinical_review_v1_patients__patient_id__clinical_review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClinicalReviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicalReviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a clinical review request for a patient",
+        "tags": [
+          "clinical-review",
+          "clinical-review"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/coach/chat": {
+      "post": {
+        "description": "Stream an AI Health Coach response for *patient_id*.\n\nThe response is a ``text/event-stream`` SSE stream containing:\n- One or more ``token`` events (text chunks from the LLM).\n- One final ``done`` event with ``ai_meta`` and the wellness disclaimer.\n- On error: one ``error`` event followed by stream close.\n\nThe ``patient_id`` path parameter is threaded into ``CoachService`` which\nscopes all database reads to that patient \u2014 ensuring cross-patient isolation.\n\nArgs:\n    patient_id: The patient's unique identifier (e.g. ``PT0001``).\n    request:    Inbound JSON payload \u2014 ``message`` and optional ``history``.\n    session:    Injected ``AsyncSession`` (per-request).\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).\n\nReturns:\n    An ``EventSourceResponse`` that streams SSE events to the client.\n\nRaises:\n    HTTPException 404: When *patient_id* does not exist in the database.\n    HTTPException 401: When the ``X-API-Key`` header is absent or invalid\n                       (raised by ``api_key_auth`` before this handler runs).",
+        "operationId": "coach_chat_v1_patients__patient_id__coach_chat_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoachChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "text/event-stream \u2014 SSE events: token*, done | error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stream a conversational AI coach response via SSE",
+        "tags": [
+          "coach"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/daily-log": {
+      "get": {
+        "description": "Return daily log entries for *patient_id* within an inclusive date window.\n\nBoth ``from`` and ``to`` are inclusive.  Only entries whose ``logged_at``\ndate falls within ``[from, to]`` are returned.  Entries are ordered by\n``logged_at ASC`` (oldest first).\n\nQuery parameters:\n    from: Start date (YYYY-MM-DD, inclusive).\n    to:   End date (YYYY-MM-DD, inclusive).\n\nArgs:\n    patient_id: Path parameter identifying the patient.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n    from_date:  Start of the date window.\n    to_date:    End of the date window.\n\nReturns:\n    ``DailyLogListOut`` containing the patient_id and list of log entries.",
+        "operationId": "list_daily_logs_v1_patients__patient_id__daily_log_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start of date range (inclusive, YYYY-MM-DD)",
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "description": "Start of date range (inclusive, YYYY-MM-DD)",
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "description": "End of date range (inclusive, YYYY-MM-DD)",
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "description": "End of date range (inclusive, YYYY-MM-DD)",
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyLogListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List daily log entries for a patient within a date range",
+        "tags": [
+          "daily-log",
+          "daily-log"
+        ]
+      },
+      "post": {
+        "description": "Persist a new quick-log entry and return the created record.\n\nAccepts a partial or full set of wellness metrics for a given date.\nFields omitted from the request body are stored as ``NULL`` \u2014 callers\nmay log a subset of metrics at a time.\n\nThe FK constraint on ``DailyLog.patient_id`` will raise an\n``IntegrityError`` (propagated as HTTP 422 by FastAPI's exception handler)\nif the patient does not exist.  This is intentional: the endpoint is only\ncalled after the client has verified the patient exists via the profile\nendpoint.\n\nArgs:\n    patient_id: Path parameter identifying the patient.\n    payload:    Validated request body (``DailyLogIn``).\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).\n\nReturns:\n    The persisted ``DailyLogOut`` DTO with ``id`` and ``logged_at`` populated.",
+        "operationId": "create_daily_log_v1_patients__patient_id__daily_log_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DailyLogIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyLogOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a new daily log entry for a patient",
+        "tags": [
+          "daily-log",
+          "daily-log"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/gdpr/": {
+      "delete": {
+        "description": "Acknowledge a data-erasure request for *patient_id*.\n\nPerforms the following deletions synchronously:\n\n1. **MealLog rows** \u2014 all rows for the patient are hard-deleted via\n   ``MealLogRepository.delete_for_patient``.\n2. **Meal photo files** \u2014 every stored photo file is removed via\n   ``PhotoStorage.delete_all_for_patient`` (``LocalFsPhotoStorage`` in dev,\n   ``GcsPhotoStorage`` in prod).\n\nFull patient record erasure (Patient, EHRRecord, WearableDay, etc.)\nrequires an async job queue and legal-retention review, both deferred to a\nfuture sprint.  The ``status=\"scheduled\"`` response communicates that\nerasure is an async process subject to legal obligations.\n\nThe response is wellness-framed per the product requirement:\n\"Your wellness data will be removed.\"\n\nRaises HTTP 404 if the patient does not exist.\n\nArgs:\n    patient_id:    Path parameter, e.g. ``PT0282``.\n    session:       Injected ``AsyncSession``.\n    _auth:         ``api_key_auth`` result.\n    photo_storage: Injected ``PhotoStorage`` backend (overridable in tests).",
+        "operationId": "gdpr_delete_v1_patients__patient_id__gdpr__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GDPRDeleteAck"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request data erasure for a patient (GDPR Art. 17)",
+        "tags": [
+          "gdpr",
+          "gdpr"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/gdpr/export": {
+      "get": {
+        "description": "Return a bundled export of all data held for *patient_id*.\n\nBundles:\n  - Demographic profile (Patient)\n  - All EHR records\n  - All available wearable telemetry (up to 90 days)\n  - Lifestyle survey data\n\nRaises HTTP 404 if the patient does not exist.\n\nArgs:\n    patient_id: Path parameter, e.g. ``PT0282``.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.",
+        "operationId": "gdpr_export_v1_patients__patient_id__gdpr_export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GDPRExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export all data held for a patient (GDPR Art. 15)",
+        "tags": [
+          "gdpr",
+          "gdpr"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/insights": {
+      "get": {
+        "description": "Compute and return wellness insights for *patient_id*.\n\nInternally calls ``compute_vitality`` then ``derive_insights``; both are\npure functions with no DB side-effects (vitality snapshot upsert is\nintentionally omitted here \u2014 the ``/vitality`` endpoint handles that).\n\nRaises HTTP 404 if the patient does not exist.\n\nArgs:\n    patient_id: Path parameter, e.g. ``PT0282``.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.",
+        "operationId": "get_insights_v1_patients__patient_id__insights_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InsightsListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Return wellness insights for a patient",
+        "tags": [
+          "patients",
+          "patients"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/insights/future-self": {
+      "post": {
+        "description": "Simulate the patient's future self given lifestyle slider adjustments.\n\nCalls ``FutureSelfService.project()`` which invokes the ``future-self``\nLLM prompt with the slider values, returning a projected biological age\nand a wellness-framed narrative comparing current vs improved trajectory.\n\nArgs:\n    patient_id: URL path parameter \u2014 the patient to project.\n    body:       ``FutureSelfRequest`` with ``sliders`` dict.\n    session:    Injected ``AsyncSession``.\n    llm:        Injected ``LLMProvider``.\n    _auth:      API key authentication guard.\n\nReturns:\n    ``FutureSelfResponse`` with ``bio_age``, ``narrative``, ``disclaimer``,\n    and ``ai_meta``.",
+        "operationId": "post_future_self_v1_patients__patient_id__insights_future_self_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FutureSelfRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FutureSelfResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Project the patient's future biological age and wellness trajectory",
+        "tags": [
+          "insights",
+          "insights"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/insights/outlook-narrator": {
+      "post": {
+        "description": "Generate a wellness narrative for the patient's vitality outlook.\n\nLooks up the latest ``VitalityOutlook`` row for the requested horizon,\nthen calls ``OutlookNarratorService.narrate()`` to produce a one-sentence\nAI-generated narrative.  If no outlook row exists for the horizon, the\nendpoint returns HTTP 404 (the caller should first fetch\n``GET /v1/patients/{pid}/outlook`` to ensure the row is computed).\n\nArgs:\n    patient_id: URL path parameter \u2014 the patient whose outlook to narrate.\n    body:       ``OutlookNarratorRequest`` with ``horizon_months``.\n    session:    Injected ``AsyncSession``.\n    llm:        Injected ``LLMProvider`` (``FakeLLMProvider`` in tests).\n    _auth:      API key authentication guard (result discarded).\n\nReturns:\n    ``OutlookNarratorResponse`` with ``narrative``, ``disclaimer``,\n    and ``ai_meta``.",
+        "operationId": "post_outlook_narrator_v1_patients__patient_id__insights_outlook_narrator_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutlookNarratorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutlookNarratorResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate a one-sentence wellness narrative for the patient's outlook",
+        "tags": [
+          "insights",
+          "insights"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/meal-log": {
+      "get": {
+        "description": "Return the most recent meal log entries for a patient.\n\nResults are ordered by ``analyzed_at DESC`` (most recent first).\nThe response carries up to ``limit`` entries (default 20).\n\nArgs:\n    patient_id: Path parameter identifying the patient.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n    limit:      Maximum number of entries to return (1\u2013100, default 20).\n\nReturns:\n    ``MealLogListOut`` with patient_id and a list of ``MealLogOut`` entries.",
+        "operationId": "get_meal_log_history_v1_patients__patient_id__meal_log_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealLogListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retrieve meal log history for a patient",
+        "tags": [
+          "meal-log",
+          "meal-log"
+        ]
+      },
+      "post": {
+        "description": "Accept a multipart photo upload, analyse it with Gemini Vision, and persist.\n\nPipeline:\n1. Read the raw image bytes from the ``UploadFile``.\n2. Delegate to ``MealVisionService.analyze_and_log`` which:\n   a. Stores the photo via ``PhotoStorage`` \u2192 returns a URI.\n   b. Calls ``LLMProvider.generate_vision`` \u2192 returns ``MealAnalysis``.\n   c. Persists a ``MealLog`` row.\n3. Build and return ``MealLogUploadResponse``.\n\nArgs:\n    patient_id: Path parameter identifying the patient.\n    image:      The uploaded image (JPEG or PNG).\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).\n    svc:        Injected ``MealVisionService`` (overridable in tests).\n    notes:      Optional free-text notes from the patient.\n\nReturns:\n    ``MealLogUploadResponse`` with HTTP 201.",
+        "operationId": "upload_meal_log_v1_patients__patient_id__meal_log_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_meal_log_v1_patients__patient_id__meal_log_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealLogUploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload a meal photo for analysis and logging",
+        "tags": [
+          "meal-log",
+          "meal-log"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/messages": {
+      "get": {
+        "description": "Return all messages in the patient's thread, chronological order.\n\nThe endpoint:\n1. Validates that the patient exists \u2014 returns 404 if not.\n2. Delegates to ``MessagesService.list`` which returns messages ordered\n   by ``created_at ASC`` (oldest first \u2014 natural conversation order).\n3. Maps each ``Message`` ORM instance to ``MessageOut``.\n\nIsolation guarantee:\n    The ``patient_id`` path parameter is the sole scope key.  No data from\n    other patients can appear in the response.\n\nArgs:\n    patient_id: Path parameter \u2014 the patient whose thread to retrieve.\n    session:    Injected ``AsyncSession`` (per-request).\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).\n\nReturns:\n    ``MessageListOut`` with patient_id and messages list.\n\nRaises:\n    HTTPException 404: If ``patient_id`` does not exist in the database.",
+        "operationId": "get_messages_v1_patients__patient_id__messages_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List all in-app messages for a patient",
+        "tags": [
+          "messages",
+          "messages"
+        ]
+      },
+      "post": {
+        "description": "Persist a new message and return it.\n\nThe endpoint:\n1. Validates that the patient exists \u2014 returns 404 if not.\n2. Delegates to ``MessagesService.post`` with ``sender=\"patient\"``\n   (inbound direction \u2014 the patient or API caller is posting the message).\n3. Maps the persisted ``Message`` ORM instance to ``MessageOut``.\n\nIsolation guarantee:\n    The ``patient_id`` path parameter is the sole scope key.  The service\n    enforces ``patient_id`` scoping at the repository layer.\n\nArgs:\n    patient_id: Path parameter \u2014 the patient posting the message.\n    body:       Request body with ``content`` (and optional ``patient_id``).\n    session:    Injected ``AsyncSession`` (per-request).\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).\n\nReturns:\n    ``MessageOut`` with id, patient_id, content, sent_at, and direction.\n\nRaises:\n    HTTPException 404: If ``patient_id`` does not exist in the database.",
+        "operationId": "post_message_v1_patients__patient_id__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post a new message in a patient's thread",
+        "tags": [
+          "messages",
+          "messages"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/notifications/smart": {
+      "post": {
+        "description": "Generate personalised notification copy and persist the row.\n\nThe endpoint:\n1. Validates that the patient exists \u2014 returns 404 if not.\n2. Delegates to ``NotificationsService.generate_smart`` which calls the LLM\n   with the ``notifications.system.md`` system prompt, parses the response\n   into title/body/cta copy, persists a ``Notification`` row for the audit\n   trail, and returns a ``SmartNotificationResponse``.\n\nIsolation guarantee:\n    The ``patient_id`` path parameter is the sole scope key.  Notification\n    rows are scoped to ``patient_id`` at the repository layer \u2014 no data from\n    other patients can appear in the response.\n\nArgs:\n    patient_id:            Path parameter \u2014 the patient to notify, e.g. ``PT0282``.\n    body:                  Request body with ``trigger_kind`` and ``context``.\n    session:               Injected ``AsyncSession`` (per-request).\n    _auth:                 ``api_key_auth`` result (validates ``X-API-Key`` header).\n    notifications_service: Injected ``NotificationsService`` (overridable for tests).\n\nReturns:\n    ``SmartNotificationResponse`` with generated title, body, cta, disclaimer,\n    and ai_meta.\n\nRaises:\n    HTTPException 404: If ``patient_id`` does not exist in the database.",
+        "operationId": "post_smart_notification_v1_patients__patient_id__notifications_smart_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmartNotificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmartNotificationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate and persist a smart notification using LLM copy generation",
+        "tags": [
+          "notifications",
+          "notifications"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/outlook": {
+      "get": {
+        "description": "Return all VitalityOutlook rows for the patient.\n\nIf no cached rows exist for **any** horizon, compute fresh projections via\n``compute_outlook`` (using the latest VitalitySnapshot score as\n``current_score``) and upsert the results.  This ensures the endpoint\nalways returns data on first call.\n\nPatient isolation: every read and write is scoped to ``patient_id`` from\nthe URL path \u2014 no cross-patient data is ever returned.\n\nArgs:\n    patient_id: URL path parameter \u2014 the patient whose outlook to fetch.\n    session:    Injected ``AsyncSession``.\n    _auth:      API key authentication guard.\n\nReturns:\n    A list of ``OutlookOut`` items (one per horizon: 3, 6, 12 months).\n    At most three items.\n\nRaises:\n    HTTPException: 404 when the patient does not exist.",
+        "operationId": "get_outlook_v1_patients__patient_id__outlook_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OutlookOut"
+                  },
+                  "title": "Response Get Outlook V1 Patients  Patient Id  Outlook Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get the patient's vitality outlook projections (3, 6, 12 months)",
+        "tags": [
+          "insights",
+          "insights"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/protocol": {
+      "get": {
+        "description": "Return the patient's current active protocol.\n\nFetches the most recently created Protocol with ``status=\"active\"`` for\nthe given patient.\n\nArgs:\n    patient_id: Path parameter.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n\nReturns:\n    ``ProtocolOut`` with the active protocol and its actions.\n\nRaises:\n    HTTPException 404: If no active protocol exists for this patient.",
+        "operationId": "get_protocol_v1_patients__patient_id__protocol_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get the active protocol for a patient",
+        "tags": [
+          "protocol"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/protocol/complete-action": {
+      "post": {
+        "description": "Mark a ProtocolAction as completed and trigger a VitalityOutlook recompute.\n\nSteps:\n1. Confirm the action belongs to the patient (two-step isolation via\n   ``ProtocolActionRepository.get_for_patient``).\n2. Increment ``streak_days`` and set ``completed_today=True`` via\n   ``ProtocolActionRepository.update_streak``.\n3. Compute a fresh ``VitalityOutlook`` projection using\n   ``compute_outlook`` (pure math \u2014 no LLM call).\n4. Persist the three horizon projections (3, 6, 12 months) via\n   ``VitalityOutlookRepository.upsert_by_horizon``.\n5. Return ``CompleteActionResponse``.\n\nArgs:\n    patient_id: Path parameter.\n    body:       ``CompleteActionRequest`` with the ``action_id`` to complete.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n\nReturns:\n    ``CompleteActionResponse`` with the updated streak and completion timestamp.\n\nRaises:\n    HTTPException 404: If the action does not exist or belongs to a\n        different patient (cross-patient isolation).",
+        "operationId": "complete_action_v1_patients__patient_id__protocol_complete_action_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteActionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mark a protocol action as completed and recompute outlook",
+        "tags": [
+          "protocol"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/protocol/generate": {
+      "post": {
+        "description": "Generate and persist a new weekly protocol for *patient_id*.\n\nCalls ``ProtocolGeneratorService`` which assembles a context from the\npatient's ``LifestyleProfile``, latest ``VitalitySnapshot``, and last-7-day\n``DailyLog`` entries, then asks the LLM for a structured ``GeneratedProtocol``.\n\nArgs:\n    patient_id: Path parameter.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n    llm:        Injected ``LLMProvider`` (Fake in tests, Gemini in prod).\n\nReturns:\n    ``ProtocolOut`` with the persisted protocol and its actions.\n\nRaises:\n    HTTPException 422: If ``LifestyleProfile`` is missing or LLM constraints\n        are violated (e.g. too many actions, time budget exceeded).",
+        "operationId": "generate_protocol_v1_patients__patient_id__protocol_generate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate a weekly wellness protocol for a patient",
+        "tags": [
+          "protocol"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/records": {
+      "get": {
+        "description": "Return EHR records for *patient_id*, optionally filtered by type.\n\nRaises HTTP 404 if the patient does not exist.\n\nQuery parameters:\n    type: Optional filter \u2014 one of ``condition``, ``medication``,\n          ``visit``, ``lab_panel``.\n\nArgs:\n    patient_id: Path parameter, e.g. ``PT0282``.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n    type:       Optional ``?type=lab_panel`` filter.",
+        "operationId": "get_records_v1_patients__patient_id__records_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EHRRecordListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List EHR records for a patient",
+        "tags": [
+          "patients",
+          "patients"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/records/qa": {
+      "post": {
+        "description": "Accept a natural-language question and return a RAG-generated answer.\n\nThe endpoint:\n1. Validates that the patient exists \u2014 returns 404 if not.\n2. Delegates to ``RAGService.ask`` which embeds the question, retrieves the\n   top-k most relevant EHR records via pgvector cosine search (hard-scoped\n   to ``patient_id``), calls the LLM with a ``records-qa`` system prompt,\n   and returns a ``RecordsQAResponse`` with answer, citations, disclaimer,\n   and ``AIMeta``.\n\nIsolation guarantee:\n    The ``patient_id`` path parameter is the sole scope key.  No data from\n    other patients can appear in the response.\n\nArgs:\n    patient_id: Path parameter \u2014 the patient to query, e.g. ``PT0282``.\n    body:        Request body containing the natural-language ``question``.\n    session:     Injected ``AsyncSession`` (per-request).\n    _auth:       ``api_key_auth`` result (validates ``X-API-Key`` header).\n    rag_service: Injected ``RAGService`` (overridable for tests).\n\nReturns:\n    ``RecordsQAResponse`` with answer, citations, disclaimer, and ai_meta.\n\nRaises:\n    HTTPException 404: If ``patient_id`` does not exist in the database.",
+        "operationId": "post_records_qa_v1_patients__patient_id__records_qa_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordsQARequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordsQAResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Answer a question about a patient's EHR records using RAG",
+        "tags": [
+          "records-qa",
+          "records-qa"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/records/{record_id}": {
+      "get": {
+        "description": "Return a single EHR record by surrogate ID, scoped to *patient_id*.\n\nRaises HTTP 404 if either the patient does not exist or the record\ndoes not belong to the patient (cross-patient access returns 404, not 403,\nto avoid information leakage).\n\nArgs:\n    patient_id: Path parameter, e.g. ``PT0282``.\n    record_id:  Surrogate integer PK of the EHR record.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.",
+        "operationId": "get_single_record_v1_patients__patient_id__records__record_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "title": "Record Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EHRRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Fetch a single EHR record by ID",
+        "tags": [
+          "patients",
+          "patients"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/referral": {
+      "post": {
+        "description": "Create a referral record and persist it.\n\nThe endpoint:\n1. Validates that the patient exists \u2014 returns 404 if not.\n2. Generates a unique referral code from the specialty.\n3. Delegates to ``ReferralService.create`` which persists a ``Referral``\n   row with ``status=\"pending\"``.\n4. Returns a response that includes ``specialty`` and ``reason`` from the\n   original request alongside the stored ``code`` and ``status``.\n\nIsolation guarantee:\n    The ``patient_id`` path parameter is the sole scope key.  The service\n    enforces ``patient_id`` scoping at the repository layer.\n\nArgs:\n    patient_id: Path parameter \u2014 the referring patient, e.g. ``PT0282``.\n    body:       Request body with ``specialty`` and ``reason``.\n    session:    Injected ``AsyncSession`` (per-request).\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).\n\nReturns:\n    ``ReferralResponse`` with id, patient_id, code, specialty, reason,\n    status, and created_at.\n\nRaises:\n    HTTPException 404: If ``patient_id`` does not exist in the database.",
+        "operationId": "post_referral_v1_patients__patient_id__referral_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferralIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a specialist referral for a patient",
+        "tags": [
+          "referral",
+          "referral"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/survey": {
+      "get": {
+        "description": "Return the most recently submitted survey of *kind* for *patient_id*.\n\nArgs:\n    patient_id: Path parameter.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n    kind:       ``?kind=weekly`` query parameter.\n\nReturns:\n    The most recent ``SurveyResponseOut``.\n\nRaises:\n    HTTPException: 404 if the patient does not exist or has no surveys\n        of the requested kind.",
+        "operationId": "get_latest_survey_v1_patients__patient_id__survey_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Survey kind: onboarding | weekly | quarterly",
+            "in": "query",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SurveyKind",
+              "description": "Survey kind: onboarding | weekly | quarterly"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyResponseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Return the latest survey of a given kind for a patient",
+        "tags": [
+          "survey",
+          "survey"
+        ]
+      },
+      "post": {
+        "description": "Persist a new survey response for *patient_id*.\n\nWhen ``kind`` is \"onboarding\" the relevant ``LifestyleProfile`` fields\nare also updated in the same DB transaction.\n\nArgs:\n    patient_id: Path parameter \u2014 the patient submitting the survey.\n    body:       Request body containing ``kind`` and ``answers``.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).\n\nReturns:\n    The persisted ``SurveyResponseOut`` with id, kind, submitted_at, answers.\n\nRaises:\n    HTTPException: 404 if the patient does not exist.",
+        "operationId": "post_survey_v1_patients__patient_id__survey_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurveySubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyResponseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit a survey response",
+        "tags": [
+          "survey",
+          "survey"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/survey/history": {
+      "get": {
+        "description": "Return all surveys of *kind* submitted by *patient_id*, newest first.\n\nReturns an empty ``responses`` list (not 404) when the patient exists but\nhas no surveys of the requested kind \u2014 this mirrors the empty-list\nconvention used by list endpoints throughout the API.\n\nArgs:\n    patient_id: Path parameter.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n    kind:       ``?kind=weekly`` query parameter.\n\nReturns:\n    ``SurveyHistoryOut`` with ``patient_id`` and ``responses`` list.\n\nRaises:\n    HTTPException: 404 if the patient does not exist.",
+        "operationId": "get_survey_history_v1_patients__patient_id__survey_history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Survey kind: onboarding | weekly | quarterly",
+            "in": "query",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SurveyKind",
+              "description": "Survey kind: onboarding | weekly | quarterly"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyHistoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Return all surveys of a given kind for a patient",
+        "tags": [
+          "survey",
+          "survey"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/vitality": {
+      "get": {
+        "description": "Compute and return the heuristic VitalityResult for *patient_id*.\n\nExecution order:\n1. Fetch patient, EHR records, last 7 wearable days, lifestyle profile.\n2. Call ``compute_vitality`` (pure function \u2014 no DB access).\n3. Opportunistically upsert a ``VitalitySnapshot`` for caching.\n4. Return ``VitalityOut``.\n\nRaises HTTP 404 if the patient does not exist.\n\nArgs:\n    patient_id: Path parameter, e.g. ``PT0282``.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.",
+        "operationId": "get_vitality_v1_patients__patient_id__vitality_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VitalityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compute the heuristic vitality score for a patient",
+        "tags": [
+          "patients",
+          "patients"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/wearable": {
+      "get": {
+        "description": "Return the last *days* days of wearable telemetry for *patient_id*.\n\nRows are ordered descending by date (most recent first).\nRaises HTTP 404 if the patient does not exist.\n\nQuery parameters:\n    days: Number of days to return (1\u201390, default 7).\n\nArgs:\n    patient_id: Path parameter, e.g. ``PT0282``.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n    days:       How many days of history to include.",
+        "operationId": "get_wearable_v1_patients__patient_id__wearable_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WearableSeriesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Return recent wearable telemetry for a patient",
+        "tags": [
+          "patients",
+          "patients"
+        ]
+      }
+    }
+  }
+}

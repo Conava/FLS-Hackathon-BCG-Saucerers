@@ -80,18 +80,26 @@ async def _run(source: str, data_dir: Path) -> None:
 
     import app.adapters.csv_source  # noqa: F401 — side-effect: @register("csv") fires
     import app.models  # noqa: F401 — register SQLModel table metadata
+    from app.ai.llm import get_llm_provider
+    from app.core.config import get_settings
     from app.db.base import create_all
     from app.db.session import get_engine
     from app.services.unified_profile import UnifiedProfileService
 
+    settings = get_settings()
     engine = get_engine()
 
     # Ensure schema exists (idempotent — CREATE TABLE IF NOT EXISTS)
     await create_all(engine)
 
+    # Obtain LLM provider from settings so embeddings are populated during ingest.
+    # With LLM_PROVIDER=fake (default) this uses FakeLLMProvider (no network calls).
+    # With LLM_PROVIDER=gemini this uses the real Gemini embedding model.
+    llm_provider = get_llm_provider(settings)
+
     session_factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with session_factory() as session:
-        svc = UnifiedProfileService(session)
+        svc = UnifiedProfileService(session, llm_provider=llm_provider)
         report = await svc.ingest(source, data_dir=data_dir)
 
     await engine.dispose()

@@ -3,6 +3,9 @@
 Uses pydantic-settings v2 with SettingsConfigDict for env-file support.
 No PHI is ever stored in settings — only connection strings, keys, and flags.
 """
+from pathlib import Path
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +23,9 @@ class Settings(BaseSettings):
     Optional:
         log_level: Standard Python logging level name. Default: ``"INFO"``.
         app_env: Deployment environment label. Default: ``"development"``.
+        photo_storage_backend: ``"local"`` (default) or ``"gcs"``.
+        photo_local_dir: Root path for local photo storage. Default: ``./var/photos``.
+        photo_gcs_bucket: GCS bucket name. Required when backend is ``"gcs"``.
     """
 
     model_config = SettingsConfigDict(
@@ -40,6 +46,51 @@ class Settings(BaseSettings):
 
     app_env: str = "development"
     """Deployment environment: development, staging, production."""
+
+    # ------------------------------------------------------------------
+    # Photo storage
+    # ------------------------------------------------------------------
+
+    photo_storage_backend: Literal["local", "gcs"] = "local"
+    """Which photo storage backend to use.
+
+    ``"local"`` — writes under ``photo_local_dir`` (development/test).
+    ``"gcs"`` — uploads to the GCS bucket named in ``photo_gcs_bucket`` (production).
+    """
+
+    photo_local_dir: Path = Path("./var/photos")
+    """Root directory for local photo storage.
+
+    Only used when ``photo_storage_backend == "local"``.
+    The directory (and per-patient subdirectories) is created on first write.
+    """
+
+    photo_gcs_bucket: str | None = None
+    """GCS bucket name for production photo storage.
+
+    Required (and validated at runtime) when ``photo_storage_backend == "gcs"``.
+    Must **not** include the ``gs://`` prefix — just the bare bucket name.
+    """
+
+    # ------------------------------------------------------------------
+    # LLM / GCP settings (T3)
+    # ------------------------------------------------------------------
+
+    llm_provider: Literal["fake", "gemini"] = "fake"
+    """LLM backend to use.
+
+    * ``"fake"`` — ``FakeLLMProvider``: deterministic, no network, for dev/tests.
+    * ``"gemini"`` — ``GeminiProvider``: Gemini 2.5 via Vertex AI (needs GCP creds).
+    """
+
+    gcp_project: str | None = None
+    """GCP project ID.  Required when ``llm_provider="gemini"``."""
+
+    gcp_location: str = "europe-west3"
+    """GCP region for Vertex AI and Cloud Storage.
+
+    Defaults to ``"europe-west3"`` to satisfy EU data-residency requirements.
+    """
 
 
 def get_settings() -> Settings:

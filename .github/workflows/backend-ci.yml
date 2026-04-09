@@ -41,3 +41,13 @@ jobs:
       - name: Pytest
         working-directory: backend
         run: uv run pytest -v
+
+      - name: OpenAPI drift check
+        working-directory: backend
+        run: |
+          uv run python -m app.cli.export_openapi /tmp/openapi_fresh.json
+          if ! diff -u openapi.json /tmp/openapi_fresh.json; then
+            echo "ERROR: backend/openapi.json is out of date."
+            echo "Run 'make openapi' and commit the updated file."
+            exit 1
+          fi

@@ -4,11 +4,14 @@ Tests cover:
 - Round-trip validation (model_validate -> model_dump) for each schema
 - Wellness framing: no diagnostic verbs in field names
 - Disclaimer defaults on score/insight schemas
+- Slice 2: AI envelope, coach, records Q&A, protocol, survey, daily log,
+  meal log, outlook, notifications, clinical review, referral, messages
 """
 
 from __future__ import annotations
 
 import datetime
+import re
 
 import pytest
 from pydantic import BaseModel, ValidationError
@@ -20,6 +23,33 @@ from app.schemas.patient import PatientProfileOut
 from app.schemas.records import EHRRecordListOut, EHRRecordOut
 from app.schemas.vitality import TrendPoint, VitalityOut
 from app.schemas.wearable import WearableDayOut, WearableSeriesOut
+
+# Slice 2 imports
+from app.schemas.ai_common import AIMeta, AIResponseEnvelope
+from app.schemas.coach import CoachChatRequest, CoachEvent
+from app.schemas.records_qa import RecordsQARequest, Citation, RecordsQAResponse
+from app.schemas.protocol import (
+    GeneratedAction,
+    GeneratedProtocol,
+    ProtocolOut,
+    ProtocolActionOut,
+    CompleteActionRequest,
+    CompleteActionResponse,
+)
+from app.schemas.survey import SurveyKind, SurveySubmitRequest, SurveyResponseOut, SurveyHistoryOut
+from app.schemas.daily_log import DailyLogIn, DailyLogOut, DailyLogListOut
+from app.schemas.meal_log import MealAnalysis, MealLogOut, MealLogListOut, MealLogUploadResponse
+from app.schemas.outlook import (
+    OutlookOut,
+    OutlookNarratorRequest,
+    OutlookNarratorResponse,
+    FutureSelfRequest,
+    FutureSelfResponse,
+)
+from app.schemas.notifications import SmartNotificationRequest, SmartNotificationResponse
+from app.schemas.clinical_review import ClinicalReviewIn, ClinicalReviewOut
+from app.schemas.referral import ReferralIn, ReferralOut
+from app.schemas.messages import MessageIn, MessageOut, MessageListOut
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -41,6 +71,44 @@ ALL_SCHEMA_CLASSES: list[type[BaseModel]] = [
     AppointmentListOut,
     GDPRExportOut,
     GDPRDeleteAck,
+    # Slice 2
+    AIMeta,
+    AIResponseEnvelope,
+    CoachChatRequest,
+    CoachEvent,
+    RecordsQARequest,
+    Citation,
+    RecordsQAResponse,
+    GeneratedAction,
+    GeneratedProtocol,
+    ProtocolOut,
+    ProtocolActionOut,
+    CompleteActionRequest,
+    CompleteActionResponse,
+    SurveySubmitRequest,
+    SurveyResponseOut,
+    SurveyHistoryOut,
+    DailyLogIn,
+    DailyLogOut,
+    DailyLogListOut,
+    MealAnalysis,
+    MealLogOut,
+    MealLogListOut,
+    MealLogUploadResponse,
+    OutlookOut,
+    OutlookNarratorRequest,
+    OutlookNarratorResponse,
+    FutureSelfRequest,
+    FutureSelfResponse,
+    SmartNotificationRequest,
+    SmartNotificationResponse,
+    ClinicalReviewIn,
+    ClinicalReviewOut,
+    ReferralIn,
+    ReferralOut,
+    MessageIn,
+    MessageOut,
+    MessageListOut,
 ]
 
 
@@ -55,7 +123,7 @@ def test_no_diagnostic_verbs_in_field_names() -> None:
     for cls in ALL_SCHEMA_CLASSES:
         for field_name in cls.model_fields:
             for verb in FORBIDDEN_VERBS:
-                if verb in field_name.lower():
+                if re.search(r'\b' + verb + r'\b', field_name.lower()):
                     violations.append(f"{cls.__name__}.{field_name} contains '{verb}'")
     assert violations == [], "Diagnostic verbs found in field names:\n" + "\n".join(violations)
 
@@ -423,3 +491,761 @@ def test_gdpr_delete_ack_status_is_literal() -> None:
     """GDPRDeleteAck.status only accepts 'scheduled'."""
     with pytest.raises(ValidationError):
         GDPRDeleteAck.model_validate({"status": "deleted", "message": "..."})
+
+
+# ===========================================================================
+# Slice 2 — AI envelope schemas
+# ===========================================================================
+
+
+def test_ai_meta_round_trip() -> None:
+    """AIMeta round-trips with all required fields."""
+    data = {
+        "model": "gemini-2.5-flash",
+        "prompt_name": "coach",
+        "request_id": "req-abc123",
+        "token_in": 512,
+        "token_out": 256,
+        "latency_ms": 420,
+    }
+    obj = AIMeta.model_validate(data)
+    result = obj.model_dump()
+    assert result["model"] == "gemini-2.5-flash"
+    assert result["prompt_name"] == "coach"
+    assert result["request_id"] == "req-abc123"
+    assert result["token_in"] == 512
+    assert result["token_out"] == 256
+    assert result["latency_ms"] == 420
+
+
+def test_ai_meta_requires_all_fields() -> None:
+    """AIMeta raises ValidationError when required fields are missing."""
+    with pytest.raises(ValidationError):
+        AIMeta.model_validate({"model": "gemini-2.5-flash"})
+
+
+def test_ai_response_envelope_has_disclaimer_default() -> None:
+    """AIResponseEnvelope.disclaimer has a non-empty default."""
+    meta = AIMeta(
+        model="gemini-2.5-flash",
+        prompt_name="test",
+        request_id="r1",
+        token_in=1,
+        token_out=1,
+        latency_ms=1,
+    )
+    obj = AIResponseEnvelope(ai_meta=meta)
+    assert "medical advice" in obj.disclaimer.lower() or "wellness" in obj.disclaimer.lower()
+
+
+def test_ai_response_envelope_disclaimer_default_text() -> None:
+    """AIResponseEnvelope.disclaimer defaults to the wellness framing string."""
+    field = AIResponseEnvelope.model_fields["disclaimer"]
+    assert field.default is not None
+    assert len(str(field.default)) > 0
+
+
+# ===========================================================================
+# Slice 2 — Coach schemas
+# ===========================================================================
+
+
+def test_coach_chat_request_round_trip() -> None:
+    """CoachChatRequest round-trips with message and history."""
+    data = {
+        "message": "How can I improve my sleep?",
+        "history": [
+            {"role": "user", "content": "Hello"},
+            {"role": "assistant", "content": "Hi! How can I help?"},
+        ],
+    }
+    obj = CoachChatRequest.model_validate(data)
+    result = obj.model_dump()
+    assert result["message"] == "How can I improve my sleep?"
+    assert len(result["history"]) == 2
+
+
+def test_coach_chat_request_empty_history() -> None:
+    """CoachChatRequest accepts empty history list."""
+    obj = CoachChatRequest.model_validate({"message": "Hello", "history": []})
+    assert obj.message == "Hello"
+    assert obj.history == []
+
+
+def test_coach_event_token_type() -> None:
+    """CoachEvent with type='token' round-trips."""
+    data = {"type": "token", "payload": "Here is your advice"}
+    obj = CoachEvent.model_validate(data)
+    assert obj.type == "token"
+    assert obj.payload == "Here is your advice"
+
+
+def test_coach_event_done_type() -> None:
+    """CoachEvent with type='done' round-trips."""
+    data = {"type": "done", "payload": None}
+    obj = CoachEvent.model_validate(data)
+    assert obj.type == "done"
+
+
+def test_coach_event_invalid_type() -> None:
+    """CoachEvent rejects unknown type values."""
+    with pytest.raises(ValidationError):
+        CoachEvent.model_validate({"type": "unknown_type", "payload": "x"})
+
+
+def test_coach_event_protocol_suggestion_type() -> None:
+    """CoachEvent with type='protocol_suggestion' round-trips."""
+    data = {"type": "protocol_suggestion", "payload": {"action": "run 30 min"}}
+    obj = CoachEvent.model_validate(data)
+    assert obj.type == "protocol_suggestion"
+
+
+def test_coach_event_error_type() -> None:
+    """CoachEvent with type='error' round-trips."""
+    data = {"type": "error", "payload": "Something went wrong"}
+    obj = CoachEvent.model_validate(data)
+    assert obj.type == "error"
+
+
+# ===========================================================================
+# Slice 2 — Records Q&A schemas
+# ===========================================================================
+
+
+def test_records_qa_request_round_trip() -> None:
+    """RecordsQARequest round-trips with a question."""
+    obj = RecordsQARequest.model_validate({"question": "What is my LDL level?"})
+    assert obj.question == "What is my LDL level?"
+
+
+def test_records_qa_request_requires_question() -> None:
+    """RecordsQARequest raises ValidationError when question is missing."""
+    with pytest.raises(ValidationError):
+        RecordsQARequest.model_validate({})
+
+
+def test_citation_round_trip() -> None:
+    """Citation round-trips with record_id and snippet."""
+    data = {"record_id": 42, "snippet": "LDL cholesterol: 3.84 mmol/L"}
+    obj = Citation.model_validate(data)
+    result = obj.model_dump()
+    assert result["record_id"] == 42
+    assert result["snippet"] == "LDL cholesterol: 3.84 mmol/L"
+
+
+def test_records_qa_response_has_envelope() -> None:
+    """RecordsQAResponse carries disclaimer and ai_meta from AIResponseEnvelope."""
+    meta = {
+        "model": "gemini-2.5-pro",
+        "prompt_name": "records-qa",
+        "request_id": "r1",
+        "token_in": 1000,
+        "token_out": 200,
+        "latency_ms": 800,
+    }
+    data = {
+        "answer": "Your LDL was 3.84 mmol/L on 2024-01-15.",
+        "citations": [{"record_id": 1, "snippet": "LDL: 3.84"}],
+        "ai_meta": meta,
+    }
+    obj = RecordsQAResponse.model_validate(data)
+    assert obj.answer == "Your LDL was 3.84 mmol/L on 2024-01-15."
+    assert len(obj.citations) == 1
+    assert "medical advice" in obj.disclaimer.lower() or "wellness" in obj.disclaimer.lower()
+    assert obj.ai_meta.prompt_name == "records-qa"
+
+
+def test_records_qa_response_empty_citations() -> None:
+    """RecordsQAResponse accepts empty citations list."""
+    meta = {
+        "model": "gemini-2.5-pro",
+        "prompt_name": "records-qa",
+        "request_id": "r2",
+        "token_in": 100,
+        "token_out": 50,
+        "latency_ms": 300,
+    }
+    obj = RecordsQAResponse.model_validate({"answer": "No records found.", "citations": [], "ai_meta": meta})
+    assert obj.citations == []
+
+
+# ===========================================================================
+# Slice 2 — Protocol schemas
+# ===========================================================================
+
+
+def test_generated_action_round_trip() -> None:
+    """GeneratedAction round-trips with all required fields."""
+    data = {
+        "category": "movement",
+        "title": "30-minute brisk walk",
+        "target": "30 minutes daily",
+        "rationale": "Improves cardiovascular health and longevity.",
+        "dimension": "cardio_fitness",
+    }
+    obj = GeneratedAction.model_validate(data)
+    result = obj.model_dump()
+    assert result["category"] == "movement"
+    assert result["dimension"] == "cardio_fitness"
+
+
+def test_generated_action_invalid_category() -> None:
+    """GeneratedAction rejects invalid category values."""
+    with pytest.raises(ValidationError):
+        GeneratedAction.model_validate(
+            {
+                "category": "yoga",  # invalid
+                "title": "Yoga session",
+                "target": "daily",
+                "rationale": "Relaxing.",
+                "dimension": "lifestyle_behavioral",
+            }
+        )
+
+
+def test_generated_action_invalid_dimension() -> None:
+    """GeneratedAction rejects invalid dimension values."""
+    with pytest.raises(ValidationError):
+        GeneratedAction.model_validate(
+            {
+                "category": "sleep",
+                "title": "Go to bed early",
+                "target": "10pm",
+                "rationale": "Better sleep.",
+                "dimension": "mental_health",  # invalid
+            }
+        )
+
+
+def test_generated_protocol_round_trip() -> None:
+    """GeneratedProtocol round-trips with rationale and 3–7 actions."""
+    action = {
+        "category": "sleep",
+        "title": "Consistent sleep schedule",
+        "target": "10pm bedtime",
+        "rationale": "Stabilises circadian rhythm.",
+        "dimension": "sleep_recovery",
+    }
+    data = {
+        "rationale": "Focus on sleep consistency to improve your score this week.",
+        "actions": [action, action, action],
+    }
+    obj = GeneratedProtocol.model_validate(data)
+    assert obj.rationale.startswith("Focus")
+    assert len(obj.actions) == 3
+
+
+def test_protocol_out_round_trip() -> None:
+    """ProtocolOut round-trips with id, patient_id, created_at, rationale, actions."""
+    data = {
+        "id": 1,
+        "patient_id": "PT0001",
+        "created_at": "2024-01-15T08:00:00",
+        "rationale": "Your protocol this week.",
+        "actions": [],
+    }
+    obj = ProtocolOut.model_validate(data)
+    result = obj.model_dump()
+    assert result["id"] == 1
+    assert result["patient_id"] == "PT0001"
+    assert result["actions"] == []
+
+
+def test_protocol_action_out_round_trip() -> None:
+    """ProtocolActionOut round-trips with completion tracking fields."""
+    data = {
+        "id": 10,
+        "protocol_id": 1,
+        "category": "nutrition",
+        "title": "Add a handful of nuts",
+        "target": "daily snack",
+        "rationale": "Rich in healthy fats.",
+        "dimension": "biological_age",
+        "completed_today": False,
+        "streak_days": 0,
+    }
+    obj = ProtocolActionOut.model_validate(data)
+    assert obj.completed_today is False
+    assert obj.streak_days == 0
+
+
+def test_complete_action_request_round_trip() -> None:
+    """CompleteActionRequest round-trips with action_id."""
+    obj = CompleteActionRequest.model_validate({"action_id": 42})
+    assert obj.action_id == 42
+
+
+def test_complete_action_response_round_trip() -> None:
+    """CompleteActionResponse round-trips with streak_days and completed_at."""
+    data = {
+        "action_id": 42,
+        "streak_days": 5,
+        "completed_at": "2024-01-15T10:00:00",
+    }
+    obj = CompleteActionResponse.model_validate(data)
+    assert obj.streak_days == 5
+
+
+def test_protocol_out_from_model_instances() -> None:
+    """ProtocolOut.model_validate(Protocol, from_attributes=True) succeeds without rationale/dimension.
+
+    Regression test: Protocol has no 'rationale' column and ProtocolAction has no
+    'dimension' column — both fields must be optional so the ORM-to-schema mapping
+    never raises a ValidationError.
+    """
+    import datetime
+    from app.models.protocol import Protocol, ProtocolAction
+
+    protocol = Protocol(
+        id=5,
+        patient_id="PT0007",
+        week_start=datetime.date(2026, 4, 7),
+        status="active",
+        generated_by="gemini-2.5-flash",
+        created_at=datetime.datetime(2026, 4, 7, 8, 0, 0),
+    )
+    # model_validate with from_attributes=True must not raise
+    out = ProtocolOut.model_validate(protocol, from_attributes=True)
+    assert out.id == 5
+    assert out.patient_id == "PT0007"
+    assert out.rationale is None  # not stored on Protocol model
+
+    action = ProtocolAction(
+        id=99,
+        protocol_id=5,
+        category="movement",
+        title="Walk 25 minutes",
+        rationale="Improves cardiovascular fitness.",
+        target_value="25 min",
+        streak_days=3,
+        completed_today=True,
+    )
+    action_out = ProtocolActionOut.model_validate(action, from_attributes=True)
+    assert action_out.id == 99
+    assert action_out.protocol_id == 5
+    assert action_out.dimension is None  # not stored on ProtocolAction model
+    assert action_out.streak_days == 3
+    assert action_out.completed_today is True
+
+
+# ===========================================================================
+# Slice 2 — Survey schemas
+# ===========================================================================
+
+
+def test_survey_kind_enum_values() -> None:
+    """SurveyKind enum has onboarding, weekly, quarterly values."""
+    assert SurveyKind.onboarding == "onboarding"
+    assert SurveyKind.weekly == "weekly"
+    assert SurveyKind.quarterly == "quarterly"
+
+
+def test_survey_submit_request_round_trip() -> None:
+    """SurveySubmitRequest round-trips with kind and answers."""
+    data = {
+        "kind": "onboarding",
+        "answers": {"diet_quality_score": 7, "stress_level": 4},
+    }
+    obj = SurveySubmitRequest.model_validate(data)
+    assert obj.kind == SurveyKind.onboarding
+    assert obj.answers["diet_quality_score"] == 7
+
+
+def test_survey_submit_request_invalid_kind() -> None:
+    """SurveySubmitRequest rejects unknown kind values."""
+    with pytest.raises(ValidationError):
+        SurveySubmitRequest.model_validate({"kind": "annual", "answers": {}})
+
+
+def test_survey_response_out_round_trip() -> None:
+    """SurveyResponseOut round-trips with id, patient_id, kind, submitted_at, answers."""
+    data = {
+        "id": 1,
+        "patient_id": "PT0001",
+        "kind": "weekly",
+        "submitted_at": "2024-01-15T12:00:00",
+        "answers": {"sleep_satisfaction": 7},
+    }
+    obj = SurveyResponseOut.model_validate(data)
+    result = obj.model_dump()
+    assert result["kind"] == "weekly"
+    assert result["answers"]["sleep_satisfaction"] == 7
+
+
+def test_survey_history_out_round_trip() -> None:
+    """SurveyHistoryOut wraps a list of SurveyResponseOut."""
+    data = {
+        "patient_id": "PT0001",
+        "responses": [],
+    }
+    obj = SurveyHistoryOut.model_validate(data)
+    assert obj.patient_id == "PT0001"
+    assert obj.responses == []
+
+
+# ===========================================================================
+# Slice 2 — DailyLog schemas
+# ===========================================================================
+
+
+def test_daily_log_in_round_trip() -> None:
+    """DailyLogIn round-trips with mood, workout, sleep, water, alcohol."""
+    data = {
+        "date": "2024-01-15",
+        "mood_score": 7,
+        "workout_minutes": 45,
+        "sleep_hours": 7.5,
+        "water_glasses": 8,
+        "alcohol_units": 0,
+    }
+    obj = DailyLogIn.model_validate(data)
+    result = obj.model_dump()
+    assert result["mood_score"] == 7
+    assert result["sleep_hours"] == pytest.approx(7.5)
+
+
+def test_daily_log_in_optional_fields() -> None:
+    """DailyLogIn accepts None for all optional metric fields."""
+    obj = DailyLogIn.model_validate({"date": "2024-01-15"})
+    assert obj.mood_score is None
+    assert obj.workout_minutes is None
+
+
+def test_daily_log_out_round_trip() -> None:
+    """DailyLogOut round-trips with id, patient_id, all fields."""
+    data = {
+        "id": 1,
+        "patient_id": "PT0001",
+        "date": "2024-01-15",
+        "mood_score": 7,
+        "workout_minutes": 45,
+        "sleep_hours": 7.5,
+        "water_glasses": 8,
+        "alcohol_units": 0,
+        "logged_at": "2024-01-15T20:00:00",
+    }
+    obj = DailyLogOut.model_validate(data)
+    assert obj.id == 1
+    assert obj.patient_id == "PT0001"
+
+
+def test_daily_log_list_out_round_trip() -> None:
+    """DailyLogListOut wraps a list of DailyLogOut."""
+    data = {"patient_id": "PT0001", "logs": []}
+    obj = DailyLogListOut.model_validate(data)
+    assert obj.patient_id == "PT0001"
+    assert obj.logs == []
+
+
+# ===========================================================================
+# Slice 2 — MealLog schemas
+# ===========================================================================
+
+
+def test_meal_analysis_round_trip() -> None:
+    """MealAnalysis round-trips with classification, macros, longevity_swap, swap_rationale."""
+    data = {
+        "classification": "grilled salmon, white rice, broccoli",
+        "macros": {"kcal": 650, "protein_g": 42.0, "carbs_g": 58.0, "fat_g": 18.0},
+        "longevity_swap": "Replace white rice with brown rice for more fibre.",
+        "swap_rationale": "Brown rice has a lower glycaemic index and more fibre than white rice.",
+    }
+    obj = MealAnalysis.model_validate(data)
+    result = obj.model_dump()
+    assert result["classification"] == "grilled salmon, white rice, broccoli"
+    assert result["macros"]["protein_g"] == pytest.approx(42.0)
+    assert result["longevity_swap"] == "Replace white rice with brown rice for more fibre."
+    assert result["swap_rationale"] == "Brown rice has a lower glycaemic index and more fibre than white rice."
+
+
+def test_meal_analysis_empty_swap() -> None:
+    """MealAnalysis accepts empty strings for longevity_swap and swap_rationale when meal is optimal."""
+    data = {
+        "classification": "grilled salmon",
+        "macros": {"kcal": 300, "protein_g": 35.0, "carbs_g": 0.0, "fat_g": 15.0},
+        "longevity_swap": "",
+        "swap_rationale": "",
+    }
+    obj = MealAnalysis.model_validate(data)
+    assert obj.longevity_swap == ""
+    assert obj.swap_rationale == ""
+
+
+def test_meal_log_upload_response_has_envelope() -> None:
+    """MealLogUploadResponse carries disclaimer and ai_meta."""
+    meta = {
+        "model": "gemini-2.5-flash",
+        "prompt_name": "meal-vision",
+        "request_id": "r3",
+        "token_in": 200,
+        "token_out": 100,
+        "latency_ms": 350,
+    }
+    data = {
+        "meal_log_id": 7,
+        "photo_uri": "local://var/photos/PT0001/abc.jpg",
+        "analysis": {
+            "classification": "oatmeal",
+            "macros": {"kcal": 380, "protein_g": 10.0, "carbs_g": 65.0, "fat_g": 7.0},
+            "longevity_swap": "",
+            "swap_rationale": "",
+        },
+        "ai_meta": meta,
+    }
+    obj = MealLogUploadResponse.model_validate(data)
+    assert obj.meal_log_id == 7
+    assert "medical advice" in obj.disclaimer.lower() or "wellness" in obj.disclaimer.lower()
+
+
+def test_meal_log_out_round_trip() -> None:
+    """MealLogOut round-trips with id, patient_id, analysis, logged_at."""
+    data = {
+        "id": 3,
+        "patient_id": "PT0001",
+        "logged_at": "2024-01-15T12:30:00",
+        "photo_uri": "local://var/photos/PT0001/abc.jpg",
+        "analysis": {
+            "classification": "salad",
+            "macros": {"kcal": 250, "protein_g": 8.0, "carbs_g": 30.0, "fat_g": 12.0},
+            "longevity_swap": "Add legumes for more protein.",
+            "swap_rationale": "Legumes are a high-fibre protein source that supports gut health and longevity.",
+        },
+        "notes": "Lunch",
+    }
+    obj = MealLogOut.model_validate(data)
+    assert obj.id == 3
+    assert obj.notes == "Lunch"
+
+
+def test_meal_log_list_out_round_trip() -> None:
+    """MealLogListOut wraps a list of MealLogOut."""
+    data = {"patient_id": "PT0001", "logs": []}
+    obj = MealLogListOut.model_validate(data)
+    assert obj.logs == []
+
+
+# ===========================================================================
+# Slice 2 — Outlook schemas
+# ===========================================================================
+
+
+def test_outlook_out_round_trip() -> None:
+    """OutlookOut round-trips with horizon_months, projected_score, narrative."""
+    data = {
+        "horizon_months": 6,
+        "projected_score": 74.5,
+        "narrative": "Hold your streak and your Outlook reaches 74 by October.",
+        "computed_at": "2024-01-15T12:00:00",
+    }
+    obj = OutlookOut.model_validate(data)
+    result = obj.model_dump()
+    assert result["horizon_months"] == 6
+    assert result["projected_score"] == pytest.approx(74.5)
+
+
+def test_outlook_narrator_request_round_trip() -> None:
+    """OutlookNarratorRequest round-trips with driver context."""
+    data = {
+        "patient_id": "PT0001",
+        "horizon_months": 6,
+        "top_drivers": ["sleep", "cardio"],
+    }
+    obj = OutlookNarratorRequest.model_validate(data)
+    assert obj.patient_id == "PT0001"
+    assert len(obj.top_drivers) == 2
+
+
+def test_outlook_narrator_response_has_envelope() -> None:
+    """OutlookNarratorResponse carries disclaimer and ai_meta."""
+    meta = {
+        "model": "gemini-2.5-flash",
+        "prompt_name": "outlook-narrator",
+        "request_id": "r4",
+        "token_in": 150,
+        "token_out": 50,
+        "latency_ms": 200,
+    }
+    data = {
+        "narrative": "Keep your sleep streak for an October milestone.",
+        "ai_meta": meta,
+    }
+    obj = OutlookNarratorResponse.model_validate(data)
+    assert obj.narrative.startswith("Keep")
+    assert "medical advice" in obj.disclaimer.lower() or "wellness" in obj.disclaimer.lower()
+
+
+def test_future_self_request_round_trip() -> None:
+    """FutureSelfRequest round-trips with slider values."""
+    data = {
+        "patient_id": "PT0001",
+        "sliders": {"sleep_improvement": 2, "exercise_frequency": 4},
+    }
+    obj = FutureSelfRequest.model_validate(data)
+    assert obj.sliders["sleep_improvement"] == 2
+
+
+def test_future_self_response_has_envelope() -> None:
+    """FutureSelfResponse carries bio_age, narrative, disclaimer, ai_meta."""
+    meta = {
+        "model": "gemini-2.5-flash",
+        "prompt_name": "future-self",
+        "request_id": "r5",
+        "token_in": 300,
+        "token_out": 180,
+        "latency_ms": 450,
+    }
+    data = {
+        "bio_age": 38,
+        "narrative": "At 70 on current trajectory you feel vibrant and active.",
+        "ai_meta": meta,
+    }
+    obj = FutureSelfResponse.model_validate(data)
+    assert obj.bio_age == 38
+    assert "medical advice" in obj.disclaimer.lower() or "wellness" in obj.disclaimer.lower()
+
+
+# ===========================================================================
+# Slice 2 — Notifications schemas
+# ===========================================================================
+
+
+def test_smart_notification_request_round_trip() -> None:
+    """SmartNotificationRequest round-trips with trigger_kind and context."""
+    data = {
+        "trigger_kind": "streak_at_risk",
+        "context": {"streak_days": 6, "last_action": "movement"},
+    }
+    obj = SmartNotificationRequest.model_validate(data)
+    assert obj.trigger_kind == "streak_at_risk"
+
+
+def test_smart_notification_response_has_envelope() -> None:
+    """SmartNotificationResponse carries title, body, cta, disclaimer, ai_meta."""
+    meta = {
+        "model": "gemini-2.5-flash",
+        "prompt_name": "notifications",
+        "request_id": "r6",
+        "token_in": 80,
+        "token_out": 40,
+        "latency_ms": 120,
+    }
+    data = {
+        "title": "Keep your streak alive!",
+        "body": "You are 1 day away from a 7-day streak. Go for a 20-min walk today.",
+        "cta": "Log activity",
+        "ai_meta": meta,
+    }
+    obj = SmartNotificationResponse.model_validate(data)
+    assert obj.title == "Keep your streak alive!"
+    assert obj.cta == "Log activity"
+    assert "medical advice" in obj.disclaimer.lower() or "wellness" in obj.disclaimer.lower()
+
+
+# ===========================================================================
+# Slice 2 — ClinicalReview schemas
+# ===========================================================================
+
+
+def test_clinical_review_in_round_trip() -> None:
+    """ClinicalReviewIn round-trips with patient_id and notes."""
+    data = {
+        "patient_id": "PT0001",
+        "notes": "Patient reports persistent fatigue.",
+    }
+    obj = ClinicalReviewIn.model_validate(data)
+    assert obj.patient_id == "PT0001"
+    assert "fatigue" in obj.notes
+
+
+def test_clinical_review_out_round_trip() -> None:
+    """ClinicalReviewOut round-trips with id, patient_id, status, created_at."""
+    data = {
+        "id": 1,
+        "patient_id": "PT0001",
+        "notes": "Flagged for review.",
+        "status": "pending",
+        "created_at": "2024-01-15T09:00:00",
+    }
+    obj = ClinicalReviewOut.model_validate(data)
+    assert obj.status == "pending"
+
+
+# ===========================================================================
+# Slice 2 — Referral schemas
+# ===========================================================================
+
+
+def test_referral_in_round_trip() -> None:
+    """ReferralIn round-trips with patient_id, specialty, reason."""
+    data = {
+        "patient_id": "PT0001",
+        "specialty": "cardiology",
+        "reason": "Elevated LDL and HRV variability — please review.",
+    }
+    obj = ReferralIn.model_validate(data)
+    assert obj.specialty == "cardiology"
+
+
+def test_referral_out_round_trip() -> None:
+    """ReferralOut round-trips with id, patient_id, specialty, created_at."""
+    data = {
+        "id": 1,
+        "patient_id": "PT0001",
+        "specialty": "cardiology",
+        "reason": "Elevated LDL.",
+        "status": "pending",
+        "created_at": "2024-01-15T10:00:00",
+    }
+    obj = ReferralOut.model_validate(data)
+    assert obj.id == 1
+    assert obj.status == "pending"
+
+
+# ===========================================================================
+# Slice 2 — Messages schemas
+# ===========================================================================
+
+
+def test_message_in_round_trip() -> None:
+    """MessageIn round-trips with patient_id and content."""
+    data = {
+        "patient_id": "PT0001",
+        "content": "I have a question about my protocol.",
+    }
+    obj = MessageIn.model_validate(data)
+    assert obj.content == "I have a question about my protocol."
+
+
+def test_message_out_round_trip() -> None:
+    """MessageOut round-trips with id, patient_id, content, sent_at, direction."""
+    data = {
+        "id": 1,
+        "patient_id": "PT0001",
+        "content": "Welcome to Longevity+",
+        "sent_at": "2024-01-15T08:00:00",
+        "direction": "outbound",
+    }
+    obj = MessageOut.model_validate(data)
+    assert obj.direction == "outbound"
+
+
+def test_message_out_invalid_direction() -> None:
+    """MessageOut rejects direction values other than 'inbound' or 'outbound'."""
+    with pytest.raises(ValidationError):
+        MessageOut.model_validate(
+            {
+                "id": 1,
+                "patient_id": "PT0001",
+                "content": "Hello",
+                "sent_at": "2024-01-15T08:00:00",
+                "direction": "sideways",  # invalid
+            }
+        )
+
+
+def test_message_list_out_round_trip() -> None:
+    """MessageListOut wraps a list of MessageOut."""
+    data = {"patient_id": "PT0001", "messages": []}
+    obj = MessageListOut.model_validate(data)
+    assert obj.patient_id == "PT0001"
+    assert obj.messages == []

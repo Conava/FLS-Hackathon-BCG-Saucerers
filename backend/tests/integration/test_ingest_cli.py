@@ -21,6 +21,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.adapters.csv_source  # noqa: F401 — side-effect: registers @register("csv")
+from app.ai.llm import FakeLLMProvider
 from app.models import EHRRecord, LifestyleProfile, Patient, WearableDay
 from app.services.unified_profile import IngestReport, UnifiedProfileService
 
@@ -37,8 +38,15 @@ FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 
 
 async def _run_ingest(session: AsyncSession) -> IngestReport:
-    """Run the CSV ingest against the test fixtures directory."""
+    """Run the CSV ingest against the test fixtures directory (no embeddings)."""
     svc = UnifiedProfileService(session)
+    return await svc.ingest("csv", data_dir=FIXTURES_DIR)
+
+
+async def _run_ingest_with_embeddings(session: AsyncSession) -> IngestReport:
+    """Run the CSV ingest with FakeLLMProvider to populate embeddings."""
+    llm = FakeLLMProvider()
+    svc = UnifiedProfileService(session, llm_provider=llm)
     return await svc.ingest("csv", data_dir=FIXTURES_DIR)
 
 
@@ -245,4 +253,60 @@ async def test_ingest_pt0282_lab_panel_exact_values(db_session: AsyncSession) ->
     )
     assert payload["sbp_mmhg"] == pytest.approx(128.0, rel=1e-3), (
         f"sbp_mmhg mismatch: {payload['sbp_mmhg']}"
+    )
+
+
+@pytest.mark.integration
+async def test_ingest_populates_embeddings_with_fake_llm(db_session: AsyncSession) -> None:
+    """Every EHRRecord must have a non-null 768-d embedding after ingest with FakeLLMProvider.
+
+    When an LLMProvider is supplied to UnifiedProfileService, the ingest must
+    batch-embed all EHRRecord.content fields and persist the resulting vectors
+    into the embedding column before committing.
+    """
+    report = await _run_ingest_with_embeddings(db_session)
+
+    assert report.ehr_records > 0, "Expected at least one EHR record to be ingested"
+
+    # Verify every EHR record has a non-null embedding
+    stmt = select(EHRRecord)
+    result = await db_session.execute(stmt)
+    records = result.scalars().all()
+
+    assert len(records) > 0, "Expected EHR records in DB after ingest"
+
+    null_embedding_ids = [r.id for r in records if r.embedding is None]
+    assert null_embedding_ids == [], (
+        f"Found {len(null_embedding_ids)} EHRRecord(s) with null embeddings "
+        f"after ingest with FakeLLMProvider. IDs: {null_embedding_ids[:10]}"
+    )
+
+    # Verify embedding dimensionality is 768
+    sample = next(r for r in records if r.embedding is not None)
+    assert len(sample.embedding) == 768, (
+        f"Expected 768-d embedding but got {len(sample.embedding)}-d "
+        f"for record id={sample.id}"
+    )
+
+
+@pytest.mark.integration
+async def test_ingest_without_llm_leaves_embeddings_null(db_session: AsyncSession) -> None:
+    """Ingest without an LLMProvider must leave embeddings as NULL.
+
+    The LLM provider is optional — if not supplied, the ingest runs as before
+    and embeddings stay null.  This preserves backward-compatibility for
+    callers that don't supply an LLM.
+    """
+    await _run_ingest(db_session)
+
+    stmt = select(EHRRecord)
+    result = await db_session.execute(stmt)
+    records = result.scalars().all()
+
+    assert len(records) > 0, "Expected EHR records in DB after ingest"
+
+    non_null_count = sum(1 for r in records if r.embedding is not None)
+    assert non_null_count == 0, (
+        f"Expected all embeddings to be NULL when no LLM is supplied, "
+        f"but found {non_null_count} non-null embeddings"
     )

@@ -6,9 +6,11 @@ Single source of truth for the **Longevity MVP** — BCG Platinion AI Hackathon,
 
 ## Build state
 
-**Slice 1 — shipped:** backend read API (FastAPI + SQLModel + asyncpg + Postgres 16 + pgvector), pluggable `DataSource` Protocol with CSV adapter, heuristic vitality engine, hard `patient_id` isolation via `PatientScopedRepository`, API-key auth, Docker Compose + Dockerfile + Cloud Run config, GitHub Actions CI. 204 tests passing.
+**Slice 1 — shipped:** backend read API (FastAPI + SQLModel + asyncpg + Postgres 16 + pgvector), pluggable `DataSource` Protocol with CSV adapter, heuristic vitality engine, hard `patient_id` isolation via `PatientScopedRepository`, API-key auth, Docker Compose + Dockerfile + Cloud Run config, GitHub Actions CI.
 
-**Slice 2 — next:** Gemini / google-genai integration, RAG + embeddings, coach endpoints, Protocol/DailyLog/MealLog/Outlook, frontend (Next.js 15 PWA).
+**Slice 2 — shipped:** Full `/v1` API with 26 endpoints across 15 routers. LLM abstraction layer (`FakeLLMProvider` / `GeminiProvider`) with file-loaded prompts. pgvector HNSW index + embeddings populated at ingest. RAG service for Records Q&A. SSE streaming coach. Protocol generator (structured output). Meal vision (multimodal). Outlook engine + narrator. Future-self simulator. Survey loop (onboarding/weekly/quarterly). DailyLog + MealLog self-tracking. Stub services for notifications, clinical review, referral, and messages. Meal photo storage (local-fs + GCS). GDPR delete now removes MealLog rows and photo files. Committed `backend/openapi.json` with CI drift check.
+
+**Frontend — not yet started.** The mockup (`mockup/index.html`) is the UI contract.
 
 ## How these docs are organized
 

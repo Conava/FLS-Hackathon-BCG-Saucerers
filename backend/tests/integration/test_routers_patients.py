@@ -44,9 +44,9 @@ async def patients_client(db_session: AsyncSession) -> AsyncClient:  # type: ign
 
     app = FastAPI()
     app.include_router(health.router)
-    app.include_router(patients.router)
-    app.include_router(appointments.router)
-    app.include_router(gdpr.router)
+    app.include_router(patients.router, prefix="/v1")
+    app.include_router(appointments.router, prefix="/v1")
+    app.include_router(gdpr.router, prefix="/v1")
 
     async def _override():  # type: ignore[return]
         yield db_session
@@ -210,14 +210,14 @@ async def test_patient_routes_require_api_key(
     await _seed_anna(db_session)
 
     routes = [
-        "/patients/PT0282",
-        "/patients/PT0282/vitality",
-        "/patients/PT0282/records",
-        "/patients/PT0282/records/1",
-        "/patients/PT0282/wearable",
-        "/patients/PT0282/insights",
-        "/patients/PT0282/appointments/",
-        "/patients/PT0282/gdpr/export",
+        "/v1/patients/PT0282",
+        "/v1/patients/PT0282/vitality",
+        "/v1/patients/PT0282/records",
+        "/v1/patients/PT0282/records/1",
+        "/v1/patients/PT0282/wearable",
+        "/v1/patients/PT0282/insights",
+        "/v1/patients/PT0282/appointments/",
+        "/v1/patients/PT0282/gdpr/export",
     ]
     for route in routes:
         resp = await patients_client.get(route)
@@ -236,7 +236,7 @@ async def test_get_patient_profile_returns_pt0282_as_anna(
     """PT0282 profile must return Anna Weber's name and demographics."""
     await _seed_anna(db_session)
 
-    resp = await patients_client.get("/patients/PT0282", headers=HEADERS)
+    resp = await patients_client.get("/v1/patients/PT0282", headers=HEADERS)
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data["patient_id"] == "PT0282"
@@ -249,7 +249,7 @@ async def test_get_patient_profile_404_on_missing(
     patients_client: AsyncClient,
 ) -> None:
     """Requesting an unknown patient_id must return 404."""
-    resp = await patients_client.get("/patients/PT9999", headers=HEADERS)
+    resp = await patients_client.get("/v1/patients/PT9999", headers=HEADERS)
     assert resp.status_code == 404
 
 
@@ -265,7 +265,7 @@ async def test_get_vitality_returns_score_subscores_7day_trend_disclaimer(
     """Vitality response must include score, 5 subscores, 7-day trend, disclaimer."""
     await _seed_anna(db_session)
 
-    resp = await patients_client.get("/patients/PT0282/vitality", headers=HEADERS)
+    resp = await patients_client.get("/v1/patients/PT0282/vitality", headers=HEADERS)
     assert resp.status_code == 200, resp.text
     data = resp.json()
 
@@ -302,7 +302,7 @@ async def test_get_records_lab_panel_returns_anna_lipids_exact(
     await _seed_anna(db_session)
 
     resp = await patients_client.get(
-        "/patients/PT0282/records",
+        "/v1/patients/PT0282/records",
         headers=HEADERS,
         params={"type": "lab_panel"},
     )
@@ -323,7 +323,7 @@ async def test_get_records_no_filter_returns_all(
     """Without a type filter, all record types are returned."""
     await _seed_anna(db_session)
 
-    resp = await patients_client.get("/patients/PT0282/records", headers=HEADERS)
+    resp = await patients_client.get("/v1/patients/PT0282/records", headers=HEADERS)
     assert resp.status_code == 200, resp.text
     data = resp.json()
     # 1 lab_panel + 1 condition seeded.
@@ -344,7 +344,7 @@ async def test_get_single_record_by_id_404_on_wrong_patient(
     await _seed_secondary(db_session)
 
     # Fetch PT0001's records to get a real record_id.
-    resp_list = await patients_client.get("/patients/PT0001/records", headers=HEADERS)
+    resp_list = await patients_client.get("/v1/patients/PT0001/records", headers=HEADERS)
     assert resp_list.status_code == 200
     records = resp_list.json()["records"]
     assert len(records) > 0
@@ -352,7 +352,7 @@ async def test_get_single_record_by_id_404_on_wrong_patient(
 
     # Attempt to access that record via PT0282's path → 404.
     resp = await patients_client.get(
-        f"/patients/PT0282/records/{pt0001_record_id}",
+        f"/v1/patients/PT0282/records/{pt0001_record_id}",
         headers=HEADERS,
     )
     assert resp.status_code == 404, resp.text
@@ -366,7 +366,7 @@ async def test_get_single_record_by_id_returns_correct_record(
     await _seed_anna(db_session)
 
     resp_list = await patients_client.get(
-        "/patients/PT0282/records",
+        "/v1/patients/PT0282/records",
         headers=HEADERS,
         params={"type": "lab_panel"},
     )
@@ -374,7 +374,7 @@ async def test_get_single_record_by_id_returns_correct_record(
     lab_id = resp_list.json()["records"][0]["id"]
 
     resp = await patients_client.get(
-        f"/patients/PT0282/records/{lab_id}",
+        f"/v1/patients/PT0282/records/{lab_id}",
         headers=HEADERS,
     )
     assert resp.status_code == 200, resp.text
@@ -394,7 +394,7 @@ async def test_get_wearable_last_7_days_returns_ordered_desc(
     await _seed_anna(db_session)
 
     resp = await patients_client.get(
-        "/patients/PT0282/wearable",
+        "/v1/patients/PT0282/wearable",
         headers=HEADERS,
         params={"days": 7},
     )
@@ -421,7 +421,7 @@ async def test_get_insights_cardio_for_anna(
     """Anna's lipid values trigger at least one cardiovascular insight."""
     await _seed_anna(db_session)
 
-    resp = await patients_client.get("/patients/PT0282/insights", headers=HEADERS)
+    resp = await patients_client.get("/v1/patients/PT0282/insights", headers=HEADERS)
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data["patient_id"] == "PT0282"

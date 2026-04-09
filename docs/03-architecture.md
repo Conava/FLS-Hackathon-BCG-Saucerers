@@ -2,7 +2,7 @@
 
 High-level: **API-first backend, multi-platform clients, pluggable data sources, Gemini-powered AI layer, all on GCP.**
 
-> **Build status (slice 1 complete):** The backend read API, data adapter layer, vitality engine, and all repos are shipped. The AI Layer component (coach, RAG, embeddings, protocol generation) is the slice-2 target.
+> **Build status (slice 2 complete):** The full `/v1` backend API is shipped — 26 endpoints, LLM abstraction layer, pgvector RAG, SSE coach, protocol generator, meal vision, outlook engine, survey loop, self-tracking logs, and stub care-layer services. The committed `backend/openapi.json` is the authoritative contract; see `make openapi` to regenerate.
 
 For locked versions see [04-tech-stack.md](04-tech-stack.md). For the adapter pattern in detail see [05-data-model.md](05-data-model.md). For AI specifics see [06-ai-layer.md](06-ai-layer.md).
 
@@ -59,7 +59,7 @@ For locked versions see [04-tech-stack.md](04-tech-stack.md). For the adapter pa
 ## Request flow — four example paths
 
 ### Path A: "Show me my Today" (Score + Outlook + Protocol)
-1. Client calls `GET /patients/me/today` with session token
+1. Client calls `GET /v1/patients/{patient_id}/vitality` and `GET /v1/patients/{patient_id}/outlook` with the API key
 2. FastAPI handler loads the unified patient profile via the data adapter layer
 3. Score service computes the composite `VitalitySnapshot` across the four longevity dimensions (Biological Age, Sleep & Recovery, Cardiovascular Fitness, Lifestyle & Behavioral Risk)
 4. Outlook service computes `VitalityOutlook` for 3/6/12 months from current streak state + active `ProtocolAction`s
@@ -68,7 +68,7 @@ For locked versions see [04-tech-stack.md](04-tech-stack.md). For the adapter pa
 7. Client renders score hero, outlook curve, streak counter, protocol list, and the nudge-of-the-day
 
 ### Path B: "What did my last blood test say about cholesterol?" (the killer Records moment)
-1. Client sends user question to `POST /records/qa`
+1. Client sends user question to `POST /v1/patients/{patient_id}/records/qa`
 2. FastAPI embeds the query via `text-embedding-004` (Vertex AI)
 3. pgvector HNSW index returns top-k relevant records (EHR notes, lab results) for **this patient only** (filtered by `patient_id` in SQL — hard isolation)
 4. Gemini 2.5 Pro call with `records-qa.system.md` (strict scope, citation-required) + retrieved records + user question
@@ -76,14 +76,14 @@ For locked versions see [04-tech-stack.md](04-tech-stack.md). For the adapter pa
 6. Client renders answer with clickable source links into the records view
 
 ### Path C: "Here's a photo of my lunch" (Nutrition woven-in)
-1. Client uploads image to `POST /today/meal-log` with the patient session
+1. Client uploads image to `POST /v1/patients/{patient_id}/meal-log` as `multipart/form-data`
 2. FastAPI calls Gemini 2.5 Flash (vision) with `meal-vision.system.md`, passing the image and the patient's `LifestyleProfile.dietary_restrictions` + `known_allergies`
 3. Model returns structured JSON (classification, macros, longevity swap, rationale) validated against `MealAnalysis`
 4. Backend writes a `MealLog` row, updates today's protein/fiber rings, and flags protocol completion if a nutrition action matches
 5. Client renders the classified meal, macro rings, and the one-line swap suggestion
 
 ### Path D: "Generate my weekly protocol" (Protocol Generator)
-1. Client calls `POST /protocol/generate` — triggered weekly, on survey retake, or on explicit user "re-plan"
+1. Client calls `POST /v1/patients/{patient_id}/protocol/generate` — triggered weekly, on survey retake, or on explicit user "re-plan"
 2. FastAPI gathers the inputs: `LifestyleProfile` (with hard constraints: time budget, out-of-pocket budget, allergies, restrictions), latest `VitalitySnapshot`, recent 7-day wearable summary, last-week adherence from `DailyLog`
 3. Gemini 2.5 Pro call with `protocol-generator.system.md`, structured-output mode enforcing `GeneratedProtocol`
 4. Backend validates the JSON, retires the prior `Protocol` (sets `is_active=false`), inserts new `Protocol` + `ProtocolAction` rows

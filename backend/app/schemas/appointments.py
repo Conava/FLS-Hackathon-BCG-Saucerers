@@ -1,4 +1,4 @@
-"""Appointment response DTOs.
+"""Appointment request/response DTOs.
 
 Appointments are sourced from the pluggable ``AppointmentSource`` Protocol
 (T15). Today backed by a static stub; future adapters (Doctolib, etc.) return
@@ -13,6 +13,33 @@ from __future__ import annotations
 import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+class AppointmentCreateIn(BaseModel):
+    """Request body for booking a new appointment.
+
+    All fields except ``price_eur`` and ``covered_percent`` are required.
+    Wellness framing applies: use clinical-service language in ``title``
+    (e.g. "Assessment", "Consultation") rather than diagnostic verbs.
+    """
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    title: str = Field(..., description="Appointment title / service name")
+    provider: str = Field(..., description="Healthcare provider name")
+    location: str = Field(..., description="Clinic or virtual location")
+    starts_at: datetime.datetime = Field(
+        ...,
+        description="Requested appointment start time (UTC, naive)",
+    )
+    duration_minutes: int = Field(..., gt=0, description="Duration in minutes")
+    price_eur: float | None = Field(None, description="Out-of-pocket price in EUR")
+    covered_percent: int | None = Field(
+        None,
+        ge=0,
+        le=100,
+        description="Insurance coverage percentage (0–100)",
+    )
 
 
 class AppointmentOut(BaseModel):

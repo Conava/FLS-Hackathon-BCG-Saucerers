@@ -32,7 +32,23 @@ from fastapi import FastAPI
 from app.core.config import Settings
 from app.core.logging import configure_logging, get_logger
 from app.core.middleware import RequestIdMiddleware
-from app.routers import appointments, gdpr, health, patients
+from app.routers import (
+    appointments,
+    clinical_review,
+    coach,
+    daily_log,
+    gdpr,
+    health,
+    insights_ai,
+    meal_log,
+    messages,
+    notifications,
+    patients,
+    protocol,
+    records_qa,
+    referral,
+    survey,
+)
 
 
 @asynccontextmanager
@@ -73,22 +89,34 @@ def create_app() -> FastAPI:
     2. Register ``RequestIdMiddleware`` so every request gets an
        ``X-Request-ID`` header in both directions.
     3. Include all routers in registration order:
-       - ``health``       → ``GET /healthz`` (unauthenticated liveness probe)
-       - ``patients``     → ``/patients/{patient_id}/…`` (profile, vitality,
-                             records, wearable, insights)
-       - ``appointments`` → ``/patients/{patient_id}/appointments/``
-       - ``gdpr``         → ``/patients/{patient_id}/gdpr/…``
+       - ``health``          → ``GET /healthz`` (unauthenticated liveness probe,
+                               no ``/v1`` prefix — kept at root for probes)
+       - ``patients``        → ``/v1/patients/{patient_id}/…`` (profile, vitality,
+                               records, wearable, insights)
+       - ``appointments``    → ``/v1/patients/{patient_id}/appointments/``
+       - ``gdpr``            → ``/v1/patients/{patient_id}/gdpr/…``
+       - ``records_qa``      → ``/v1/patients/{patient_id}/records/qa``
+       - ``coach``           → ``/v1/patients/{patient_id}/coach/chat``
+       - ``protocol``        → ``/v1/patients/{patient_id}/protocol/…``
+       - ``survey``          → ``/v1/patients/{patient_id}/survey``
+       - ``daily_log``       → ``/v1/patients/{patient_id}/daily-log``
+       - ``meal_log``        → ``/v1/patients/{patient_id}/meal-log``
+       - ``insights_ai``     → ``/v1/patients/{patient_id}/insights/…``
+       - ``notifications``   → ``/v1/patients/{patient_id}/notifications/smart``
+       - ``clinical_review`` → ``/v1/patients/{patient_id}/clinical-review``
+       - ``referral``        → ``/v1/patients/{patient_id}/referral``
+       - ``messages``        → ``/v1/patients/{patient_id}/messages``
 
     Returns:
         A ``FastAPI`` instance ready for use with uvicorn or an ASGI test
         transport (e.g. ``httpx.ASGITransport``).
     """
     app = FastAPI(
-        title="Longevity+ Backend",
+        title="Longevity+ API",
         description=(
             "Clinical-grade longevity MVP backend — wellness signals, not medical advice."
         ),
-        version="0.1.0",
+        version="1.0.0",
         lifespan=lifespan,
     )
 
@@ -96,10 +124,25 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestIdMiddleware)
 
     # Routers are included in a stable order that matches the OpenAPI tag grouping.
+    # health stays at root (unauthenticated liveness probe — no /v1 prefix).
+    # All Slice 1 patient-domain routers are mounted under /v1 per the API contract.
     app.include_router(health.router)
-    app.include_router(patients.router)
-    app.include_router(appointments.router)
-    app.include_router(gdpr.router)
+    app.include_router(patients.router, prefix="/v1")
+    app.include_router(appointments.router, prefix="/v1")
+    app.include_router(gdpr.router, prefix="/v1")
+
+    # Wave 3 — Slice 2 routers (all under /v1)
+    app.include_router(records_qa.router, prefix="/v1")
+    app.include_router(coach.router, prefix="/v1")
+    app.include_router(protocol.router, prefix="/v1")
+    app.include_router(survey.router, prefix="/v1")
+    app.include_router(daily_log.router, prefix="/v1")
+    app.include_router(meal_log.router, prefix="/v1")
+    app.include_router(insights_ai.router, prefix="/v1")
+    app.include_router(notifications.router, prefix="/v1")
+    app.include_router(clinical_review.router, prefix="/v1")
+    app.include_router(referral.router, prefix="/v1")
+    app.include_router(messages.router, prefix="/v1")
 
     return app
 

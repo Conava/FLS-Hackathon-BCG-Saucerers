@@ -68,13 +68,11 @@ All prompts live in `app/ai/prompts/` as versioned `.md` files (not string liter
 ```
 app/ai/prompts/
 ├── coach.system.md
-├── coach.user-preamble.md
 ├── records-qa.system.md
 ├── protocol-generator.system.md
 ├── meal-vision.system.md
 ├── outlook-narrator.system.md
 ├── notifications.system.md
-├── analytics-narration.system.md
 └── future-self.system.md
 ```
 
@@ -198,8 +196,9 @@ Back-of-envelope for 24h hackathon + 10 demo runs:
 
 Total: **<$15 for the entire hackathon.** GCP credits cover it.
 
-## Open questions
+## Implementation notes (slice 2)
 
-- Do we stream coach responses (better UX) or batch (simpler)? Leaning stream — it's a killer demo moment.
-- Do we fine-tune a small model later, or stay prompt-engineered? Stay prompt-engineered for MVP. Fine-tuning is a v2 slide.
-- Reranking in the RAG pipeline: needed for MVP or skip? Skip for MVP — top-8 cosine is enough on a 1,000-patient corpus.
+- **Coach streaming:** `POST /v1/patients/{patient_id}/coach/chat` returns `text/event-stream` via `sse_starlette.EventSourceResponse`. Events: `token`, optional `protocol_suggestion`, `done` (with `ai_meta`). The `FakeLLMProvider` yields a small fixed sequence for tests.
+- **LLM abstraction:** `app/ai/llm.py` exposes an `LLMProvider` Protocol with four methods: `generate`, `generate_stream`, `embed`, `generate_vision`. Set `LLM_PROVIDER=fake` (default) for dev/CI; `LLM_PROVIDER=gemini` for production.
+- **Prompt files:** `app/ai/prompts/` contains all seven `.system.md` files. Loaded by `app/ai/prompt_loader.py` with in-process caching; raises `FileNotFoundError` on a miss.
+- **Reranking:** skipped for MVP — top-8 cosine is sufficient on the 1,000-patient corpus.
