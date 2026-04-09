@@ -26,6 +26,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/longevity
     ports:
       - "8080:8080"
+    volumes:
+      - ./data:/app/data:ro
     depends_on:
       db:
         condition: service_healthy

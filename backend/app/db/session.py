@@ -33,11 +33,8 @@ def _settings_database_url() -> str:
     """Return ``database_url`` from ``app.core.config.Settings``.
 
     Imported lazily so callers do not need T3 to be present at import time.
-    The ``type: ignore`` below covers the "module not yet installed" state;
-    once T3 merges the ignore becomes dead but harmless (ruff ``noqa``
-    suppresses the unused-ignore warning).
     """
-    from app.core.config import Settings  # type: ignore[import-untyped]  # noqa: PGH003
+    from app.core.config import Settings
 
     return str(Settings().database_url)
 
