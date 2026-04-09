@@ -1,7 +1,7 @@
 import * as React from "react";
 
 export interface NudgeCardProps {
-  /** Short headline, e.g. "Hydration reminder" */
+  /** Contextual sentence headline, e.g. "You slept 5h 40m last night" */
   title: string;
   /** Descriptive body text */
   description: string;
@@ -17,7 +17,12 @@ export interface NudgeCardProps {
 
 /**
  * Contextual warning-tone nudge card shown on the Today screen.
- * Has an amber gradient background matching the warn color family.
+ *
+ * Visuals match mockup `.nudge`:
+ *   - amber gradient background (warn-lt family)
+ *   - 34×34 icon container with warn accent
+ *   - 13px/700 title, 11.5px/ink-2 body with 1.55 line-height
+ *   - primary + ghost CTA buttons sized to match btn-sm
  */
 export function NudgeCard({
   title,
@@ -30,25 +35,32 @@ export function NudgeCard({
   return (
     <div
       role="alert"
-      className="flex gap-3 rounded-[14px]"
       style={{
-        background: "linear-gradient(135deg, #FFF7E8 0%, #FDF3DC 100%)",
+        background:
+          "linear-gradient(135deg, #FFF7E8 0%, var(--color-warn-lt) 100%)",
         border: "1px solid #F3DFA6",
+        borderRadius: "var(--radius-md)",
         padding: 14,
+        display: "flex",
+        gap: 12,
       }}
     >
-      {/* Icon box */}
+      {/* Icon box — 34×34, warn accent */}
       <div
-        className="flex-shrink-0 flex items-center justify-center rounded-[10px]"
         style={{
           width: 34,
           height: 34,
+          borderRadius: 10,
           background: "#F3DFA6",
           color: "var(--color-warn)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
         }}
         aria-hidden="true"
       >
-        {/* Warning / bell icon */}
+        {/* Bell / alert icon */}
         <svg
           width="18"
           height="18"
@@ -64,20 +76,52 @@ export function NudgeCard({
         </svg>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <p className="t-body-sm font-bold text-ink">{title}</p>
-        <p className="t-caption text-ink-2" style={{ marginTop: 2 }}>
+      {/* Content column */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Title — 13px, bold, ink */}
+        <p
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            lineHeight: 1.35,
+            color: "var(--color-ink)",
+            margin: 0,
+          }}
+        >
+          {title}
+        </p>
+
+        {/* Description — 11.5px, ink-2, 1.55 line-height */}
+        <p
+          style={{
+            fontSize: 11.5,
+            color: "var(--color-ink-2)",
+            lineHeight: 1.55,
+            margin: "2px 0 0",
+          }}
+        >
           {description}
         </p>
 
+        {/* CTA row */}
         {(ctaLabel || secondaryLabel) && (
-          <div className="flex gap-2" style={{ marginTop: 10 }}>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             {ctaLabel && (
               <button
                 type="button"
                 onClick={onCta}
-                className="t-support text-accent font-semibold"
+                style={{
+                  padding: "7px 12px",
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  lineHeight: 1,
+                  background: "var(--color-accent)",
+                  color: "#fff",
+                  border: "1px solid transparent",
+                  borderRadius: "var(--radius-sm)",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
               >
                 {ctaLabel}
               </button>
@@ -86,7 +130,18 @@ export function NudgeCard({
               <button
                 type="button"
                 onClick={onSecondary}
-                className="t-support text-ink-3"
+                style={{
+                  padding: "7px 12px",
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  lineHeight: 1,
+                  background: "var(--color-surface)",
+                  color: "var(--color-ink)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "var(--radius-sm)",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
               >
                 {secondaryLabel}
               </button>
