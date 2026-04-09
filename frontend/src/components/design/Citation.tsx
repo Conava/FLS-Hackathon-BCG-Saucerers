@@ -10,7 +10,10 @@ export interface CitationProps {
 }
 
 /**
- * Inline teal badge used in Records Q&A answers to reference source documents.
+ * Inline teal citation chip used in AI chat bubbles to reference source documents.
+ *
+ * Matches mockup `.cite`: accent-lt bg, teal text/border, 10.5px / weight 600,
+ * 999px radius. Renders inline inside prose text.
  */
 export function Citation({ label, onClick }: CitationProps) {
   return (
@@ -23,11 +26,11 @@ export function Citation({ label, onClick }: CitationProps) {
         borderRadius: 999,
         background: "var(--color-accent-lt)",
         color: "var(--color-accent)",
+        border: "1px solid var(--color-accent-md)",
         fontSize: 10.5,
         fontWeight: 600,
         margin: "0 2px",
         cursor: "pointer",
-        border: "none",
       }}
       aria-label={`Citation ${label}`}
     >

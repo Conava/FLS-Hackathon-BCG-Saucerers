@@ -177,9 +177,9 @@ describe("AiDisclosureBanner", () => {
     expect(screen.getByRole("note")).toBeInTheDocument();
   });
 
-  it("shows the region label (EU by default)", () => {
+  it("shows the region label (EU-only by default)", () => {
     render(<AiDisclosureBanner />);
-    expect(screen.getByText("EU")).toBeInTheDocument();
+    expect(screen.getByText("EU-only")).toBeInTheDocument();
   });
 
   it("renders a custom region", () => {

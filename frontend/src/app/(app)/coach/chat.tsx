@@ -24,12 +24,12 @@ export interface CoachChatProps {
   suggestions?: string[];
 }
 
-// Default suggestions shown on an empty thread
+// Default suggestions shown on an empty thread — matches mockup
 const DEFAULT_SUGGESTIONS = [
-  "How can I improve my sleep?",
-  "What does my vitality score mean?",
-  "Give me today's top wellness tip",
-  "How is my cardiovascular health?",
+  "What should I eat for lower ApoB?",
+  "Plan my week",
+  "I feel stressed",
+  "Recipe for dinner",
 ];
 
 // ---------------------------------------------------------------------------
@@ -39,11 +39,17 @@ const DEFAULT_SUGGESTIONS = [
 /**
  * Full-screen chat client component for the AI Wellness Coach.
  *
- * - Streams token-by-token via `coachChat` (SSE-backed AsyncIterable).
+ * Matches mockup layout in order:
+ * - Scrollable message log (.chat-log): gap 12px, flex column
+ * - Suggested prompt chips (.suggest): horizontal scroll, hidden once thread has messages
+ * - Input form (.chat-input): outer 999px-radius container with voice + send buttons
+ * - Footer disclaimer (.fine): 11.5px / ink-3
+ *
+ * Streaming behaviour:
  * - Shows `TypingIndicator` while waiting for the first token.
  * - Appends tokens to the last AI bubble as they arrive.
+ * - Last streaming AI bubble shows a blinking cursor.
  * - Handles errors gracefully by inserting an error bubble.
- * - Suggested chips pre-fill the input; hidden once the thread has messages.
  * - Auto-scrolls to the bottom on new content unless the user has scrolled up.
  */
 export function CoachChat({ suggestions = DEFAULT_SUGGESTIONS }: CoachChatProps) {
@@ -152,7 +158,6 @@ export function CoachChat({ suggestions = DEFAULT_SUGGESTIONS }: CoachChatProps)
         setWaitingForFirst(false);
         setIsStreaming(false);
       }
-
     },
     [messages, isStreaming]
   );
@@ -180,7 +185,7 @@ export function CoachChat({ suggestions = DEFAULT_SUGGESTIONS }: CoachChatProps)
         flex: 1,
       }}
     >
-      {/* ── Message list ─────────────────────────────────────────────────── */}
+      {/* ── Message log (.chat-log) ──────────────────────────────────────── */}
       <div
         ref={listRef}
         onScroll={handleScroll}
@@ -190,7 +195,7 @@ export function CoachChat({ suggestions = DEFAULT_SUGGESTIONS }: CoachChatProps)
           padding: "16px 16px 8px",
           display: "flex",
           flexDirection: "column",
-          gap: 10,
+          gap: 12,
         }}
         aria-label="Chat messages"
       >
@@ -211,39 +216,47 @@ export function CoachChat({ suggestions = DEFAULT_SUGGESTIONS }: CoachChatProps)
         {waitingForFirst && <TypingIndicator />}
       </div>
 
-      {/* ── Suggested chips ──────────────────────────────────────────────── */}
+      {/* ── Suggested prompt chips (.suggest) — horizontal scroll ────────── */}
       {showSuggestions && (
         <div
           style={{
-            padding: "0 16px 12px",
             display: "flex",
-            flexWrap: "wrap",
             gap: 8,
+            padding: "0 16px 10px",
+            overflowX: "auto",
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
           }}
           aria-label="Suggested questions"
         >
           {suggestions.map((s) => (
-            <SuggestedChip key={s} label={s} onClick={() => handleChipClick(s)} />
+            <SuggestedChip
+              key={s}
+              label={s}
+              style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+              onClick={() => handleChipClick(s)}
+            />
           ))}
         </div>
       )}
 
-      {/* ── Input bar ────────────────────────────────────────────────────── */}
+      {/* ── Input bar (.chat-input) — outer rounded container ────────────── */}
       <form
         onSubmit={handleSubmit}
         style={{
           display: "flex",
           alignItems: "center",
           gap: 8,
-          padding: "12px 16px",
-          paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
-          borderTop: "1px solid var(--color-border)",
-          background: "var(--color-bg)",
-          position: "sticky",
-          bottom: 0,
+          margin: "0 12px",
+          padding: "10px 12px",
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          borderRadius: 999,
+          marginBottom: `calc(12px + env(safe-area-inset-bottom, 0px))`,
         }}
         aria-label="Send a message"
       >
+        {/* Text input — bare, no border */}
         <input
           type="text"
           value={input}
@@ -253,25 +266,60 @@ export function CoachChat({ suggestions = DEFAULT_SUGGESTIONS }: CoachChatProps)
           aria-label="Message input"
           style={{
             flex: 1,
-            padding: "10px 14px",
-            borderRadius: 999,
-            border: "1px solid var(--color-border)",
-            background: "var(--color-surface)",
-            color: "var(--color-ink)",
-            fontSize: 14,
+            border: "none",
+            background: "transparent",
             outline: "none",
+            fontSize: 14,
+            fontFamily: "inherit",
+            color: "var(--color-ink)",
+            minWidth: 0,
           }}
         />
 
-        {/* Send button */}
+        {/* Voice button — transparent bg, ink-3 icon */}
+        <button
+          type="button"
+          aria-label="Voice input"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 999,
+            border: "none",
+            background: "transparent",
+            color: "var(--color-ink-3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="9" y="3" width="6" height="12" rx="3" />
+            <path d="M5 11a7 7 0 0 0 14 0M12 18v4" />
+          </svg>
+        </button>
+
+        {/* Send button — accent bg, white icon */}
         <button
           type="submit"
           disabled={!input.trim() || isStreaming}
           aria-label={COPY.coach.sendButton}
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
+            width: 36,
+            height: 36,
+            borderRadius: 999,
             background: "var(--color-accent)",
             color: "#fff",
             border: "none",
@@ -281,25 +329,39 @@ export function CoachChat({ suggestions = DEFAULT_SUGGESTIONS }: CoachChatProps)
             flexShrink: 0,
             cursor: input.trim() && !isStreaming ? "pointer" : "not-allowed",
             opacity: input.trim() && !isStreaming ? 1 : 0.5,
+            padding: 0,
           }}
         >
-          {/* Arrow-up icon */}
+          {/* Arrow-right send icon — matches mockup */}
           <svg
             width="16"
             height="16"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="currentColor"
+            stroke="#fff"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
           >
-            <line x1="12" y1="19" x2="12" y2="5" />
-            <polyline points="5 12 12 5 19 12" />
+            <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
         </button>
       </form>
+
+      {/* ── Footer disclaimer (.fine) ─────────────────────────────────────── */}
+      <p
+        style={{
+          fontSize: 11.5,
+          color: "var(--color-ink-3)",
+          textAlign: "center",
+          padding: "8px 20px calc(14px + env(safe-area-inset-bottom, 0px))",
+          lineHeight: 1.5,
+        }}
+      >
+        Coach uses your wearable, survey &amp; EHR context. General wellness — not
+        medical advice.
+      </p>
     </div>
   );
 }
