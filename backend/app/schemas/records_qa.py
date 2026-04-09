@@ -13,10 +13,9 @@ clickable chip links back to source records.
 
 from __future__ import annotations
 
-from pydantic import ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.ai_common import AIResponseEnvelope, AIMeta
-from pydantic import BaseModel
+from app.schemas.ai_common import AIResponseEnvelope
 
 
 class RecordsQARequest(BaseModel):

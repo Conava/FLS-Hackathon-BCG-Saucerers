@@ -50,6 +50,10 @@ class MealAnalysis(BaseModel):
             "Empty string if the meal is already well-optimised."
         ),
     )
+    swap_rationale: str = Field(
+        ...,
+        description="One line explaining the longevity benefit of the swap. Empty string if longevity_swap is empty.",
+    )
 
 
 class MealLogUploadResponse(AIResponseEnvelope):

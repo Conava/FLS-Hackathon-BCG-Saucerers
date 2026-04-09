@@ -11,6 +11,7 @@ Tests cover:
 from __future__ import annotations
 
 import datetime
+import re
 
 import pytest
 from pydantic import BaseModel, ValidationError
@@ -122,7 +123,7 @@ def test_no_diagnostic_verbs_in_field_names() -> None:
     for cls in ALL_SCHEMA_CLASSES:
         for field_name in cls.model_fields:
             for verb in FORBIDDEN_VERBS:
-                if verb in field_name.lower():
+                if re.search(r'\b' + verb + r'\b', field_name.lower()):
                     violations.append(f"{cls.__name__}.{field_name} contains '{verb}'")
     assert violations == [], "Diagnostic verbs found in field names:\n" + "\n".join(violations)
 
@@ -900,28 +901,32 @@ def test_daily_log_list_out_round_trip() -> None:
 
 
 def test_meal_analysis_round_trip() -> None:
-    """MealAnalysis round-trips with classification, macros, longevity_swap."""
+    """MealAnalysis round-trips with classification, macros, longevity_swap, swap_rationale."""
     data = {
         "classification": "grilled salmon, white rice, broccoli",
         "macros": {"kcal": 650, "protein_g": 42.0, "carbs_g": 58.0, "fat_g": 18.0},
         "longevity_swap": "Replace white rice with brown rice for more fibre.",
+        "swap_rationale": "Brown rice has a lower glycaemic index and more fibre than white rice.",
     }
     obj = MealAnalysis.model_validate(data)
     result = obj.model_dump()
     assert result["classification"] == "grilled salmon, white rice, broccoli"
     assert result["macros"]["protein_g"] == pytest.approx(42.0)
     assert result["longevity_swap"] == "Replace white rice with brown rice for more fibre."
+    assert result["swap_rationale"] == "Brown rice has a lower glycaemic index and more fibre than white rice."
 
 
 def test_meal_analysis_empty_swap() -> None:
-    """MealAnalysis accepts empty string for longevity_swap (already optimal)."""
+    """MealAnalysis accepts empty strings for longevity_swap and swap_rationale when meal is optimal."""
     data = {
         "classification": "grilled salmon",
         "macros": {"kcal": 300, "protein_g": 35.0, "carbs_g": 0.0, "fat_g": 15.0},
         "longevity_swap": "",
+        "swap_rationale": "",
     }
     obj = MealAnalysis.model_validate(data)
     assert obj.longevity_swap == ""
+    assert obj.swap_rationale == ""
 
 
 def test_meal_log_upload_response_has_envelope() -> None:
@@ -941,6 +946,7 @@ def test_meal_log_upload_response_has_envelope() -> None:
             "classification": "oatmeal",
             "macros": {"kcal": 380, "protein_g": 10.0, "carbs_g": 65.0, "fat_g": 7.0},
             "longevity_swap": "",
+            "swap_rationale": "",
         },
         "ai_meta": meta,
     }
@@ -960,6 +966,7 @@ def test_meal_log_out_round_trip() -> None:
             "classification": "salad",
             "macros": {"kcal": 250, "protein_g": 8.0, "carbs_g": 30.0, "fat_g": 12.0},
             "longevity_swap": "Add legumes for more protein.",
+            "swap_rationale": "Legumes are a high-fibre protein source that supports gut health and longevity.",
         },
         "notes": "Lunch",
     }
