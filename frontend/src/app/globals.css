@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+@theme {
+  /* Placeholder — full design tokens added by Task 2 */
+  --color-brand: #14b8a6;
+  --font-sans: "Inter", sans-serif;
+}
