@@ -4,20 +4,32 @@
  * RecordsQA — Client Component for plain-language Q&A over EHR records.
  *
  * Renders:
- * - AiDisclosureBanner (required on all AI screens)
- * - Text input + submit button
+ * - AI disclosure banner with file icon, "EHR-scoped" pill, and violet-lt bg
+ * - Q&A card (accent-lt bg, accent-md border) with heading, subtext, chat input
  * - Loading state while the request is in flight
- * - AI answer text with inline Citation chips for each source record
+ * - Inline answer with Citation chips (when used standalone, i.e. no onAnswer)
+ *
+ * When `onAnswer` is provided, the parent component owns the response display
+ * (used by RecordsContent to render the answer in a separate summary card).
+ * When omitted, the component renders its own answer inline (backward-compatible).
  */
 
 import * as React from "react";
-import { AiDisclosureBanner } from "@/components/design/AiDisclosureBanner";
 import { Citation } from "@/components/design/Citation";
 import { postRecordsQA } from "@/lib/api/client";
 import type { RecordsQAResponse } from "@/lib/api/schemas";
 import { COPY } from "@/lib/copy/copy";
 
-export function RecordsQA() {
+export interface RecordsQAProps {
+  /**
+   * Optional callback invoked when the API returns a successful answer.
+   * When provided the parent controls the answer display; the inline answer
+   * section is suppressed.
+   */
+  onAnswer?: (response: RecordsQAResponse) => void;
+}
+
+export function RecordsQA({ onAnswer }: RecordsQAProps) {
   const [question, setQuestion] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [response, setResponse] = React.useState<RecordsQAResponse | null>(null);
@@ -35,12 +47,16 @@ export function RecordsQA() {
     try {
       const result = await postRecordsQA(trimmed);
       setResponse(result);
+      onAnswer?.(result);
     } catch {
       setError(COPY.errors.generic);
     } finally {
       setLoading(false);
     }
   }
+
+  // Whether to show the inline answer (only when not delegating to parent)
+  const showInlineAnswer = !onAnswer;
 
   return (
     <div
@@ -50,19 +66,95 @@ export function RecordsQA() {
         gap: 12,
       }}
     >
-      {/* AI disclosure banner — required on every AI screen */}
-      <AiDisclosureBanner />
+      {/* AI disclosure banner */}
+      <div
+        role="note"
+        className="flex items-center"
+        style={{
+          padding: "10px 14px",
+          borderRadius: 14,
+          background: "var(--color-violet-lt)",
+          color: "var(--color-violet)",
+          border: "1px solid rgba(107, 74, 168, 0.18)",
+          fontSize: 11.5,
+          fontWeight: 600,
+          gap: 10,
+        }}
+      >
+        {/* File document icon */}
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+          style={{ flexShrink: 0 }}
+        >
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2v6h6" />
+        </svg>
+
+        <span>
+          <span>You&apos;re talking to an AI</span>
+          <span style={{ opacity: 0.75 }}>
+            {" "}
+            &middot; Records Q&amp;A is AI &middot; answers cite real documents &middot; Gemini 2.5
+            Pro
+          </span>
+        </span>
+
+        {/* EHR-scoped pill */}
+        <span
+          className="ml-auto"
+          style={{
+            fontSize: 10,
+            opacity: 0.85,
+            flexShrink: 0,
+          }}
+        >
+          EHR-scoped
+        </span>
+      </div>
 
       {/* Q&A card */}
       <div
         style={{
           borderRadius: 16,
           background: "var(--color-accent-lt)",
-          border: "1px solid rgba(26, 107, 116, 0.18)",
+          border: "1px solid var(--color-accent-md)",
           padding: "16px",
         }}
       >
-        <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8 }}>
+        {/* Card heading */}
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-ink)" }}>
+          Ask about your records
+        </div>
+
+        {/* Card subtext */}
+        <div
+          style={{
+            fontSize: 11.5,
+            color: "var(--color-ink-2)",
+            margin: "4px 0 10px",
+          }}
+        >
+          Plain-language answers, citing the actual lab or report.
+        </div>
+
+        {/* Chat input — white background inside the accent card */}
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            display: "flex",
+            gap: 8,
+            background: "#fff",
+            borderRadius: 10,
+            border: "1px solid var(--color-border)",
+            padding: "4px 4px 4px 12px",
+          }}
+        >
           <input
             type="text"
             value={question}
@@ -70,13 +162,12 @@ export function RecordsQA() {
             placeholder={COPY.records.placeholder}
             style={{
               flex: 1,
-              borderRadius: 10,
-              border: "1px solid var(--color-border, #E5E3DF)",
-              background: "var(--color-surface)",
+              border: "none",
+              background: "transparent",
               color: "var(--color-ink)",
-              padding: "10px 14px",
               fontSize: 13,
               outline: "none",
+              padding: "6px 0",
             }}
             aria-label="Ask a question about your records"
             disabled={loading}
@@ -85,19 +176,32 @@ export function RecordsQA() {
             type="submit"
             disabled={loading || !question.trim()}
             style={{
-              borderRadius: 10,
+              borderRadius: 8,
               background: "var(--color-accent)",
               color: "#fff",
               border: "none",
-              padding: "10px 18px",
+              padding: "8px 14px",
               fontSize: 13,
               fontWeight: 600,
               cursor: loading ? "wait" : "pointer",
               opacity: !question.trim() ? 0.5 : 1,
+              display: "flex",
+              alignItems: "center",
             }}
             aria-label="Ask"
           >
-            Ask
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
           </button>
         </form>
 
@@ -113,7 +217,7 @@ export function RecordsQA() {
               fontWeight: 600,
             }}
           >
-            Thinking…
+            Thinking&hellip;
           </div>
         )}
 
@@ -131,8 +235,8 @@ export function RecordsQA() {
           </p>
         )}
 
-        {/* Answer section */}
-        {response && !loading && (
+        {/* Inline answer section — only when not delegating to parent */}
+        {showInlineAnswer && response && !loading && (
           <div style={{ marginTop: 14 }}>
             <p
               style={{
@@ -169,7 +273,6 @@ export function RecordsQA() {
                     key={citation.record_id}
                     label={index + 1}
                     onClick={() => {
-                      // Future: open record detail sheet
                       console.info(`Open record ${citation.record_id}`);
                     }}
                   />
