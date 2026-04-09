@@ -40,7 +40,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters import get_source
 from app.adapters.base import PatientData
 from app.core.logging import get_logger
-from app.models import EHRRecord, WearableDay
+from app.models import DailyLog, EHRRecord, MealLog, WearableDay
 
 if TYPE_CHECKING:
     from app.ai.llm import LLMProvider
@@ -257,6 +257,22 @@ class UnifiedProfileService:
         )
         for day in patient_data.wearable_days:
             session.add(day)
+
+        # 5. Delete-then-insert DailyLog rows (idempotent per patient).
+        # Delete always runs so stale logs are cleared even on empty re-ingest.
+        await session.execute(
+            delete(DailyLog).where(getattr(DailyLog, "patient_id") == pid)
+        )
+        for log in patient_data.daily_logs:
+            session.add(log)
+
+        # 6. Delete-then-insert MealLog rows (idempotent per patient).
+        # Delete always runs so stale meal logs are cleared even on empty re-ingest.
+        await session.execute(
+            delete(MealLog).where(getattr(MealLog, "patient_id") == pid)
+        )
+        for meal in patient_data.meal_logs:
+            session.add(meal)
 
         # Flush after each patient so FK constraints are satisfied before
         # child rows are inserted in the same unit of work

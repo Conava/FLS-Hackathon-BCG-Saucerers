@@ -24,7 +24,7 @@ import dataclasses
 from collections.abc import AsyncIterator
 from typing import Protocol, runtime_checkable
 
-from app.models import EHRRecord, LifestyleProfile, Patient, WearableDay
+from app.models import DailyLog, EHRRecord, LifestyleProfile, MealLog, Patient, WearableDay
 
 
 @dataclasses.dataclass
@@ -43,12 +43,21 @@ class PatientData:
     lifestyle:
         Latest lifestyle survey response, or ``None`` if the source does not
         supply lifestyle data (e.g. a pure FHIR adapter).
+    daily_logs:
+        Quick-log records (mood, workout, sleep, water) loaded from the data
+        source for this patient.  Defaults to an empty list so existing call
+        sites that do not supply daily_logs remain valid.
+    meal_logs:
+        Meal-photo analysis records loaded from the data source for this
+        patient.  Defaults to an empty list.
     """
 
     patient: Patient
     ehr_records: list[EHRRecord]
     wearable_days: list[WearableDay]
     lifestyle: LifestyleProfile | None
+    daily_logs: list[DailyLog] = dataclasses.field(default_factory=list)
+    meal_logs: list[MealLog] = dataclasses.field(default_factory=list)
 
 
 @runtime_checkable

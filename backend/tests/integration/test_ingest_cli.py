@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.adapters.csv_source  # noqa: F401 — side-effect: registers @register("csv")
 from app.ai.llm import FakeLLMProvider
-from app.models import EHRRecord, LifestyleProfile, Patient, WearableDay
+from app.models import DailyLog, EHRRecord, LifestyleProfile, MealLog, Patient, WearableDay
 from app.services.unified_profile import IngestReport, UnifiedProfileService
 
 # ---------------------------------------------------------------------------
@@ -310,3 +310,189 @@ async def test_ingest_without_llm_leaves_embeddings_null(db_session: AsyncSessio
         f"Expected all embeddings to be NULL when no LLM is supplied, "
         f"but found {non_null_count} non-null embeddings"
     )
+
+
+# ---------------------------------------------------------------------------
+# T2 — daily_log and meal_log ingestion tests
+# ---------------------------------------------------------------------------
+
+#: EHR/wearable/lifestyle boilerplate for a single-patient temp fixture.
+_EHR_HEADER = (
+    "patient_id,age,sex,country,height_cm,weight_kg,bmi,smoking_status,"
+    "alcohol_units_weekly,chronic_conditions,icd_codes,n_chronic_conditions,"
+    "medications,n_visits_2yr,visit_history,"
+    "sbp_mmhg,dbp_mmhg,total_cholesterol_mmol,ldl_mmol,hdl_mmol,"
+    "triglycerides_mmol,hba1c_pct,fasting_glucose_mmol,crp_mg_l,egfr_ml_min\n"
+)
+_EHR_ROW = (
+    "PTTEST,35,F,Germany,170.0,65.0,22.5,never,0,"
+    "none,Z00.0,0,None,1,2023-01-01:Z00.0,"
+    "120,80,5.0,3.0,1.5,1.0,5.0,4.5,0.5,90\n"
+)
+_WEARABLE_HEADER = (
+    "patient_id,date,resting_hr_bpm,hrv_rmssd_ms,steps,active_minutes,"
+    "sleep_duration_hrs,sleep_quality_score,deep_sleep_pct,spo2_avg_pct,"
+    "calories_burned_kcal\n"
+)
+_WEARABLE_ROW = "PTTEST,2026-01-01,62,45.0,8000,30,7.5,80.0,20.0,97.5,1700\n"
+_LIFESTYLE_HEADER = (
+    "patient_id,survey_date,smoking_status,alcohol_units_weekly,"
+    "diet_quality_score,fruit_veg_servings_daily,meal_frequency_daily,"
+    "exercise_sessions_weekly,sedentary_hrs_day,stress_level,sleep_satisfaction,"
+    "mental_wellbeing_who5,self_rated_health,water_glasses_daily\n"
+)
+_LIFESTYLE_ROW = "PTTEST,2026-01-01,never,0,7,3.0,3,4,6.0,3,7,70,7,8\n"
+
+_DAILY_LOG_HEADER = (
+    "patient_id,logged_at,mood,workout_minutes,sleep_hours,water_ml,"
+    "alcohol_units,sleep_quality,workout_type,workout_intensity\n"
+)
+_DAILY_LOG_ROWS = (
+    "PTTEST,2026-01-01T08:00:00,4,30,7.5,1800,0,4,walk,low\n"
+    "PTTEST,2026-01-02T08:00:00,3,0,6.8,1600,0,3,,\n"
+    "PTTEST,2026-01-03T08:00:00,5,45,7.8,2000,0,4,yoga,med\n"
+)
+
+_MEAL_LOG_HEADER = (
+    "patient_id,analyzed_at,photo_uri,protein_g,carbs_g,fat_g,fiber_g,"
+    "calories_kcal,description,longevity_swap\n"
+)
+_MEAL_LOG_ROWS = (
+    "PTTEST,2026-01-01T12:00:00,manual://test-uri-1,32,38,14,9,420,"
+    "Grilled salmon bowl,Swap white rice for quinoa\n"
+    "PTTEST,2026-01-02T13:00:00,,28,45,10,6,380,"
+    "Chicken pasta,Add more vegetables\n"
+)
+
+
+def _write_temp_fixture(tmp_path: Path) -> None:
+    """Write all 5 CSV files for PTTEST into tmp_path."""
+    (tmp_path / "ehr_records.csv").write_text(_EHR_HEADER + _EHR_ROW)
+    (tmp_path / "wearable_telemetry_1.csv").write_text(_WEARABLE_HEADER + _WEARABLE_ROW)
+    (tmp_path / "lifestyle_survey.csv").write_text(_LIFESTYLE_HEADER + _LIFESTYLE_ROW)
+    (tmp_path / "daily_log.csv").write_text(_DAILY_LOG_HEADER + _DAILY_LOG_ROWS)
+    (tmp_path / "meal_log.csv").write_text(_MEAL_LOG_HEADER + _MEAL_LOG_ROWS)
+
+
+@pytest.mark.integration
+async def test_ingest_daily_log_rows_written(
+    db_session: AsyncSession,
+    tmp_path: Path,
+) -> None:
+    """Ingest writes DailyLog rows to the database when daily_log.csv is present.
+
+    3 daily_log rows for PTTEST in the fixture → 3 DailyLog rows in the DB.
+    """
+    _write_temp_fixture(tmp_path)
+
+    svc = UnifiedProfileService(db_session)
+    await svc.ingest("csv", data_dir=tmp_path)
+
+    stmt = (
+        select(func.count())
+        .select_from(DailyLog)
+        .where(getattr(DailyLog, "patient_id") == "PTTEST")
+    )
+    count = (await db_session.execute(stmt)).scalar_one()
+    assert count == 3, f"Expected 3 DailyLog rows, got {count}"
+
+
+@pytest.mark.integration
+async def test_ingest_meal_log_rows_written(
+    db_session: AsyncSession,
+    tmp_path: Path,
+) -> None:
+    """Ingest writes MealLog rows to the database when meal_log.csv is present.
+
+    2 meal_log rows for PTTEST in the fixture → 2 MealLog rows in the DB.
+    """
+    _write_temp_fixture(tmp_path)
+
+    svc = UnifiedProfileService(db_session)
+    await svc.ingest("csv", data_dir=tmp_path)
+
+    stmt = (
+        select(func.count())
+        .select_from(MealLog)
+        .where(getattr(MealLog, "patient_id") == "PTTEST")
+    )
+    count = (await db_session.execute(stmt)).scalar_one()
+    assert count == 2, f"Expected 2 MealLog rows, got {count}"
+
+
+@pytest.mark.integration
+async def test_ingest_daily_and_meal_log_idempotent(
+    db_session: AsyncSession,
+    tmp_path: Path,
+) -> None:
+    """Running ingest twice yields the same DailyLog and MealLog row counts.
+
+    The delete-then-insert strategy must be idempotent for the new tables.
+    """
+    _write_temp_fixture(tmp_path)
+    svc = UnifiedProfileService(db_session)
+
+    await svc.ingest("csv", data_dir=tmp_path)
+
+    dl_stmt = (
+        select(func.count())
+        .select_from(DailyLog)
+        .where(getattr(DailyLog, "patient_id") == "PTTEST")
+    )
+    ml_stmt = (
+        select(func.count())
+        .select_from(MealLog)
+        .where(getattr(MealLog, "patient_id") == "PTTEST")
+    )
+    dl_count_run1 = (await db_session.execute(dl_stmt)).scalar_one()
+    ml_count_run1 = (await db_session.execute(ml_stmt)).scalar_one()
+
+    # Run ingest a second time
+    await svc.ingest("csv", data_dir=tmp_path)
+
+    dl_count_run2 = (await db_session.execute(dl_stmt)).scalar_one()
+    ml_count_run2 = (await db_session.execute(ml_stmt)).scalar_one()
+
+    assert dl_count_run1 == dl_count_run2, (
+        f"DailyLog count changed: run1={dl_count_run1}, run2={dl_count_run2}"
+    )
+    assert ml_count_run1 == ml_count_run2, (
+        f"MealLog count changed: run1={ml_count_run1}, run2={ml_count_run2}"
+    )
+
+
+@pytest.mark.integration
+async def test_ingest_missing_daily_log_and_meal_log_files_no_error(
+    db_session: AsyncSession,
+    tmp_path: Path,
+) -> None:
+    """Ingest succeeds without daily_log.csv and meal_log.csv (backward compat).
+
+    The fixture dir has only ehr, wearable, and lifestyle CSVs.
+    No DailyLog or MealLog rows should be inserted, and no exception raised.
+    """
+    # Write only the mandatory files — no daily_log.csv, no meal_log.csv.
+    (tmp_path / "ehr_records.csv").write_text(_EHR_HEADER + _EHR_ROW)
+    (tmp_path / "wearable_telemetry_1.csv").write_text(_WEARABLE_HEADER + _WEARABLE_ROW)
+    (tmp_path / "lifestyle_survey.csv").write_text(_LIFESTYLE_HEADER + _LIFESTYLE_ROW)
+
+    svc = UnifiedProfileService(db_session)
+    report = await svc.ingest("csv", data_dir=tmp_path)
+
+    assert report.patients_ingested == 1
+
+    dl_stmt = (
+        select(func.count())
+        .select_from(DailyLog)
+        .where(getattr(DailyLog, "patient_id") == "PTTEST")
+    )
+    ml_stmt = (
+        select(func.count())
+        .select_from(MealLog)
+        .where(getattr(MealLog, "patient_id") == "PTTEST")
+    )
+    dl_count = (await db_session.execute(dl_stmt)).scalar_one()
+    ml_count = (await db_session.execute(ml_stmt)).scalar_one()
+
+    assert dl_count == 0, f"Expected 0 DailyLog rows, got {dl_count}"
+    assert ml_count == 0, f"Expected 0 MealLog rows, got {ml_count}"
