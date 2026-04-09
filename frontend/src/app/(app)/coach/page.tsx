@@ -6,11 +6,17 @@
  * 2. AI disclosure banner — non-dismissible, violet-lt bg, circuit icon
  * 3. CoachChat — scrollable log + suggestions + input + footer
  *
+ * The optional `q` search param (e.g. from the Records tab Q&A input) is read
+ * via `useSearchParams` inside a Suspense boundary (required by Next.js 15 for
+ * client components that call useSearchParams). When present, CoachChat
+ * prefills and auto-sends the question as the first message.
+ *
  * Stack: Next.js 15 App Router, Tailwind v4.
  */
 
+import * as React from "react";
 import { AiDisclosureBanner } from "@/components/design";
-import { CoachChat } from "./chat";
+import { CoachChatWithQuery } from "./chat";
 
 export default function CoachPage() {
   return (
@@ -64,7 +70,13 @@ export default function CoachPage() {
       <div
         style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}
       >
-        <CoachChat />
+        {/*
+          Suspense boundary is required by Next.js 15 when useSearchParams is
+          used inside a client component that is a direct descendant of a page.
+        */}
+        <React.Suspense fallback={null}>
+          <CoachChatWithQuery />
+        </React.Suspense>
       </div>
     </div>
   );

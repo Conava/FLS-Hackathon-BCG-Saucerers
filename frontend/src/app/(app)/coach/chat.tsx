@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { ChatBubble } from "@/components/design/ChatBubble";
 import { TypingIndicator } from "@/components/design/TypingIndicator";
 import { SuggestedChip } from "@/components/design/Chip";
@@ -22,6 +23,12 @@ export interface CoachChatProps {
    * empty. Tapping a chip pre-fills the input.
    */
   suggestions?: string[];
+
+  /**
+   * Optional pre-filled message to auto-send on mount (used when navigating
+   * from the Records tab with a prefilled question).
+   */
+  initialMessage?: string;
 }
 
 // Default suggestions shown on an empty thread — matches mockup
@@ -31,6 +38,38 @@ const DEFAULT_SUGGESTIONS = [
   "I feel stressed",
   "Recipe for dinner",
 ];
+
+// ---------------------------------------------------------------------------
+// CoachChatWithQuery
+// ---------------------------------------------------------------------------
+
+/**
+ * Thin wrapper that reads the `q` search param and passes it to CoachChat as
+ * `initialMessage`. Placed inside a Suspense boundary in the page so that
+ * useSearchParams doesn't block the static shell.
+ *
+ * After consuming the param, the URL is cleaned up via replaceState so a page
+ * reload won't re-submit the question.
+ */
+export function CoachChatWithQuery() {
+  const searchParams = useSearchParams();
+
+  const q = searchParams.get("q") ?? undefined;
+
+  // Clear the `q` param from the URL immediately so reloading doesn't re-send
+  React.useEffect(() => {
+    if (q) {
+      // replaceState keeps the history entry but removes the query param
+      const url = new URL(window.location.href);
+      url.searchParams.delete("q");
+      window.history.replaceState(null, "", url.toString());
+    }
+    // Only run once on mount — intentionally omitting `q` and `router` deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return <CoachChat initialMessage={q} />;
+}
 
 // ---------------------------------------------------------------------------
 // CoachChat
@@ -51,8 +90,15 @@ const DEFAULT_SUGGESTIONS = [
  * - Last streaming AI bubble shows a blinking cursor.
  * - Handles errors gracefully by inserting an error bubble.
  * - Auto-scrolls to the bottom on new content unless the user has scrolled up.
+ *
+ * When `initialMessage` is provided the component auto-sends it on mount,
+ * simulating a user submission. This is used when navigating from the Records
+ * tab Q&A input.
  */
-export function CoachChat({ suggestions = DEFAULT_SUGGESTIONS }: CoachChatProps) {
+export function CoachChat({
+  suggestions = DEFAULT_SUGGESTIONS,
+  initialMessage,
+}: CoachChatProps) {
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [input, setInput] = React.useState("");
   const [streaming, setStreaming] = React.useState(false);
@@ -61,6 +107,7 @@ export function CoachChat({ suggestions = DEFAULT_SUGGESTIONS }: CoachChatProps)
 
   const listRef = React.useRef<HTMLDivElement>(null);
   const userScrolledUp = React.useRef(false);
+  const autoSentRef = React.useRef(false);
 
   // ── Autoscroll ─────────────────────────────────────────────────────────────
 
@@ -161,6 +208,18 @@ export function CoachChat({ suggestions = DEFAULT_SUGGESTIONS }: CoachChatProps)
     },
     [messages, isStreaming]
   );
+
+  // ── Auto-send initialMessage on mount ──────────────────────────────────────
+
+  React.useEffect(() => {
+    if (initialMessage && !autoSentRef.current) {
+      autoSentRef.current = true;
+      void handleSend(initialMessage);
+    }
+    // handleSend identity changes with messages/isStreaming, but we only want
+    // to fire this once on mount, so we suppress the dep warning.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

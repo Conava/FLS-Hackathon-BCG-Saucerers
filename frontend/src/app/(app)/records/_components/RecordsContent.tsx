@@ -16,8 +16,6 @@
 import * as React from "react";
 import { RecordsQA } from "./RecordsQA";
 import type { EHRRecordOut } from "@/lib/api/schemas";
-import type { RecordsQAResponse } from "@/lib/api/schemas";
-import { Citation } from "@/components/design/Citation";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -204,7 +202,6 @@ export interface RecordsContentProps {
  */
 export function RecordsContent({ records }: RecordsContentProps) {
   const [activeTab, setActiveTab] = React.useState<SubTab>("All");
-  const [qaResponse, setQaResponse] = React.useState<RecordsQAResponse | null>(null);
 
   // Filter records by active sub-tab
   const filteredRecords = React.useMemo(() => {
@@ -231,63 +228,7 @@ export function RecordsContent({ records }: RecordsContentProps) {
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
 
       {/* ── RecordsQA card (banner + input embedded) ──────────────── */}
-      <RecordsQA onAnswer={(r) => setQaResponse(r)} />
-
-      {/* ── Plain-language summary card ──────────────────────────── */}
-      <div
-        style={{
-          borderRadius: 16,
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          padding: "14px 16px",
-          marginTop: 14,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: "var(--color-ink-3)",
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-          }}
-        >
-          Plain-language summary
-        </div>
-
-        {qaResponse ? (
-          <div style={{ fontSize: 13, lineHeight: 1.55, marginTop: 8, color: "var(--color-ink)" }}>
-            {qaResponse.answer}
-
-            {/* Inline citation chips */}
-            {qaResponse.citations && qaResponse.citations.length > 0 && (
-              <span style={{ marginLeft: 4 }}>
-                {qaResponse.citations.map((citation, index) => (
-                  <Citation
-                    key={citation.record_id}
-                    label={index + 1}
-                    onClick={() => {
-                      console.info(`Open record ${citation.record_id}`);
-                    }}
-                  />
-                ))}
-              </span>
-            )}
-          </div>
-        ) : (
-          <p
-            style={{
-              fontSize: 13,
-              lineHeight: 1.55,
-              marginTop: 8,
-              color: "var(--color-ink-3)",
-              fontStyle: "italic",
-            }}
-          >
-            Ask a question above to see a summary.
-          </p>
-        )}
-      </div>
+      <RecordsQA />
 
       {/* ── Sub-tabs ───────────────────────────────────────────────── */}
       <div

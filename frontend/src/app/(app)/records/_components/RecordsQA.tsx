@@ -1,62 +1,31 @@
 "use client";
 
 /**
- * RecordsQA — Client Component for plain-language Q&A over EHR records.
+ * RecordsQA — Client Component for routing record questions to the Coach tab.
  *
  * Renders:
  * - AI disclosure banner with file icon, "EHR-scoped" pill, and violet-lt bg
  * - Q&A card (accent-lt bg, accent-md border) with heading, subtext, chat input
- * - Loading state while the request is in flight
- * - Inline answer with Citation chips (when used standalone, i.e. no onAnswer)
  *
- * When `onAnswer` is provided, the parent component owns the response display
- * (used by RecordsContent to render the answer in a separate summary card).
- * When omitted, the component renders its own answer inline (backward-compatible).
+ * On submit, the question is URL-encoded and the user is navigated to
+ * `/coach?q=<question>` where the Coach tab will auto-send it as the first
+ * message of a new conversation.
  */
 
 import * as React from "react";
-import { Citation } from "@/components/design/Citation";
-import { postRecordsQA } from "@/lib/api/client";
-import type { RecordsQAResponse } from "@/lib/api/schemas";
+import { useRouter } from "next/navigation";
 import { COPY } from "@/lib/copy/copy";
 
-export interface RecordsQAProps {
-  /**
-   * Optional callback invoked when the API returns a successful answer.
-   * When provided the parent controls the answer display; the inline answer
-   * section is suppressed.
-   */
-  onAnswer?: (response: RecordsQAResponse) => void;
-}
-
-export function RecordsQA({ onAnswer }: RecordsQAProps) {
+export function RecordsQA() {
+  const router = useRouter();
   const [question, setQuestion] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const [response, setResponse] = React.useState<RecordsQAResponse | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = question.trim();
     if (!trimmed) return;
-
-    setLoading(true);
-    setError(null);
-    setResponse(null);
-
-    try {
-      const result = await postRecordsQA(trimmed);
-      setResponse(result);
-      onAnswer?.(result);
-    } catch {
-      setError(COPY.errors.generic);
-    } finally {
-      setLoading(false);
-    }
+    router.push(`/coach?q=${encodeURIComponent(trimmed)}`);
   }
-
-  // Whether to show the inline answer (only when not delegating to parent)
-  const showInlineAnswer = !onAnswer;
 
   return (
     <div
@@ -170,11 +139,10 @@ export function RecordsQA({ onAnswer }: RecordsQAProps) {
               padding: "6px 0",
             }}
             aria-label="Ask a question about your records"
-            disabled={loading}
           />
           <button
             type="submit"
-            disabled={loading || !question.trim()}
+            disabled={!question.trim()}
             style={{
               borderRadius: 8,
               background: "var(--color-accent)",
@@ -183,7 +151,7 @@ export function RecordsQA({ onAnswer }: RecordsQAProps) {
               padding: "8px 14px",
               fontSize: 13,
               fontWeight: 600,
-              cursor: loading ? "wait" : "pointer",
+              cursor: "pointer",
               opacity: !question.trim() ? 0.5 : 1,
               display: "flex",
               alignItems: "center",
@@ -204,97 +172,6 @@ export function RecordsQA({ onAnswer }: RecordsQAProps) {
             </svg>
           </button>
         </form>
-
-        {/* Loading indicator */}
-        {loading && (
-          <div
-            role="status"
-            aria-live="polite"
-            style={{
-              marginTop: 12,
-              fontSize: 12,
-              color: "var(--color-accent)",
-              fontWeight: 600,
-            }}
-          >
-            Thinking&hellip;
-          </div>
-        )}
-
-        {/* Error state */}
-        {error && !loading && (
-          <p
-            role="alert"
-            style={{
-              marginTop: 12,
-              fontSize: 12,
-              color: "var(--color-danger)",
-            }}
-          >
-            {error}
-          </p>
-        )}
-
-        {/* Inline answer section — only when not delegating to parent */}
-        {showInlineAnswer && response && !loading && (
-          <div style={{ marginTop: 14 }}>
-            <p
-              style={{
-                fontSize: 13,
-                color: "var(--color-ink)",
-                lineHeight: 1.6,
-              }}
-            >
-              {response.answer}
-            </p>
-
-            {/* Citation chips */}
-            {response.citations && response.citations.length > 0 && (
-              <div
-                style={{
-                  marginTop: 10,
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 4,
-                  alignItems: "center",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 10.5,
-                    color: "var(--color-ink-3)",
-                    fontWeight: 600,
-                  }}
-                >
-                  Sources:
-                </span>
-                {response.citations.map((citation, index) => (
-                  <Citation
-                    key={citation.record_id}
-                    label={index + 1}
-                    onClick={() => {
-                      console.info(`Open record ${citation.record_id}`);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Disclaimer if present */}
-            {response.disclaimer && (
-              <p
-                style={{
-                  marginTop: 8,
-                  fontSize: 10.5,
-                  color: "var(--color-ink-3)",
-                  fontStyle: "italic",
-                }}
-              >
-                {response.disclaimer}
-              </p>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
