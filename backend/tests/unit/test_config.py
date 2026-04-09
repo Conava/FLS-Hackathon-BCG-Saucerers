@@ -47,15 +47,15 @@ class TestSettingsLoadsFromEnv:
         settings = Settings()
         assert settings.app_env == "production"
 
-    def test_settings_app_env_defaults_to_development(
+    def test_settings_app_env_defaults_to_local(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """APP_ENV defaults to 'development' when not set."""
+        """APP_ENV defaults to 'local' when not set (sourced from .env file)."""
         monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://user:pass@localhost:5432/test")
         monkeypatch.setenv("API_KEY", "test-key")
         monkeypatch.delenv("APP_ENV", raising=False)
         settings = Settings()
-        assert settings.app_env == "development"
+        assert settings.app_env == "local"
 
     def test_settings_reads_multiple_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Settings reads DATABASE_URL, API_KEY, and LOG_LEVEL from env together."""

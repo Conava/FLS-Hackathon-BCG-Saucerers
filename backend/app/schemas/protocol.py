@@ -168,7 +168,7 @@ class SkipActionRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     action_id: int = Field(..., description="Primary key of the ProtocolAction to skip")
-    reason: str = Field(..., description="Human-readable reason for skipping today")
+    reason: str = Field(..., max_length=200, description="Human-readable reason for skipping today")
 
 
 class ReorderRequest(BaseModel):

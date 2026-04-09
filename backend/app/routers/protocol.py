@@ -316,12 +316,11 @@ async def complete_action(
 
     # Protocol adherence is estimated from the fraction of actions completed
     # today vs total actions in the patient's protocol.
+    # list_for_patient re-queries the DB, so it already reflects the update
+    # applied above — no need to manually add the just-completed action.
     all_actions = await action_repo.list_for_patient(patient_id=patient_id)
     total_actions = max(1, len(all_actions))
     completed_count = sum(1 for a in all_actions if a.completed_today)
-    # Include the just-updated action in the count
-    if not updated_action.completed_today:
-        completed_count += 1
     protocol_adherence = completed_count / total_actions
 
     projections = compute_outlook(
@@ -493,7 +492,12 @@ async def _get_current_vitality_score(
     from app.models.vitality_snapshot import VitalitySnapshot
 
     pid_attr = getattr(VitalitySnapshot, "patient_id")  # noqa: B009  # mypy-strict pattern: see CLAUDE.md
-    stmt = select(VitalitySnapshot).where(pid_attr == patient_id)
+    computed_at_attr = getattr(VitalitySnapshot, "computed_at")  # noqa: B009
+    stmt = (
+        select(VitalitySnapshot)
+        .where(pid_attr == patient_id)
+        .order_by(computed_at_attr.desc())
+    )
     result = await session.execute(stmt)
     snapshot = result.scalars().first()
 

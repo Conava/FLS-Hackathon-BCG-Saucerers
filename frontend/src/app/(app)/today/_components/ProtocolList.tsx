@@ -125,6 +125,10 @@ export function ProtocolList({ actions }: ProtocolListProps) {
     const toIndex = direction === "up" ? fromIndex - 1 : fromIndex + 1;
     if (toIndex < 0 || toIndex >= orderedActions.length) return;
 
+    // Snapshot the current order BEFORE mutation so the catch closure
+    // captures the correct pre-mutation state regardless of re-renders.
+    const snapshot = orderedActions;
+
     const newOrder = [...orderedActions] as ProtocolActionOut[];
     // Swap the two items — use a temp variable so TypeScript is happy with
     // strict array-index typing (destructure assignment targets infer as T|undefined).
@@ -136,8 +140,8 @@ export function ProtocolList({ actions }: ProtocolListProps) {
     reorderProtocolActions(newOrder.map((a) => a.id))
       .then(() => router.refresh())
       .catch(() => {
-        // Rollback
-        setOrderedActions(orderedActions);
+        // Rollback to pre-mutation state
+        setOrderedActions(snapshot);
       });
   }
 

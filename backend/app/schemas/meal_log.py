@@ -113,11 +113,11 @@ class ManualMealLogIn(BaseModel):
         ...,
         description="Plain-English meal name, e.g. 'Grilled chicken salad'",
     )
-    kcal: int = Field(..., ge=0, description="Total kilocalories")
-    protein_g: float = Field(..., ge=0.0, description="Protein in grams")
-    carbs_g: float = Field(..., ge=0.0, description="Carbohydrates in grams")
-    fat_g: float = Field(..., ge=0.0, description="Fat in grams")
-    fiber_g: float = Field(default=0.0, ge=0.0, description="Dietary fibre in grams")
+    kcal: int = Field(..., ge=0, le=10000, description="Total kilocalories")
+    protein_g: float = Field(..., ge=0.0, le=1000.0, description="Protein in grams")
+    carbs_g: float = Field(..., ge=0.0, le=1000.0, description="Carbohydrates in grams")
+    fat_g: float = Field(..., ge=0.0, le=1000.0, description="Fat in grams")
+    fiber_g: float = Field(default=0.0, ge=0.0, le=1000.0, description="Dietary fibre in grams")
     notes: str | None = Field(None, description="Optional free-text notes from the patient")
 
 
