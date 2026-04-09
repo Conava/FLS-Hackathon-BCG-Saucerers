@@ -136,6 +136,8 @@ The checkboxes below track the product scope commitment, not implementation comp
 
 **Frontend PWA — shipped.** All nine screens (Login, Onboarding, Today, Coach, Records, Insights, Care, Meal Log, Me) implemented in `frontend/` and wired to the FastAPI `/v1` stubs via the Route Handler proxy. Installable PWA with manual service worker + web app manifest. See [`frontend/README.md`](../frontend/README.md) for the demo walkthrough.
 
+**Manual trackers + protocol interactivity — shipped.** Sleep/water/workout quick-log sheets, manual meal entry (no camera), weekly check-in sheet, protocol skip-with-reason, protocol reorder. Today's `QuickLogGrid` now opens BottomSheets instead of navigating. Three new backend endpoints (`/meal-log/manual`, `/protocol/skip-action`, `/protocol/reorder`) and six new nullable DB columns. Me screen data-sources section lists manual tracker rows alongside connected wearables.
+
 ## Must-have (from the brief + our extension)
 
 From the BCG brief:
@@ -163,6 +165,11 @@ From our product thinking:
 - [x] **Messages to care team** — `GET/POST /v1/patients/{pid}/messages`
 - [x] **Weekly micro-survey prompt** — survey router supports `kind=weekly`; `POST /v1/patients/{pid}/survey`
 - [x] **Signals drill-down** — four-dimension signal cards in Insights + bottom sheet from Today vitality ring tap
+- [x] **Manual self-tracking sheets** — sleep (hours + quality), water (+250/+500 ml chips), workout (type/duration/intensity), manual meal entry (no camera) — all as BottomSheets from Today's quick-log grid
+- [x] **Weekly check-in sheet** — energy/sleep/mood 1–5 scales; Today card shows last submission date; reuses existing survey endpoint (`kind=weekly`)
+- [x] **Protocol skip-with-reason** — kebab menu → canned reason prompt; soft-skip flag preserves history; distinct from complete
+- [x] **Protocol reorder** — up/down arrows persist `sort_order`; optimistic local state with rollback on error
+- [x] **Me screen manual data-source rows** — Sleep, Water, Workout, Check-in rows with Manual badge in the data-sources section
 - [ ] **At-home test-kit checkout** (microbiome / food-intolerance)
 
 ## Deferred (mentioned in pitch, not built)

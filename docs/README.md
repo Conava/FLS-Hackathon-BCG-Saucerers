@@ -12,6 +12,8 @@ Single source of truth for the **Longevity MVP** — BCG Platinion AI Hackathon,
 
 **Frontend PWA — shipped.** Next.js 15 App Router + React 19 + Tailwind v4 + TypeScript strict PWA at `frontend/`. Nine screens (Login, Onboarding, Today, Coach, Records, Insights, Care, Meal Log, Me) wired to the FastAPI `/v1` stubs via a Route Handler proxy. Installable with service worker + web app manifest. See [`frontend/README.md`](../frontend/README.md) for setup and demo walkthrough.
 
+**Manual trackers + protocol interactivity — shipped:** Three new backend endpoints (29 total) — `/meal-log/manual`, `/protocol/skip-action`, `/protocol/reorder`. Six new nullable DB columns on `daily_log` and `protocol_action`. Five BottomSheet components under `frontend/src/components/trackers/` (sleep, water, workout, meal, weekly check-in). `QuickLogGrid` now opens sheets instead of navigating. Protocol list supports skip-with-reason and up/down reorder with optimistic UI. Me screen lists manual tracker data-source rows.
+
 ## How these docs are organized
 
 Each file is scoped to one concern and kept short so it fits cleanly into an LLM context window. Read top-to-bottom for full context, or jump to the section you need.

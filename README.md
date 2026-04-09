@@ -31,6 +31,8 @@ See [`docs/README.md`](docs/README.md) for the full documentation index. See [`f
 
 **Frontend PWA — shipped.** Next.js 15 App Router, React 19, Tailwind v4, TypeScript strict, installable PWA. All nine screens wired to the FastAPI `/v1` stubs via a Route Handler proxy. See [`frontend/README.md`](frontend/README.md) for setup, demo accounts, and the 3-minute walkthrough.
 
+**Manual trackers + protocol interactivity — shipped.** 29 total backend endpoints (3 new: `/meal-log/manual`, `/protocol/skip-action`, `/protocol/reorder`). Sleep/water/workout/meal/check-in BottomSheet components. Protocol list supports skip-with-reason and up/down reorder. Today's quick-log grid opens sheets instead of navigating.
+
 ## Quick start
 
 Requires Docker and [`uv`](https://docs.astral.sh/uv/).

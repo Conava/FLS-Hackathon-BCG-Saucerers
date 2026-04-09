@@ -123,6 +123,8 @@ class VitalitySnapshot(SQLModel, table=True):
 
 **Slice-2 models** (shipped in slice 2): `SurveyResponse`, `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `VitalityOutlook`, `Message`, `Notification`, `ClinicalReview`, `Referral`. All tables are created at startup via `db.base.create_all`, which also ensures the `vector` extension and HNSW index are present.
 
+**Manual-tracker columns** (added as nullable, backwards-compatible): `DailyLog` gained `sleep_quality: int | None` (1–5), `workout_type: str | None` (`walk|run|bike|strength|yoga|other`), and `workout_intensity: str | None` (`low|med|high`). `ProtocolAction` gained `sort_order: int | None` (explicit display order, `NULLS LAST` in list query), `skipped_today: bool` (default `false`), and `skip_reason: str | None`. Manual meal entries use the existing `MealLog` table with `photo_uri = "manual://<uuid>"` as a sentinel value — readers check for the `manual://` prefix before rendering a photo.
+
 ### Design principles
 
 1. **Source-agnostic downstream.** The score engine and AI layer never ask *where* data came from — only what it is.
