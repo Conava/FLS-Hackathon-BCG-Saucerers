@@ -33,6 +33,7 @@ import { MessageComposer } from "./_components/MessageComposer";
 import { CareSubTabsClient } from "./_components/CareSubTabsClient";
 import { CareServicesGrid } from "./_components/CareServicesGrid";
 import ScreenFrame from "@/components/shell/ScreenFrame";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { backendFetch } from "@/lib/backend-fetch";
 
 // ── Server-side fetch helpers ─────────────────────────────────────────────────
@@ -102,34 +103,15 @@ export default async function CarePage() {
 
   return (
     <ScreenFrame>
-      <div style={{ padding: "0 16px" }}>
-        {/* ── 1. Page Header ──────────────────────────────────── */}
-        <div style={{ paddingTop: 8, paddingBottom: 4 }}>
-          <h1
-            style={{
-              fontSize: 22,
-              fontWeight: 700,
-              letterSpacing: "-0.01em",
-              color: "var(--color-ink)",
-            }}
-          >
-            Care
-          </h1>
-          <p
-            style={{
-              fontSize: 13,
-              color: "var(--color-ink-3)",
-              fontWeight: 500,
-              marginTop: 4,
-            }}
-          >
-            Your clinic network · clinics, diagnostics, home care
-          </p>
-        </div>
+      {/* ── 1. Page Header ──────────────────────────────────── */}
+      <PageHeader
+        title="Care"
+        subtitle="Your clinic network · clinics, diagnostics, home care"
+        mb={10}
+      />
 
-        {/* ── 2. Clinician Review Card ────────────────────────── */}
-        <div style={{ marginTop: 10 }}>
-          <ClinicianReviewCard
+      {/* ── 2. Clinician Review Card ────────────────────────── */}
+      <ClinicianReviewCard
             initials="DL"
             name="Dr. Lehmann reviewed your ApoB flag"
             specialty="Cardiology · Hamburg Altstadt · 2h ago"
@@ -139,10 +121,9 @@ export default async function CarePage() {
             }
             ctaLabel="Confirm follow-up \u00b7 Mon 14 Apr \u00b7 10:30"
           />
-        </div>
 
-        {/* ── 3. Sub-tabs ─────────────────────────────────────── */}
-        <CareSubTabsClient />
+      {/* ── 3. Sub-tabs ─────────────────────────────────────── */}
+      <CareSubTabsClient />
 
         {/* ── 4. Upcoming appointments ────────────────────────── */}
         <section id="care-upcoming" aria-label="Upcoming appointments">
@@ -210,14 +191,7 @@ export default async function CarePage() {
         {/* ── 6. Recommended diagnostics card ─────────────────── */}
         <section id="care-diagnostics" aria-label="Recommended diagnostics">
           <SectionHeader title="Recommended diagnostics" />
-          <div
-            style={{
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              borderRadius: 14,
-              padding: 16,
-            }}
-          >
+          <div className="card">
             {/* Top row: title + price */}
             <div
               style={{
@@ -332,9 +306,8 @@ export default async function CarePage() {
           Real clinicians. In-network. Insurance-billed where applicable.
         </p>
 
-        {/* Bottom breathing room */}
-        <div style={{ height: 16 }} />
-      </div>
+      {/* Bottom breathing room */}
+      <div style={{ height: 16 }} />
     </ScreenFrame>
   );
 }

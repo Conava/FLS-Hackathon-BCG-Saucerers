@@ -200,7 +200,7 @@ export function MealLogUpload() {
       style={{
         display: "flex",
         flexDirection: "column",
-        padding: "16px 16px 32px",
+        padding: "52px 20px 32px",
         maxWidth: 480,
         margin: "0 auto",
       }}
@@ -506,23 +506,13 @@ export function MealLogUpload() {
               marginTop: 12,
               background: "var(--color-surface)",
               border: "1px solid var(--color-border)",
-              borderRadius: 16,
-              boxShadow: "0 1px 4px rgba(14,23,38,.06)",
+              borderRadius: "var(--radius-lg)",
+              boxShadow: "var(--shadow-sm)",
               padding: 18,
             }}
           >
             {/* DETECTED label */}
-            <div
-              style={{
-                fontSize: 11,
-                color: "var(--color-ink-3)",
-                textTransform: "uppercase",
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-              }}
-            >
-              Detected
-            </div>
+            <div className="t-micro">Detected</div>
 
             {/* Food description */}
             <div
@@ -569,7 +559,7 @@ export function MealLogUpload() {
               marginTop: 12,
               background: "var(--color-good-lt)",
               border: "1px solid #BEE5CC",
-              borderRadius: 16,
+              borderRadius: "var(--radius-lg)",
               padding: 18,
             }}
           >

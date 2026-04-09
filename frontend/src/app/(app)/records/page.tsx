@@ -20,6 +20,7 @@
 
 import { cookies } from "next/headers";
 import ScreenFrame from "@/components/shell/ScreenFrame";
+import { PageHeader } from "@/components/shell/PageHeader";
 import type { EHRRecordOut } from "@/lib/api/schemas";
 import { RecordsContent } from "./_components/RecordsContent";
 import { backendFetch } from "@/lib/backend-fetch";
@@ -63,33 +64,18 @@ export default async function RecordsPage() {
 
   return (
     <ScreenFrame>
-      <div style={{ padding: "0 16px" }}>
-        {/* Page Header */}
-        <div style={{ paddingTop: 8, paddingBottom: 16 }}>
-          <h1
-            className="t-heading-lg text-ink"
-            style={{ fontSize: 22, fontWeight: 700 }}
-          >
-            Records
-          </h1>
-          <div
-            style={{
-              fontSize: 13,
-              color: "var(--color-ink-3)",
-              fontWeight: 500,
-              marginTop: 2,
-            }}
-          >
-            Your official clinical data &middot; provider-scoped
-          </div>
-        </div>
+      {/* Page Header */}
+      <PageHeader
+        title="Records"
+        subtitle="Your official clinical data · provider-scoped"
+        mb={12}
+      />
 
-        {/* Interactive records content */}
-        <RecordsContent records={records} />
+      {/* Interactive records content */}
+      <RecordsContent records={records} />
 
-        {/* Bottom breathing room */}
-        <div style={{ height: 16 }} />
-      </div>
+      {/* Bottom breathing room */}
+      <div style={{ height: 16 }} />
     </ScreenFrame>
   );
 }

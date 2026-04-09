@@ -29,6 +29,8 @@ import { WeeklyCheckInCard } from "./_components/WeeklyCheckInCard";
 import { RecentlyCard } from "./_components/RecentlyCard";
 import { COPY } from "@/lib/copy/copy";
 import { backendFetch } from "@/lib/backend-fetch";
+import ScreenFrame from "@/components/shell/ScreenFrame";
+import { PageHeader } from "@/components/shell/PageHeader";
 import type {
   PatientProfileOut,
   VitalityOut,
@@ -267,73 +269,40 @@ export default async function TodayPage() {
   const todayTitle = formatTodayTitle(new Date());
 
   return (
-    <div
-      style={{
-        padding: "8px 20px 28px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 0,
-        maxWidth: 480,
-        margin: "0 auto",
-      }}
-    >
+    <ScreenFrame>
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 10,
-        }}
-      >
-        <div>
-          <p
-            style={{ fontSize: 13, fontWeight: 500, color: "var(--color-ink-3)" }}
-          >
-            {COPY.today.greeting(firstName)}
-          </p>
-          <h1
+      <PageHeader
+        title={todayTitle}
+        subtitle={COPY.today.greeting(firstName)}
+        mb={10}
+        trailing={
+          <Link
+            href="/me"
+            aria-label="Profile"
             style={{
-              fontSize: 22,
+              width: 28,
+              height: 28,
+              borderRadius: "50%",
+              background: "var(--color-accent)",
+              color: "#fff",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 11,
               fontWeight: 700,
-              letterSpacing: "-0.01em",
-              lineHeight: 1.2,
-              marginTop: 2,
-              color: "var(--color-ink)",
+              textDecoration: "none",
             }}
           >
-            {todayTitle}
-          </h1>
-        </div>
-
-        {/* Avatar button — 28px circle, accent bg, white initials, links to /me */}
-        <Link
-          href="/me"
-          aria-label="Profile"
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: "50%",
-            background: "var(--color-accent)",
-            color: "#fff",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 11,
-            fontWeight: 700,
-            textDecoration: "none",
-            flexShrink: 0,
-          }}
-        >
-          {initials}
-        </Link>
-      </div>
+            {initials}
+          </Link>
+        }
+      />
 
       {/* ── Hero card: Vitality ring + streak + outlook ─────────────────── */}
       <div
         className="card"
         style={{
-          marginTop: 12,
+          marginTop: 10,
           textAlign: "center",
         }}
       >
@@ -346,15 +315,7 @@ export default async function TodayPage() {
             marginBottom: 4,
           }}
         >
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "var(--color-ink-3)",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-            }}
-          >
+          <span className="t-micro">
             Vitality Score
           </span>
           {streak > 0 && <StreakBadge days={streak} />}
@@ -500,18 +461,7 @@ export default async function TodayPage() {
 
       {/* ── Recently — latest lab + score change ─────────────────────────── */}
       <div style={{ marginTop: 14 }}>
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: "var(--color-ink-3)",
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            marginBottom: 8,
-          }}
-        >
-          Recently
-        </p>
+        <SectionHeader title="Recently" />
         <RecentlyCard latestLab={latestLab} vitality={vitality} />
       </div>
 
@@ -520,17 +470,14 @@ export default async function TodayPage() {
 
       {/* Fine print */}
       <p
+        className="t-fine"
         style={{
-          fontSize: 10.5,
-          color: "var(--color-ink-3)",
-          textAlign: "center",
           marginTop: 14,
           padding: "0 12px",
-          lineHeight: 1.5,
         }}
       >
         Not medical advice. Wellness and lifestyle guidance only.
       </p>
-    </div>
+    </ScreenFrame>
   );
 }

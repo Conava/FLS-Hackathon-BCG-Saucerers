@@ -22,6 +22,8 @@ import { getPatientProfile } from "@/lib/api/client";
 import { Switch } from "@/components/ui/switch";
 import GdprActions from "./_components/GdprActions";
 import LogoutButton from "./_components/LogoutButton";
+import ScreenFrame from "@/components/shell/ScreenFrame";
+import { PageHeader } from "@/components/shell/PageHeader";
 
 // ---------------------------------------------------------------------------
 // Demo stats — tagged // demo until backend exposes these fields
@@ -146,24 +148,15 @@ export default async function MePage() {
   };
 
   return (
-    <div
-      className="min-h-dvh pb-24"
-      style={{ backgroundColor: "var(--color-bg)" }}
-    >
+    <ScreenFrame>
       {/* ── 1. Header ─────────────────────────────────────────────────────── */}
-      <header className="px-5 pt-12 pb-6">
-        <h1
-          className="text-2xl font-extrabold"
-          style={{ color: "var(--color-ink)" }}
-        >
-          Me
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: "var(--color-ink-3)" }}>
-          Your profile and data controls
-        </p>
-      </header>
+      <PageHeader
+        title="Me"
+        subtitle="Your profile and data controls"
+        mb={16}
+      />
 
-      <div className="px-5 space-y-6">
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         {/* ── 2. Profile card ───────────────────────────────────────────── */}
         <section aria-label="Profile">
           <div
@@ -464,6 +457,6 @@ export default async function MePage() {
           </div>
         </section>
       </div>
-    </div>
+    </ScreenFrame>
   );
 }

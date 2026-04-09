@@ -17,6 +17,7 @@
 import * as React from "react";
 import { AiDisclosureBanner } from "@/components/design";
 import { CoachChatWithQuery } from "./chat";
+import { PageHeader } from "@/components/shell/PageHeader";
 
 export default function CoachPage() {
   return (
@@ -31,36 +32,18 @@ export default function CoachPage() {
       {/* Page header */}
       <header
         style={{
-          padding: "52px 16px 12px",
+          padding: "52px 20px 12px",
           borderBottom: "1px solid var(--color-border)",
           background: "var(--color-bg)",
           flexShrink: 0,
         }}
       >
-        {/* h1 "Coach" — 22px / 700, matches mockup .h-title */}
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 700,
-            letterSpacing: "-0.01em",
-            color: "var(--color-ink)",
-            marginBottom: 4,
-          }}
-        >
-          Coach
-        </h1>
-
-        {/* Subtitle — 13px / 500 / ink-3, matches mockup .h-hello */}
-        <p
-          style={{
-            fontSize: 13,
-            fontWeight: 500,
-            color: "var(--color-ink-3)",
-            marginBottom: 10,
-          }}
-        >
-          Your longevity AI · personalized to your data
-        </p>
+        {/* Title + subtitle via shared PageHeader */}
+        <PageHeader
+          title="Coach"
+          subtitle="Your longevity AI · personalized to your data"
+          mb={10}
+        />
 
         {/* AI disclosure — required on all AI screens, non-dismissible */}
         <AiDisclosureBanner />

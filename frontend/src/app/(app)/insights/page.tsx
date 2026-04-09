@@ -16,6 +16,9 @@
 import * as React from "react";
 import { backendFetch } from "@/lib/backend-fetch";
 import { FutureSelfSimulator } from "./_components/FutureSelfSimulator";
+import ScreenFrame from "@/components/shell/ScreenFrame";
+import { PageHeader } from "@/components/shell/PageHeader";
+import { SectionHeader } from "@/components/design/SectionHeader";
 
 // -- Backend types ------------------------------------------------------------
 
@@ -149,32 +152,13 @@ export default async function InsightsPage() {
     "LDL 3.84 and total cholesterol 7.05 are elevated for your age group, especially given your family history. This is a pattern worth discussing with your doctor.";
 
   return (
-    <main
-      style={{ display: "flex", flexDirection: "column", padding: "8px 20px 28px" }}
-    >
+    <ScreenFrame>
       {/* -- 1. Header -------------------------------------------------------- */}
-      <header style={{ padding: "16px 0 10px" }}>
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 700,
-            letterSpacing: "-0.01em",
-            color: "var(--color-ink)",
-          }}
-        >
-          Insights
-        </h1>
-        <p
-          style={{
-            fontSize: 13.5,
-            fontWeight: 500,
-            color: "var(--color-ink-3)",
-            marginTop: 2,
-          }}
-        >
-          Your four longevity dimensions
-        </p>
-      </header>
+      <PageHeader
+        title="Insights"
+        subtitle="Your four longevity dimensions"
+        mb={14}
+      />
 
       {/* -- 3. Signal grid -------------------------------------------------- */}
       <div
@@ -505,27 +489,10 @@ export default async function InsightsPage() {
 
       {/* -- 6. Sleep trend chart -------------------------------------------- */}
       {/* demo: replace with real data when endpoint exists */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          margin: "0 0 10px",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: 14,
-            fontWeight: 700,
-            letterSpacing: "0.01em",
-            textTransform: "uppercase",
-            color: "var(--color-ink)",
-          }}
-        >
-          Sleep &middot; last 7 days
-        </h2>
-        <span className="chip chip-warn">&#x2212;1h avg</span>
-      </div>
+      <SectionHeader
+        title="Sleep · last 7 days"
+        action={<span className="chip chip-warn">&#x2212;1h avg</span>}
+      />
 
       <div className="card" style={{ marginBottom: 14, padding: "16px 18px" }}>
         {/* Bar chart */}
@@ -585,6 +552,6 @@ export default async function InsightsPage() {
       <p className="t-fine" style={{ marginTop: 16, paddingTop: 4 }}>
         Projections are illustrative wellness guidance, not disease prediction.
       </p>
-    </main>
+    </ScreenFrame>
   );
 }
