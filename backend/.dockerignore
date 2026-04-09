@@ -1,0 +1,35 @@
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tests and dev tooling (not needed in the container)
+tests/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor and OS artefacts
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Environment files (secrets must come from Secret Manager / env_file at runtime)
+.env
+.env.*
+!.env.example
+
+# Docs and notebooks
+*.md
+*.ipynb
+
+# Git
+.git/
+.gitignore

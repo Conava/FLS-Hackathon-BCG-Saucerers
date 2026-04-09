@@ -41,30 +41,38 @@ from datetime import date, datetime
 from pgvector.sqlalchemy import Vector
 
 class Patient(SQLModel, table=True):
-    id: str = Field(primary_key=True)
+    patient_id: str = Field(primary_key=True)  # e.g. "PT0001" from source system
     name: str
-    date_of_birth: date
+    age: int          # CSV datasets provide age, not date_of_birth
     sex: str
-    # ... + consent flags, clinic_id, etc.
+    country: str
 
-    ehr_records: list["EHRRecord"] = Relationship(back_populates="patient")
-    wearable_days: list["WearableDay"] = Relationship(back_populates="patient")
-    lifestyle: "LifestyleProfile" = Relationship(back_populates="patient")
-    vitality_snapshots: list["VitalitySnapshot"] = Relationship(back_populates="patient")
+    # Biometric — optional; absent rows allowed
+    height_cm: float | None = None
+    weight_kg: float | None = None
+    bmi: float | None = None
+
+    # Lifestyle summary copied from EHR CSV row for quick access
+    # (LifestyleProfile holds the full per-survey breakdown)
+    smoking_status: str | None = None
+    alcohol_units_weekly: float | None = None
+
+    created_at: datetime  # naive UTC — see CLAUDE.md Lessons
+    updated_at: datetime
 
 class EHRRecord(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    patient_id: str = Field(foreign_key="patient.id", index=True)
+    patient_id: str = Field(foreign_key="patient.patient_id")
     recorded_at: datetime
     record_type: str          # "diagnosis", "medication", "visit", "lab"
-    content: str              # human-readable summary for RAG
+    content: str              # human-readable summary (for RAG in slice 2)
     structured: dict          # JSON — codes, values, units
-    embedding: list[float] | None = Field(sa_column=Column(Vector(768)))
+    embedding: list[float] | None = Field(sa_column=Column(Vector(768)))  # null until slice 2
     source: str               # adapter name: "csv", "fhir", ...
 
 class WearableDay(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    patient_id: str = Field(foreign_key="patient.id", index=True)
+    patient_id: str = Field(foreign_key="patient.patient_id")
     date: date
     resting_hr: float | None
     steps: int | None
@@ -73,20 +81,47 @@ class WearableDay(SQLModel, table=True):
     # ... etc.
 
 class LifestyleProfile(SQLModel, table=True):
-    patient_id: str = Field(foreign_key="patient.id", primary_key=True)
-    diet_quality: int | None         # 1–10 self-reported
-    exercise_frequency: int | None   # sessions/week
-    stress_level: int | None         # 1–10
-    # ... etc.
+    """Typed projection of the onboarding survey. One row per patient, overwritten on retake."""
+    patient_id: str = Field(foreign_key="patient.patient_id", primary_key=True)
+    # goals & motivation
+    primary_goal: str | None
+    motivation_type: str | None
+    # sleep
+    sleep_hours_typical: float | None
+    sleep_quality_self: int | None        # 1–5
+    # activity
+    exercise_sessions_per_week: int | None
+    exercise_intensity: str | None        # light | moderate | vigorous
+    # nutrition
+    diet_pattern: str | None              # omnivore | vegetarian | vegan | low_carb | mediterranean | other
+    meals_per_day: int | None
+    ultra_processed_frequency: str | None
+    cooking_willingness: int | None       # 1–5
+    dietary_restrictions: list[str] | None = Field(sa_column=Column(JSON))
+    known_allergies: list[str] | None = Field(sa_column=Column(JSON))
+    alcohol_units_per_week: float | None
+    caffeine_cups_per_day: float | None
+    # mind & social
+    stress_level: int | None              # 1–5
+    social_connection: int | None         # 1–5
+    # constraints & commerce gating
+    time_budget_minutes_per_day: int | None
+    out_of_pocket_budget_eur_per_month: float | None
+    injuries_or_limitations: list[str] | None = Field(sa_column=Column(JSON))
+    data_sources_consented: list[str] | None = Field(sa_column=Column(JSON))
+    last_full_retake_at: datetime | None
+    last_micro_survey_at: datetime | None
 
 class VitalitySnapshot(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    patient_id: str = Field(foreign_key="patient.id", index=True)
+    patient_id: str = Field(foreign_key="patient.patient_id")
     computed_at: datetime
-    score: float                      # 0–100 composite
-    sub_scores: dict                  # {sleep, recovery, activity, metabolic, cardio}
-    flags: list[str]                  # risk flags surfaced
+    score: float                          # 0–100 composite
+    sub_scores: dict                      # one per longevity dimension
+    flags: list[str]                      # wellness-framed risk flags
 ```
+
+**Slice-2 models** (schema designed, not yet created in DB): `SurveyResponse`, `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `VitalityOutlook`. These require the Gemini / coach layer to be useful and are deferred to the next sprint.
 
 ### Design principles
 
@@ -96,35 +131,60 @@ class VitalitySnapshot(SQLModel, table=True):
 4. **Structured + unstructured together.** Keep `content` (text for RAG) and `structured` (codes/values for scoring) on the same record.
 5. **Immutable history.** Snapshots are append-only. Deletion only via consent revocation flow.
 
-## CSV adapter implementation (hour-1 deliverable)
+## CSV adapter implementation (shipped in slice 1)
 
-Loads the 3 provided datasets into the unified schema:
-- `ehr_records.csv` → `EHRRecord` rows (1,000 patients)
-- `wearable_telemetry_1.csv` → `WearableDay` rows (90-day history per patient)
-- `lifestyle_survey.csv` → `LifestyleProfile` rows
+The `CSVDataSource` adapter (`app/adapters/csv_source.py`) loads the three provided datasets into the unified schema. Each CSV row is **exploded** into multiple model instances: one `Patient` + one `LifestyleProfile` + N `EHRRecord` rows (one per distinct diagnosis/medication/visit coded in the row) + M `WearableDay` rows (one per calendar day in the telemetry window).
 
-During load:
-1. Parse + validate each row
-2. Generate `content` text for EHR records ("Diagnosed with hypertension on 2024-03-15, prescribed losartan 50mg")
-3. Embed `content` via `text-embedding-004` in batches
-4. Insert via SQLModel bulk insert
+- `ehr_records.csv` → `Patient` + `LifestyleProfile` + `EHRRecord` rows per patient
+- `wearable_telemetry_1.csv` → `WearableDay` rows (up to 90 days per patient)
 
-This runs once at startup or via a CLI command `uv run python -m app.scripts.load_csv`.
+`lifestyle_survey.csv` fields are merged into `LifestyleProfile` at ingest time. Survey-only fields not present in the CSVs (`diet_pattern`, `time_budget_minutes_per_day`, `out_of_pocket_budget_eur_per_month`, etc.) are left null and filled when the user completes the in-app onboarding survey.
 
-## Vitality Score engine
+The adapter yields one `PatientData` bundle per patient via an `async` generator, keeping memory bounded across 1,000+ patients.
 
-The composite score patients see every day.
+Embedding generation (`text-embedding-004`) and bulk vector inserts are slice-2 work — the `EHRRecord.embedding` column exists in the schema but is null after slice-1 ingest.
+
+Run the ingest:
+
+```bash
+# Via docker-compose (recommended)
+make seed
+
+# Directly (from backend/)
+uv run python -m app.cli.ingest --source=csv --data-dir=../data
+```
+
+## Vitality Score engine — aligned to the brief's four dimensions
+
+The composite score patients see every day. Sub-scores map 1:1 to the four "exemplary" longevity dimensions from the BCG brief — this alignment is deliberate pitch ammunition.
 
 ```
 Vitality Score (0–100)
-├── Sleep & Recovery (0–100)   from wearable: duration, quality, HRV proxy
-├── Activity (0–100)           from wearable: steps, active minutes
-├── Metabolic (0–100)          from EHR labs: glucose, HbA1c, ApoB trendlines
-├── Cardiovascular (0–100)     from EHR + wearable: resting HR, BP, family hx
-└── Lifestyle (0–100)          from survey: diet, stress, exercise frequency
+├── Biological Age (0–100)            heuristic from sleep, HRV proxy, VO2max proxy, ApoB, HbA1c
+├── Sleep & Recovery (0–100)          from wearable: duration, quality, HRV proxy
+├── Cardiovascular Fitness (0–100)    from wearable + EHR: resting HR, BP, VO2max proxy, lipid panel
+└── Lifestyle & Behavioral Risk       from survey: diet pattern, alcohol, stress, activity, social
+    (0–100)
 ```
 
-Weights are v1 heuristic — document as "clinically-informed, not clinically-validated" in the pitch. V2 story: "we retrain weights on outcomes from the 10M-patient cohort."
+Weights are v1 heuristic — document as "clinically-informed, not clinically-validated" in the pitch. V2 story: *"we retrain weights on outcomes from the 10M-patient cohort."*
+
+### Vitality Outlook (near-term projection)
+
+Distinct from the raw Score. Drives the forward-looking curve on Today.
+
+```
+Outlook(h months) = Score_now + Σ (streak_weight[category] × streak_days × decay(h))
+```
+
+- **Streak weight** per action category is a heuristic (nutrition = 0.15/day capped, sleep = 0.20, movement = 0.15, mind = 0.10, supplement = 0.05).
+- **Decay** tempers the projection so 12-month outlook isn't unboundedly optimistic.
+- **Breaking a streak flattens the curve — never drops the current Score.** This is a product choice, not a technical one: punitive scoring kills retention.
+- Computed on login and on any protocol-completion event. Cached in `VitalityOutlook`.
+
+### Long-horizon Future-self simulator
+
+Stateless — not persisted. A Gemini call that takes lifestyle sliders (sleep, activity, nutrition, alcohol) and returns a projected biological age + score at 70, current path vs. improved path. Lives in Insights next to the near-term Outlook. See [06-ai-layer.md](06-ai-layer.md) for the prompt contract.
 
 ## Open questions
 

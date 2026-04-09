@@ -1,0 +1,70 @@
+# Cloud Run service definition — PLACEHOLDER, NOT YET DEPLOYED
+#
+# This file is checked in for reference and as the deployment target once
+# Cloud SQL and Secret Manager are provisioned. Do NOT deploy this file
+# during the hackathon scaffold phase.
+#
+# To deploy (when ready):
+#   gcloud run services replace cloudrun.yaml --region=europe-west3
+#
+# Prerequisites:
+#   1. Cloud SQL instance created (PROJECT:europe-west3:longevity-db)
+#   2. Secrets created in Secret Manager: DATABASE_URL, API_KEY
+#   3. Container image pushed to Artifact Registry
+#   4. Service account with roles/cloudsql.client + secretmanager.secretAccessor
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: longevity-backend
+  labels:
+    cloud.googleapis.com/location: europe-west3
+  annotations:
+    # EU data residency — pitch talking point
+    run.googleapis.com/launch-stage: GA
+spec:
+  template:
+    metadata:
+      annotations:
+        # Keep one warm instance to avoid cold-start latency on demo day
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "10"
+        # Cloud SQL connection — replace PROJECT_ID with your GCP project
+        run.googleapis.com/cloudsql-instances: PROJECT_ID:europe-west3:longevity-db
+    spec:
+      serviceAccountName: longevity-backend-sa@PROJECT_ID.iam.gserviceaccount.com
+      # One Uvicorn worker per instance; Cloud Run scales horizontally
+      containerConcurrency: 80
+      containers:
+        - image: europe-west3-docker.pkg.dev/PROJECT_ID/longevity/backend:latest
+          ports:
+            - name: http1
+              containerPort: 8080
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          env:
+            - name: APP_ENV
+              value: production
+            - name: LOG_LEVEL
+              value: INFO
+            - name: PORT
+              value: "8080"
+          # Secrets injected from Secret Manager at startup
+          envFrom:
+            - secretRef:
+                name: longevity-backend-secrets
+          livenessProbe:
+            httpGet:
+              path: /healthz
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+            initialDelaySeconds: 5
+            periodSeconds: 10
+  traffic:
+    - percent: 100
+      latestRevision: true

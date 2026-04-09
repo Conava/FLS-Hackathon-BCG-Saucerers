@@ -43,7 +43,7 @@ The back pain was the trigger for a clinic visit, but the fear ran deeper. In th
 
 ## Longevity journey map
 
-From first awareness to daily engagement. Each stage is a hook we design for.
+From first awareness to daily engagement. Each stage is a hook we design for. See [07-features.md](07-features.md) for the tab-level IA (Today / Coach / Records / Insights / Care / Me) that surfaces each stage.
 
 | Stage | Trigger | What Rebecca does | What the app does | Touchpoint |
 |---|---|---|---|---|
@@ -76,6 +76,18 @@ Written in "As a / I want / So that" format. These ground prototype decisions.
 
 **US-4 — Risk-to-action path**
 > As Rebecca, I want early warning signals surfaced with a one-tap path to a real doctor in my network, so that I'm not left to Google "is HbA1c 7.2 bad" at 11 pm.
+
+**US-5 — Daily protocol with streaks**
+> As Anna, I want a short daily list of specific actions generated from my goals and data, with a streak I can keep, so that longevity advice becomes a habit instead of a PDF I never open.
+
+**US-6 — Self-tracking without a wearable**
+> As Anna, I want to quick-log meals (by photo), sleep, mood, and workouts, so that the AI still has something to work with on days my Fitbit is dead or on vacation.
+
+**US-7 — Nutrition woven in**
+> As Anna, I want the app to help me eat for longevity in the moment I'm actually eating — photographing a plate and getting one concrete swap — so that nutrition stops being a separate app.
+
+**US-8 — Forward-looking motivation**
+> As Anna, I want to see how my current habits project my Vitality Score forward 3, 6, and 12 months, so that I have a near-term reason to hold the streak, not just a 70-year-old abstraction.
 
 ### Nice-to-have stories
 
