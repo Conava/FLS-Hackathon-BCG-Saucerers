@@ -1,55 +1,63 @@
 # 02 — Persona, Journey & User Stories
 
-> **Status:** LOCKED. Grounded in real data from the provided dataset. Primary demo patient: **PT0282**. Secondary cameo: **PT0421**.
+> **Status:** LOCKED. Grounded in real data from the provided dataset. Primary demo patient: **PT0199**. Secondary cameo: **PT0421**.
 
-## Primary persona — Anna Weber
+## Primary persona — Rebecca Mueller
 
-**43, product manager, Hamburg. Married, two kids (8 and 11). Private insurance. Long-standing patient of the clinic group — her whole family has gone there for 15 years.**
+**40, part-time HR consultant, Hamburg. Married, two young kids (3 and 5). Statutory health insurance (gesetzlich versichert). Patient of the clinic group for 5 years — since the birth of her first child.**
 
-> **Backed by real data:** Anna's profile is grounded in patient **PT0282** from `ehr_records.csv` — 43F, German, BMI 22.7, ex-smoker, no active chronic diagnoses. On paper she looks healthy. Her labs tell a quieter story: **total cholesterol 7.05 mmol/L, LDL 3.84 mmol/L, SBP 128** — hidden cardiovascular risk the AI surfaces. This is the **preventive longevity thesis**: looks fine, isn't fine.
+> **Backed by real data:** Rebecca's profile is grounded in patient **PT0199** from `ehr_records.csv` — 40F, BMI 27.6, ex-smoker, diagnosed Type 2 diabetes (E11), on Metformin 1000 mg twice daily. Her labs reinforce the risk picture: **HbA1c 7.2 %, fasting glucose 12.4 mmol/L, total cholesterol 5.68 mmol/L, LDL 3.72 mmol/L, CRP 2.4 mg/L, eGFR 68, SBP 142 mmHg**. She is slightly overweight, sleeping poorly, stressed — and until now, nobody has connected those dots. This is the **whole-person longevity thesis**: the numbers are there, the lifestyle signals are there, but no one is joining them up.
+>
+> *Note: PT0199 is coded as Austria in the dataset. For the persona we relocate Rebecca to Hamburg; all clinical values are used as-is.*
 
 ### Backstory
-Last year her dad had a mild heart attack at 68. It wasn't fatal, but it shook her. She started reading about longevity, bought a Fitbit, downloaded MyFitnessPal, and has a folder of PDFs from her last check-up she never opened because they're full of medical jargon.
+On her 40th birthday, Rebecca bent down to pick something up and felt a sharp sting of pain surge through her lower back and up her spine. That single moment cracked open a bigger realisation: she had roughly 40 years left, and the second half of her life was going to get progressively harder — physically and mentally — if she didn't change course now.
+
+The back pain was the trigger for a clinic visit, but the fear ran deeper. In the months before, she had noticed that simple things — playing on the floor with her 3-year-old, chasing her 5-year-old at the park, staying present during family evenings instead of zoning out from exhaustion — had become noticeably harder. She was tired all the time, her sleep was broken, and her Type 2 diabetes diagnosis (about a year old) felt like a ticking clock she didn't know how to manage beyond taking her Metformin.
 
 ### Motivations
-- Be healthy and present for her kids when they're 30
-- Understand her own cardiovascular risk (genetic component scares her)
-- Stop feeling tired by 3pm every day
-- Make sense of her health data without a 30-minute Google spiral
+- Live the second half of her life healthily — not just longer, but *better*
+- Make good memories with her kids, her husband, and her friends while she still has energy
+- Feel physically fit enough to keep up with two small children
+- Get her diabetes, weight, and stress under control in a way that actually sticks
+- Stop feeling like her body is declining faster than it should at 40
 
 ### Fears
-- Inheriting her dad's heart condition
-- Wasting money and time on wellness fads (she's skeptical of influencer supplements)
-- Losing control of her health data to random apps
+- That the tiredness and pain she feels now is just the beginning of a slow decline
+- That her diabetes will spiral into complications she can't reverse
+- Wasting money on wellness trends that don't work (she's a pragmatist — skeptical of influencer supplements and miracle diets)
+- Losing control of her health data to random apps — though her fear of her own health trajectory makes her more open to trying something her doctor actually recommends
 - Missing an early warning sign she could have acted on
 
 ### Frustrations with today's status quo
-- Her GP has 8 minutes per visit and doesn't have time for prevention conversations
-- Lab results come as PDFs in medical jargon — no plain-language summary
-- Nobody connects the dots between her sleep, stress, and bloodwork
-- US longevity apps (Function, Lifeforce) aren't available in Germany and she wouldn't trust them with her kids' records anyway
+- Her GP has 8 minutes per visit and doesn't have time for prevention conversations — the diabetes gets checked, but her sleep, stress, energy, and weight are treated as separate problems
+- Lab results come as PDFs in medical jargon — no plain-language summary, no connection to daily life
+- Nobody connects the dots between her broken sleep, her rising HbA1c, her stress at work, and her back pain
+- US longevity apps (Function, Lifeforce) aren't available in Germany, and she wouldn't trust them with her family's data anyway
 
 ### Why she trusts the clinic
-- 15-year relationship, her GP knows her family history
+- 5-year relationship, built since the birth of her first child — they know her family
 - German data protection, not a startup
+- Her doctor personally recommended the app during the back-pain visit
 - If something's wrong, a real doctor is a tram ride away
 
 ## Longevity journey map
 
 From first awareness to daily engagement. Each stage is a hook we design for.
 
-| Stage | Trigger | What Anna does | What the app does | Touchpoint |
+| Stage | Trigger | What Rebecca does | What the app does | Touchpoint |
 |---|---|---|---|---|
-| **Awareness** | Dad's heart attack | Googles "heart attack risk women 40s" | — | Organic, clinic newsletter |
-| **Activation** | Clinic emails her: "See your Vitality Score" | Signs in with existing patient account | Pulls EHR + asks 3 lifestyle questions | Web / PWA install |
-| **First insight** | Dashboard loads | Sees Vitality Score + 2 personalized recommendations | Synthesizes EHR + wearable + survey into one score | Dashboard |
-| **First action** | Coach nudges: "You slept 5h 40m — skip HIIT today" | Changes plan | Tracks adherence | Coach, notifications |
-| **First aha moment** | Asks "What did my last blood test say about cholesterol?" | Gets plain-language answer citing the actual record | NL Q&A over her EHR via RAG | Records view |
-| **First commercial** | AI flags ApoB trending up | Taps "book cardio-prevention panel" | Surfaces diagnostic package + books into clinic calendar | Insights + appointments |
-| **Habit formation** | Daily score + streak | Opens app most mornings | Personalized nudges at learned optimal times | Push / in-app |
-| **Deep engagement** | Asks the coach hard questions | Treats coach as prevention advisor | Cites evidence, escalates to human clinician when needed | Coach |
+| **Awareness** | 40th birthday back-pain episode | Visits her trusted clinic about the back pain; notices posters in the waiting room about a new longevity product | — | In-clinic posters, leaflets |
+| **Activation** | Doctor recommends the app during consultation | Downloads the app out of curiosity and fear; signs in with existing patient account | Pulls EHR + asks 3 lifestyle questions (sleep, stress, activity) | Web / PWA install |
+| **First insight** | Dashboard loads | Sees Vitality Score + 2 personalised recommendations connecting her sleep, weight, and HbA1c | Synthesises EHR + wearable (Apple Watch) + survey into one score | Dashboard |
+| **First action** | Coach nudges: "Your sleep was 5 h 20 m — try a 10-min wind-down tonight" | Follows the suggestion, sleeps slightly better | Tracks adherence, adjusts next nudge | Coach, notifications |
+| **First aha moment** | Asks "Why am I always tired even though I sleep 7 hours?" | Gets a plain-language answer linking her fragmented sleep, HbA1c, and cortisol pattern | NL Q&A over her EHR via RAG | Records view |
+| **Positive feedback loop** | Sees her sleep score improve after 10 days of nudges | Thinks: "I can actually commit to this" | Reinforces with streak + micro-celebration | Dashboard, push |
+| **First commercial** | AI flags HbA1c trending up + fasting glucose elevated | Taps "book diabetes & metabolic panel" | Surfaces diagnostic package + books into clinic calendar | Insights + appointments |
+| **Habit formation** | Daily score + streak | Opens app most mornings before the kids wake up | Personalised nudges at learned optimal times | Push / in-app |
+| **Deep engagement** | Asks the coach hard questions about diabetes progression | Treats coach as prevention advisor | Cites evidence, escalates to human clinician when needed | Coach |
 | **Commercial deep** | Subscribes to Longevity+ | Quarterly panels, supplement plan | Auto-ships, books follow-ups | Subscription |
-| **Advocate** | Refers sister | — | Referral program | Shareable Vitality Score snapshot |
+| **Advocate** | Refers a colleague who also just turned 40 | — | Referral program | Shareable Vitality Score snapshot |
 
 ## User stories
 
@@ -58,41 +66,37 @@ Written in "As a / I want / So that" format. These ground prototype decisions.
 ### Must-have stories
 
 **US-1 — Unified view**
-> As Anna, I want to see my clinical data, wearable data, and lifestyle inputs in one place, so that I don't have to mentally merge three apps and a folder of PDFs.
+> As Rebecca, I want to see my clinical data, wearable data, and lifestyle inputs in one place, so that I don't have to mentally merge three apps and a folder of PDFs.
 
 **US-2 — Plain-language record Q&A**
-> As Anna, I want to ask natural-language questions about my own medical records and get answers citing the actual documents, so that I understand my health without decoding jargon or waiting for a GP appointment.
+> As Rebecca, I want to ask natural-language questions about my own medical records and get answers citing the actual documents, so that I understand my health without decoding jargon or waiting for a GP appointment.
 
 **US-3 — Right-moment nudge**
-> As Anna, I want the app to nudge me with a specific action at the moment I can actually do something about it, so that advice becomes behavior instead of another ignored notification.
+> As Rebecca, I want the app to nudge me with a specific action at the moment I can actually do something about it, so that advice becomes behaviour instead of another ignored notification.
 
 **US-4 — Risk-to-action path**
-> As Anna, I want early warning signals surfaced with a one-tap path to a real doctor in my network, so that I'm not left to Google "is ApoB 120 bad" at 11pm.
+> As Rebecca, I want early warning signals surfaced with a one-tap path to a real doctor in my network, so that I'm not left to Google "is HbA1c 7.2 bad" at 11 pm.
 
 ### Nice-to-have stories
 
 **US-5 — Future-self simulator**
-> As Anna, I want to see a projection of my health at 70 based on current habits vs. improved habits, so that I'm motivated by a concrete picture instead of abstract advice.
+> As Rebecca, I want to see a projection of my health at 70 based on current habits vs. improved habits, so that I'm motivated by a concrete picture instead of abstract advice.
 
 **US-6 — Flexible appointments**
-> As Anna, I want to book appointments with my clinic *or* external specialists (via Doctolib etc.), so that the app stays useful even when I need someone outside the network.
+> As Rebecca, I want to book appointments with my clinic *or* external specialists (via Doctolib etc.), so that the app stays useful even when I need someone outside the network.
 
 ## Secondary cameo — PT0421
 
 A 10-second supporting mention in the pitch, not a full persona. Shows the system works for patients across the risk spectrum, not just the worried well.
 
-**45F, Germany, BMI 28.9, current smoker, diagnosed hypertension (I10), on Amlodipine 5mg/day**
+**45F, Germany, BMI 28.9, current smoker, diagnosed hypertension (I10), on Amlodipine 5 mg/day**
 - BP **140/108** despite medication (Stage 2 hypertension — meds aren't controlling it)
-- Total cholesterol **6.63**, LDL 3.75, HDL 1.23 (low), CRP 2.4, HbA1c 5.7% (pre-diabetic edge), eGFR 61 (mildly reduced)
-- Wearable: **sleep quality trended from 75 down to 59** over 90 days while duration held at 7.2h — fragmented, non-restorative sleep
+- Total cholesterol **6.63**, LDL 3.75, HDL 1.23 (low), CRP 2.4, HbA1c 5.7 % (pre-diabetic edge), eGFR 61 (mildly reduced)
+- Wearable: **sleep quality trended from 75 down to 59** over 90 days while duration held at 7.2 h — fragmented, non-restorative sleep
 - Only 1.8 fruit/veg servings/day, 2 exercise sessions/week
 
 **Pitch use:** *"And our system isn't just for the worried well — here's PT0421, a patient whose hypertension has been uncontrolled despite therapy for two years. Our coach flagged both the BP trend and the degrading sleep quality on day one."* Also: her sleep-trend chart is dramatic, use it as the hero visual in the analytics screen.
 
-## Anna's data story (pitch-ready, from real numbers)
+## Rebecca's data story (pitch-ready, from real numbers)
 
-> Anna came to us worried about her heart after her father's infarct last year. On paper she's fine — she's lean (BMI 22.7), an ex-smoker, no diagnoses, 43 years old. But her last lab panel tells a quieter story: total cholesterol **7.05 mmol/L** and LDL **3.84 mmol/L** — both meaningfully elevated for a woman her age with family history. Her blood pressure at 128 is borderline. For two years, nobody connected the dots between these numbers and her anxiety about her dad's heart attack. Our AI coach did — on the first screen. It flagged the lipid profile, pulled her family history from the EHR, and surfaced a cardio-prevention panel from our Hamburg clinic — one tap to book, 80% covered by her insurance. Anna didn't know she was at risk until we showed her. That's the longevity product.
-
-## Open questions
-
-- None for persona itself. Journey-level open questions: do we need a second persona (older, diagnosed) for the pitch, or does the PT0421 cameo carry that angle?
+> Rebecca came to us after her 40th birthday — not because of a diagnosis, but because of a sting of pain in her lower back that made her realise her body was changing faster than she expected. On paper she's "managing" — she has a Type 2 diabetes diagnosis, she takes her Metformin, she sees her GP. But her last lab panel tells a bigger story: **HbA1c 7.2 %** (above target despite medication), **fasting glucose 12.4 mmol/L** (significantly elevated), **total cholesterol 5.68 mmol/L and LDL 3.72 mmol/L** (both raised), **CRP 2.4 mg/L** (low-grade inflammation), **eGFR 68** (early renal signal worth watching), and **blood pressure at 142 mmHg systolic** — nobody had flagged the emerging hypertension. She sleeps poorly, she's exhausted by 3 pm, she can barely keep up with a 3-year-old and a 5-year-old. For a year, each of these problems was treated in isolation — diabetes here, tiredness there, back pain somewhere else. Our AI coach connected them on the first screen. It linked the sleep disruption to her glycaemic control, flagged the blood pressure trend, pulled her weight and activity data from her Apple Watch, and surfaced a metabolic health panel from our Hamburg clinic — one tap to book, covered by her GKV. Rebecca didn't know how much risk she was carrying until we showed her the whole picture. That's the longevity product.
