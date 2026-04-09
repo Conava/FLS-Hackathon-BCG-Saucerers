@@ -278,6 +278,121 @@ class TestMealLogHistory:
         assert response.status_code == 401, response.text
 
 
+class TestManualMealLog:
+    """Tests for POST /v1/patients/{patient_id}/meal-log/manual."""
+
+    async def test_manual_post_creates_row_with_sentinel_uri(
+        self,
+        meal_log_client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        """POST manual meal → 201, photo_uri starts with manual://, macros populated."""
+        from sqlalchemy import select
+
+        from app.models.meal_log import MealLog
+
+        patient_id = "PT_ML_MAN001"
+        db_session.add(_make_patient(patient_id))
+        await db_session.flush()
+
+        payload = {
+            "name": "Grilled chicken salad",
+            "kcal": 450,
+            "protein_g": 38.0,
+            "carbs_g": 15.0,
+            "fat_g": 22.0,
+            "fiber_g": 5.0,
+            "notes": "post-workout",
+        }
+        response = await meal_log_client.post(
+            f"/v1/patients/{patient_id}/meal-log/manual",
+            json=payload,
+            headers=HEADERS,
+        )
+
+        assert response.status_code == 201, response.text
+        body = response.json()
+
+        # photo_uri sentinel
+        assert body["photo_uri"].startswith("manual://"), (
+            f"Expected manual:// URI, got: {body['photo_uri']!r}"
+        )
+
+        # analysis fields reflect the manual entry
+        analysis = body["analysis"]
+        assert analysis["classification"] == "manual"
+        assert analysis["macros"]["kcal"] == 450
+        assert analysis["macros"]["protein_g"] == 38.0
+        assert analysis["longevity_swap"] == ""
+
+        # envelope fields
+        assert body["disclaimer"]
+        assert "ai_meta" in body
+
+        # DB row
+        stmt = select(MealLog).where(
+            getattr(MealLog, "patient_id") == patient_id
+        )
+        result = await db_session.execute(stmt)
+        rows = list(result.scalars().all())
+        assert len(rows) == 1
+        assert rows[0].photo_uri.startswith("manual://")
+
+    async def test_manual_post_appears_in_get_history(
+        self,
+        meal_log_client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        """Manual entry appears in GET /meal-log alongside photo entries."""
+        patient_id = "PT_ML_MAN002"
+        db_session.add(_make_patient(patient_id))
+        await db_session.flush()
+
+        # Post a manual entry
+        payload = {
+            "name": "Oatmeal",
+            "kcal": 300,
+            "protein_g": 10.0,
+            "carbs_g": 50.0,
+            "fat_g": 6.0,
+            "fiber_g": 4.0,
+        }
+        r = await meal_log_client.post(
+            f"/v1/patients/{patient_id}/meal-log/manual",
+            json=payload,
+            headers=HEADERS,
+        )
+        assert r.status_code == 201, r.text
+
+        # Fetch history
+        response = await meal_log_client.get(
+            f"/v1/patients/{patient_id}/meal-log",
+            headers=HEADERS,
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert len(body["logs"]) == 1
+        assert body["logs"][0]["photo_uri"].startswith("manual://")
+        assert body["logs"][0]["analysis"]["classification"] == "manual"
+
+    async def test_manual_post_requires_auth(
+        self,
+        meal_log_client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        """POST manual meal without X-API-Key returns 401."""
+        patient_id = "PT_ML_MAN003"
+        db_session.add(_make_patient(patient_id))
+        await db_session.flush()
+
+        response = await meal_log_client.post(
+            f"/v1/patients/{patient_id}/meal-log/manual",
+            json={"name": "Toast", "kcal": 120, "protein_g": 3.0, "carbs_g": 22.0, "fat_g": 1.0, "fiber_g": 1.0},
+            # no HEADERS
+        )
+        assert response.status_code == 401, response.text
+
+
 class TestMealLogIsolation:
     """Cross-patient isolation tests for the meal-log endpoints."""
 
