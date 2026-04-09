@@ -4,17 +4,32 @@ AI-driven longevity MVP for a European healthcare group — BCG Platinion AI Hac
 
 See [`docs/README.md`](docs/README.md) for the full documentation index. See [`mockup/index.html`](mockup/index.html) for the frontend contract.
 
-## What's built (backend slice 1)
+## What's built
 
-- FastAPI read API: patients, vitality, EHR records, wearable telemetry, insights, appointments, GDPR export stub
+**Backend slice 1 — read API**
+- Patients, vitality score, EHR records, wearable telemetry, insights, appointments, GDPR export
 - Heuristic vitality engine across four longevity dimensions
 - Pluggable `DataSource` Protocol with CSV adapter (1,000 synthetic patients)
 - Hard `patient_id` isolation on every query via `PatientScopedRepository`
-- API-key auth, JSON structured logging, request-ID middleware
-- Docker Compose + Dockerfile + Cloud Run placeholder (`cloudrun.yaml`)
-- GitHub Actions CI, Makefile shortcuts
+- API-key auth, JSON structured logging (PHI-free), request-ID middleware
+- Docker Compose + Dockerfile + Cloud Run config, GitHub Actions CI
 
-**Next (slice 2):** Gemini / google-genai integration, RAG, coach endpoints, Protocol/DailyLog/MealLog, frontend.
+**Backend slice 2 — full `/v1` API**
+- 26 endpoints across 15 routers — all Slice 1 paths moved under `/v1`
+- LLM abstraction layer: `FakeLLMProvider` (dev/CI) + `GeminiProvider` (production via Vertex AI)
+- File-loaded prompt system (`app/ai/prompts/*.system.md`) — editable without Python changes
+- pgvector HNSW index; embeddings populated at ingest; RAG service for Records Q&A with citations
+- SSE streaming coach (`text/event-stream`) with protocol-suggestion write-back
+- Protocol generator (structured JSON output, 3–7 actions, constraint-validated)
+- Meal vision (multimodal upload, `MealAnalysis`, macros, longevity swap)
+- Outlook engine (streak math) + narrator (one-sentence LLM summary) + future-self simulator
+- Survey loop: onboarding, weekly micro, quarterly deep retake
+- Daily self-tracking: `DailyLog` (mood, workout, sleep, water, alcohol)
+- Meal photo storage: local-fs (`./var/photos`) or GCS, wired into GDPR Art. 17 delete
+- Stub care layer: notifications (LLM-generated copy), clinical review, referral, messages
+- Committed `backend/openapi.json`; CI fails if spec drifts from code (`make openapi`)
+
+**Frontend — not yet started.** See `mockup/index.html` for the UI contract.
 
 ## Quick start
 

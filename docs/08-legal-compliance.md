@@ -97,23 +97,24 @@ Nine countries means nine slightly different consent + cookie + telemedicine reg
 - No third-party trackers on health-data screens
 - Telemedicine features gated per country (deferred to v2 — mock a single country for demo)
 
-## Engineering checklist — slice 1 status
+## Engineering checklist — slice 2 status
 
-- [x] Every SQL query filters by `patient_id` (hard isolation) — enforced by `PatientScopedRepository` base class; all slice-1 repos inherit it
-- [x] Wellness-framed copy in all response schemas — no diagnostic verbs in `EHRRecordOut`, `InsightOut`, `VitalityOut`, or GDPR router messages
-- [x] Log only request IDs + model name + tokens — `RequestIdMiddleware` injects `X-Request-ID`; no PHI in any log statement
-- [x] `GET /patients/{id}/gdpr/export` (Art. 15) — shipped, returns Patient + EHR + wearable + lifestyle bundle
-- [x] `DELETE /patients/{id}/gdpr` (Art. 17) — shipped as wellness-framed stub; schedules erasure, does not delete data
-- [x] EU-region only — `cloudrun.yaml` targets `europe-west3`; Cloud SQL + Vertex AI region pinned in docs/04
+- [x] Every SQL query filters by `patient_id` (hard isolation) — enforced by `PatientScopedRepository` base class; all repos (slice 1 + slice 2) inherit it
+- [x] Wellness-framed copy in all response schemas — no diagnostic verbs in `EHRRecordOut`, `InsightOut`, `VitalityOut`, or any AI response schema
+- [x] Log only request IDs + model name + tokens — `RequestIdMiddleware` injects `X-Request-ID`; no PHI in any log statement; PHI-leak assertion integration test (`test_no_phi_in_logs.py`)
+- [x] `GET /v1/patients/{id}/gdpr/export` (Art. 15) — returns Patient + EHR + wearable + lifestyle bundle
+- [x] `DELETE /v1/patients/{id}/gdpr/` (Art. 17) — deletes all rows across all tables including `MealLog` and photo files (local-fs + GCS)
+- [x] EU-region only — `cloudrun.yaml` targets `europe-west3`; `GCP_LOCATION` defaults to `europe-west3` in `Settings`
+- [x] Every AI prompt contains "not medical advice" framing — all seven `.system.md` files include the disclaimer block
+- [x] Every AI response schema carries a `disclaimer: str` field (required) — enforced by `AIResponseEnvelope`
+- [x] `patient_id` isolation on all slice-2 tables — `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `SurveyResponse`, `VitalityOutlook`, `Message`, `Notification`, `ClinicalReview`, `Referral`
+- [x] `GcsPhotoStorage` uses `gcp_location` (defaults to `europe-west3`) for bucket operations
 
-Deferred to slice 2 (requires AI layer):
-- [ ] Every AI prompt contains "not medical advice" framing — `protocol-generator.system.md`, `meal-vision.system.md`, `outlook-narrator.system.md`
-- [ ] Every AI screen has a visible "You're talking to an AI" disclosure
-- [ ] `patient_id` isolation extended to slice-2 tables: `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `SurveyResponse`, `VitalityOutlook`
-- [ ] Art. 17 cascading deletion through all tables + Cloud Storage meal photo objects
-- [ ] Cloud Storage meal photo bucket in `europe-west3`
-- [ ] Consent checkbox on onboarding
-- [ ] Survey retake flow re-confirms consent for new categories (photo, detailed lifestyle)
+Remaining for frontend + launch:
+- [ ] Visible "You're talking to an AI" disclosure on every AI screen (frontend)
+- [ ] Consent checkbox on onboarding (frontend)
+- [ ] Survey retake flow re-confirms consent for new categories (frontend)
+- [ ] Cloud Storage bucket creation in `europe-west3` (ops)
 
 ## Pitch slide content
 

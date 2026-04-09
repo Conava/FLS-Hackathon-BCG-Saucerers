@@ -181,6 +181,53 @@ When starting a new session with an assistant, open these files in context:
 - `docs/09-ai-assist-playbook.md` (this file)
 - Whichever doc covers the feature you're building
 
+### 13. SSE with sse-starlette — response class, not a generator return
+Assistants sometimes return a plain `AsyncGenerator` or wrap it with `StreamingResponse`. The correct pattern for this project is `EventSourceResponse` from `sse_starlette`:
+
+```python
+from sse_starlette.sse import EventSourceResponse
+
+@router.post("/coach/chat")
+async def coach_chat(...) -> EventSourceResponse:
+    async def event_generator():
+        async for event in coach_service.stream(...):
+            yield {"event": event.type, "data": event.model_dump_json()}
+    return EventSourceResponse(event_generator())
+```
+
+**How to prompt:** *"Use `sse_starlette.sse.EventSourceResponse`. Do not use `StreamingResponse` for SSE."*
+
+### 14. `google-genai` structured output — `response_schema` goes in `GenerateContentConfig`, not as a top-level kwarg
+```python
+# Wrong — schema as top-level kwarg
+response = client.models.generate_content(model=..., contents=..., response_schema=MySchema)
+
+# Right — schema inside GenerateContentConfig
+response = client.models.generate_content(
+    model=...,
+    contents=...,
+    config=genai.types.GenerateContentConfig(
+        response_mime_type="application/json",
+        response_schema=MySchema,
+    ),
+)
+```
+
+### 15. pgvector raw DDL must run after `create_all`, not before
+`CREATE EXTENSION IF NOT EXISTS vector` and `CREATE INDEX ... USING hnsw` are not standard SQLAlchemy DDL. Run them as raw SQL after `SQLModel.metadata.create_all()`:
+
+```python
+async with engine.begin() as conn:
+    await conn.run_sync(SQLModel.metadata.create_all)
+    await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    await conn.execute(text(
+        "CREATE INDEX IF NOT EXISTS ehr_record_embedding_hnsw "
+        "ON ehr_record USING hnsw (embedding vector_cosine_ops)"
+    ))
+```
+
+**How to prompt:** *"pgvector DDL (extension + HNSW index) runs as raw SQL after `create_all`, not via SQLAlchemy Index objects."*
+
 ## When in doubt
 
 Ask the assistant to show you the import statements and package versions it's assuming. If it names `google-generativeai`, `vertexai.generative_models`, Pydantic `class Config`, `session.query()`, or a `tailwind.config.js` — stop it. Repeat the golden-rule preamble. Try again.

@@ -35,7 +35,7 @@ Use `make up && make seed` from the repo root for the same effect.
 All endpoints except `GET /healthz` require an `X-API-Key` header. Set the key via the `API_KEY` environment variable. The docker-compose default is `dev-api-key`.
 
 ```bash
-curl -H "X-API-Key: dev-api-key" http://localhost:8080/patients/PT0001/profile
+curl -H "X-API-Key: dev-api-key" http://localhost:8080/v1/patients/PT0001/profile
 ```
 
 OpenAPI docs (unauthenticated) at `http://localhost:8080/docs`.
@@ -58,45 +58,80 @@ uv run mypy app          # type-check (strict)
 
 Or via Makefile: `make lint`, `make fmt`.
 
+## Regenerate the OpenAPI spec
+
+```bash
+make openapi       # writes backend/openapi.json
+```
+
+CI fails if the committed spec is stale (`.github/workflows/backend-ci.yml`).
+
 ## Project layout
 
 ```
 app/
   core/         config (pydantic-settings), JSON logging, request-ID middleware, API-key security
-  db/           async engine, session factory (get_session dependency)
-  models/       SQLModel table entities (Patient, EHRRecord, WearableDay, LifestyleProfile, VitalitySnapshot)
-  schemas/      Pydantic v2 response DTOs (wellness-framed copy, separate from table models)
-  repositories/ PatientScopedRepository base + concrete repos (patient, ehr, wearable, vitality)
-  adapters/     Pluggable DataSource Protocol + CSV adapter — see adapters/README.md
-  services/     Vitality engine, insights derivation, UnifiedProfileService (ingest orchestration)
-  routers/      FastAPI routers: health, patients, appointments, gdpr
-  cli/          ingest CLI (app.cli.ingest)
+  db/           async engine, session factory, create_all (includes pgvector extension + HNSW index)
+  models/       SQLModel table entities — Slice 1: Patient, EHRRecord, WearableDay, LifestyleProfile,
+                VitalitySnapshot; Slice 2: Protocol, ProtocolAction, DailyLog, MealLog, SurveyResponse,
+                VitalityOutlook, Message, Notification, ClinicalReview, Referral
+  schemas/      Pydantic v2 request/response DTOs; AI responses include disclaimer + AIMeta
+  repositories/ PatientScopedRepository base + concrete repos for all models
+  adapters/     Pluggable DataSource Protocol + CSV adapter (see adapters/README.md);
+                PhotoStorage Protocol + LocalFsPhotoStorage + GcsPhotoStorage
+  ai/           LLMProvider Protocol, FakeLLMProvider, GeminiProvider, prompt_loader, prompts/
+  services/     Vitality engine, RAG, coach (SSE), protocol generator, meal vision,
+                outlook engine + narrator, future-self, notifications, clinical review,
+                referral, messages, unified profile
+  routers/      15 FastAPI routers mounted under /v1 (health stays at root)
+  cli/          ingest CLI (app.cli.ingest), OpenAPI export CLI (app.cli.export_openapi)
 tests/
-  unit/         Pure logic, no DB (vitality engine, schema validation)
-  integration/  Testcontainers Postgres (repository, router, E2E auth)
+  unit/         Pure logic, no DB (vitality engine, schemas, LLM fake, prompt loader, outlook math)
+  integration/  Testcontainers Postgres + pgvector (repositories, routers, E2E, PHI-leak assertion)
 ```
 
-## Routers shipped (slice 1 — read-only)
+## Routers (all endpoints)
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/healthz` | Liveness probe (unauthenticated) |
-| GET | `/patients/{patient_id}/profile` | Unified patient profile |
-| GET | `/patients/{patient_id}/vitality` | Heuristic vitality score + sub-scores |
-| GET | `/patients/{patient_id}/records` | EHR records (paginated) |
-| GET | `/patients/{patient_id}/wearable` | Wearable telemetry series |
-| GET | `/patients/{patient_id}/insights` | Wellness flags derived from vitality result |
-| GET | `/patients/{patient_id}/appointments` | Appointment stubs |
-| GET | `/patients/{patient_id}/gdpr/export` | GDPR Art. 15 data export |
-| DELETE | `/patients/{patient_id}/gdpr` | GDPR Art. 17 erasure request (stub — schedules, does not delete) |
-
-AI layer endpoints (coach, records Q&A, protocol generation, meal vision) are slice 2.
+| GET | `/v1/patients/{patient_id}` | Unified patient profile |
+| GET | `/v1/patients/{patient_id}/vitality` | Heuristic vitality score + sub-scores |
+| GET | `/v1/patients/{patient_id}/records` | EHR records (paginated) |
+| GET | `/v1/patients/{patient_id}/records/{record_id}` | Single EHR record |
+| GET | `/v1/patients/{patient_id}/wearable` | Wearable telemetry series |
+| GET | `/v1/patients/{patient_id}/insights` | Wellness flags |
+| GET, POST | `/v1/patients/{patient_id}/appointments/` | Appointments list + booking |
+| GET | `/v1/patients/{patient_id}/gdpr/export` | GDPR Art. 15 data export |
+| DELETE | `/v1/patients/{patient_id}/gdpr/` | GDPR Art. 17 erasure (deletes all rows + photo files) |
+| POST | `/v1/patients/{patient_id}/records/qa` | RAG Records Q&A with citations |
+| POST | `/v1/patients/{patient_id}/coach/chat` | SSE streaming coach (`text/event-stream`) |
+| POST | `/v1/patients/{patient_id}/protocol/generate` | Generate weekly protocol via LLM |
+| GET | `/v1/patients/{patient_id}/protocol` | Get active protocol + actions |
+| POST | `/v1/patients/{patient_id}/protocol/complete-action` | Mark action complete, update streak |
+| POST, GET | `/v1/patients/{patient_id}/survey` | Submit survey (onboarding/weekly/quarterly) |
+| GET | `/v1/patients/{patient_id}/survey/history` | Survey history by kind |
+| POST, GET | `/v1/patients/{patient_id}/daily-log` | Log daily check-in / get history |
+| POST, GET | `/v1/patients/{patient_id}/meal-log` | Upload meal photo + get history |
+| POST | `/v1/patients/{patient_id}/insights/outlook-narrator` | LLM outlook narrative |
+| POST | `/v1/patients/{patient_id}/insights/future-self` | Future-self projection |
+| GET | `/v1/patients/{patient_id}/outlook` | Current VitalityOutlook |
+| POST | `/v1/patients/{patient_id}/notifications/smart` | Generate smart notification copy |
+| GET, POST | `/v1/patients/{patient_id}/clinical-review` | Clinical review stub |
+| GET, POST | `/v1/patients/{patient_id}/referral` | Referral stub |
+| GET, POST | `/v1/patients/{patient_id}/messages` | Messages to care team |
 
 ## Environment variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | `postgresql+asyncpg://postgres:dev@localhost:5432/longevity` | Async SQLAlchemy connection string |
-| `API_KEY` | *(required)* | Shared-secret key sent in `X-API-Key` header |
+| `DATABASE_URL` | *(required)* | Async SQLAlchemy DSN: `postgresql+asyncpg://user:pass@host/db` |
+| `API_KEY` | *(required)* | Shared secret sent in `X-API-Key` header |
 | `APP_ENV` | `development` | `development` \| `production` |
 | `LOG_LEVEL` | `INFO` | Python log level |
+| `LLM_PROVIDER` | `fake` | `fake` (deterministic, no network) \| `gemini` (Vertex AI) |
+| `GCP_PROJECT` | `None` | GCP project ID — required when `LLM_PROVIDER=gemini` |
+| `GCP_LOCATION` | `europe-west3` | GCP region for Vertex AI (EU data-residency) |
+| `PHOTO_STORAGE_BACKEND` | `local` | `local` (writes to `PHOTO_LOCAL_DIR`) \| `gcs` |
+| `PHOTO_LOCAL_DIR` | `./var/photos` | Root directory for local photo storage |
+| `PHOTO_GCS_BUCKET` | `None` | GCS bucket name — required when `PHOTO_STORAGE_BACKEND=gcs` |

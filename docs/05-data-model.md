@@ -65,9 +65,9 @@ class EHRRecord(SQLModel, table=True):
     patient_id: str = Field(foreign_key="patient.patient_id")
     recorded_at: datetime
     record_type: str          # "diagnosis", "medication", "visit", "lab"
-    content: str              # human-readable summary (for RAG in slice 2)
+    content: str              # human-readable summary (RAG-indexed via pgvector)
     structured: dict          # JSON — codes, values, units
-    embedding: list[float] | None = Field(sa_column=Column(Vector(768)))  # null until slice 2
+    embedding: list[float] | None = Field(sa_column=Column(Vector(768)))  # populated at ingest via LLMProvider.embed
     source: str               # adapter name: "csv", "fhir", ...
 
 class WearableDay(SQLModel, table=True):
@@ -121,7 +121,7 @@ class VitalitySnapshot(SQLModel, table=True):
     flags: list[str]                      # wellness-framed risk flags
 ```
 
-**Slice-2 models** (schema designed, not yet created in DB): `SurveyResponse`, `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `VitalityOutlook`. These require the Gemini / coach layer to be useful and are deferred to the next sprint.
+**Slice-2 models** (shipped in slice 2): `SurveyResponse`, `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `VitalityOutlook`, `Message`, `Notification`, `ClinicalReview`, `Referral`. All tables are created at startup via `db.base.create_all`, which also ensures the `vector` extension and HNSW index are present.
 
 ### Design principles
 
@@ -142,7 +142,7 @@ The `CSVDataSource` adapter (`app/adapters/csv_source.py`) loads the three provi
 
 The adapter yields one `PatientData` bundle per patient via an `async` generator, keeping memory bounded across 1,000+ patients.
 
-Embedding generation (`text-embedding-004`) and bulk vector inserts are slice-2 work — the `EHRRecord.embedding` column exists in the schema but is null after slice-1 ingest.
+Embedding generation uses `FakeLLMProvider` (dev/CI) or `GeminiProvider` (`text-embedding-004` via Vertex AI) depending on `LLM_PROVIDER`. Embeddings are populated during ingest — every `EHRRecord.embedding` column is non-null after `make seed`. An HNSW index (`vector_cosine_ops`) is created automatically at startup.
 
 Run the ingest:
 
