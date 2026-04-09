@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 
 /**
  * Load Inter with the full weight range used across the design system
@@ -17,6 +18,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Longevity",
   description: "AI-driven longevity companion",
+  manifest: "/manifest.webmanifest",
 };
 
 /**
@@ -43,7 +45,10 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       {/* inter.variable injects --font-sans into the document root so
           globals.css can reference it via var(--font-sans). */}
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        <ServiceWorkerRegister />
+      </body>
     </html>
   );
 }
