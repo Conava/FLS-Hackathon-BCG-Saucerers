@@ -88,9 +88,7 @@ def _get_appointment_source() -> _FallbackAppointmentSource:
     from typing import cast
 
     try:
-        from app.adapters.appointment_source import (  # type: ignore[import-untyped]
-            get_appointment_source,
-        )
+        from app.adapters.appointment_source import get_appointment_source
 
         return cast(_FallbackAppointmentSource, get_appointment_source())
     except ImportError:
