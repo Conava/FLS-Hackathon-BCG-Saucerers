@@ -47,15 +47,16 @@ class EHRRecord(SQLModel, table=True):
     __tablename__ = "ehr_record"
 
     # Named index on patient_id — most efficient path for per-patient queries.
-    # Also declared via Field(index=True) below; this __table_args__ entry
-    # provides the spec-required "ix_<table>_patient_id" name.
+    # Single source of truth: __table_args__ provides the canonical name.
+    # Do NOT add index=True to the Field below — that creates a duplicate index
+    # which causes Postgres to fail with "relation already exists" at create_all().
     __table_args__ = (Index("ix_ehr_record_patient_id", "patient_id"),)
 
     # Auto-incrementing surrogate key
     id: int | None = Field(default=None, primary_key=True)
 
-    # patient_id is indexed for efficient per-patient lookups
-    patient_id: str = Field(foreign_key="patient.patient_id", index=True)
+    # patient_id is indexed via __table_args__ above — no index=True here
+    patient_id: str = Field(foreign_key="patient.patient_id")
 
     # Discriminator — one of the four supported types
     record_type: str  # values: EHRRecordType; str for DB portability

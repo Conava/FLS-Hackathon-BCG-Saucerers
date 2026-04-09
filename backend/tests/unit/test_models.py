@@ -287,6 +287,46 @@ def test_vitality_snapshot_subscores_column_type() -> None:
     )
 
 
+def test_no_duplicate_patient_id_indexes_on_ehr_record() -> None:
+    """EHRRecord must declare patient_id in exactly one index (not two).
+
+    Regression test for the duplicate index bug: Field(index=True) combined
+    with __table_args__ Index(...) causes Postgres to fail with
+    'relation already exists' at create_all() time.
+    """
+    from app.models import EHRRecord
+
+    count = sum(
+        1
+        for idx in EHRRecord.__table__.indexes
+        if any(c.name == "patient_id" for c in idx.columns)
+    )
+    assert count == 1, (
+        f"EHRRecord has {count} indexes on patient_id (expected exactly 1). "
+        "Remove index=True from Field(...) and keep only __table_args__ Index."
+    )
+
+
+def test_no_duplicate_patient_id_indexes_on_wearable_day() -> None:
+    """WearableDay must declare patient_id in exactly one index (not two).
+
+    Regression test for the duplicate index bug: same as EHRRecord.
+    WearableDay.patient_id is also the PK, so the named __table_args__ index
+    is the only explicit index that should appear.
+    """
+    from app.models import WearableDay
+
+    count = sum(
+        1
+        for idx in WearableDay.__table__.indexes
+        if any(c.name == "patient_id" for c in idx.columns)
+    )
+    assert count == 1, (
+        f"WearableDay has {count} indexes on patient_id (expected exactly 1). "
+        "Remove index=True from Field(...) and keep only __table_args__ Index."
+    )
+
+
 def test_models_init_exports_all_classes() -> None:
     """app.models.__init__ must export all five model classes."""
     from app.models import (

@@ -22,13 +22,16 @@ class WearableDay(SQLModel, table=True):
     __tablename__ = "wearable_day"
 
     # Named index on patient_id for per-patient queries.
+    # Single source of truth: __table_args__ provides the canonical name.
+    # Do NOT add index=True to the Field below — that creates a duplicate index
+    # which causes Postgres to fail with "relation already exists" at create_all().
     __table_args__ = (Index("ix_wearable_day_patient_id", "patient_id"),)
 
     # Composite PK — (patient_id, date) is the natural unique key
+    # patient_id is indexed via __table_args__ above — no index=True here
     patient_id: str = Field(
         foreign_key="patient.patient_id",
         primary_key=True,
-        index=True,
     )
     date: dt.date = Field(primary_key=True)
 
