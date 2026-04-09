@@ -17,7 +17,7 @@ Each file is scoped to one concern and kept short so it fits cleanly into an LLM
 | # | File | Purpose | Audience |
 |---|---|---|---|
 | 01 | [Vision & Strategy](01-vision.md) | Problem, goals, north-star metric, monetization, competitive positioning | Everyone, pitch |
-| 02 | [Persona, Journey & User Stories](02-persona-and-journey.md) | Anna persona, longevity journey, 3+ user stories | Product, design, pitch |
+| 02 | [Persona, Journey & User Stories](02-persona-and-journey.md) | Rebecca persona, longevity journey, 3+ user stories | Product, design, pitch |
 | 03 | [System Architecture](03-architecture.md) | Component diagram, request flow, deployment topology | Engineering, pitch |
 | 04 | [Tech Stack (LOCKED)](04-tech-stack.md) | Every pinned version, why each choice | Engineering, AI assistants |
 | 05 | [Data Model & Adapter Layer](05-data-model.md) | Unified patient profile, pluggable data sources | Backend devs |
