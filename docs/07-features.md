@@ -181,17 +181,17 @@ From our product thinking:
 Rehearsed until flawless. Every screen earns its spot by selling one pillar of the pitch.
 
 ### Setup (pre-demo, not on stage)
-Browser tabbed to the PWA. Anna's account pre-loaded: 42yo, recent lab showing elevated ApoB, 5 nights of poor sleep, Fitbit connected, onboarding survey completed, 6-day protocol streak.
+Browser tabbed to the PWA. Rebecca's account pre-loaded: 40yo, Type 2 diabetes on Metformin, elevated HbA1c and fasting glucose, 5 nights of poor sleep, Apple Watch connected, onboarding survey completed, 6-day protocol streak.
 
 ### 1. Onboarding story (0:00 – 0:20)
-*"Meet Anna. 42, product manager in Hamburg. Her dad had a heart attack last year. She's a patient of our clinic network. Yesterday we emailed her: 'See your Vitality Score.'"*
+*"Meet Rebecca. 40, part-time HR consultant in Hamburg. On her 40th birthday, a sting of back pain made her realise the second half of her life needed a different approach. She's a patient of our clinic network. Her doctor recommended the app during her next visit."*
 
 → Show: one-click login, 3-question lifestyle micro-form (subset of full survey for demo speed), **instant score reveal**.
 
 **Selling:** zero-friction activation. 10M warm leads → no CAC.
 
 ### 2. Today (0:20 – 0:45)
-*"This is Anna's morning. One number, one outlook, one action."*
+*"This is Rebecca's morning. One number, one outlook, one action."*
 
 → Show: Vitality Score 68 (down from 74), **Vitality Outlook** curve projecting to 74 by October if the streak holds, 6-day streak badge, today's protocol (3 actions: walk 25 min, lights-out 22:30, swap rice for lentils at lunch), nudge: *"You slept 5h 40m. Skip HIIT today — a 25-min walk keeps your recovery on track."*
 
@@ -200,33 +200,33 @@ Browser tabbed to the PWA. Anna's account pre-loaded: 42yo, recent lab showing e
 ### 3. AI Coach chat (0:45 – 1:10)
 *"Why is my score down? Let's ask."*
 
-→ Show: Coach chat, streaming response: *"Anna, your sleep dropped to 5h 40m the last 3 nights, and your resting heart rate is up 6bpm. Both are recovery signals. Try tonight: 22:00 lights out, no alcohol, 300mg magnesium glycinate. I've added these to today's protocol."* → actions appear on Today.
+→ Show: Coach chat, streaming response: *"Rebecca, your sleep dropped to 5h 20m the last 3 nights, and your resting heart rate is up 6bpm. Both are recovery signals — and fragmented sleep can raise your fasting glucose. Try tonight: 22:00 lights out, no alcohol, 300mg magnesium glycinate. I've added these to today's protocol."* → actions appear on Today.
 
 **Selling:** clinical-grade but consumer-friendly. Grounded in *her* real data. Writes back to the protocol loop.
 
 ### 4. Nutrition moment — meal photo (1:10 – 1:25)
-*"Anna's at lunch."*
+*"Rebecca's at lunch."*
 
 → Show: camera → photo of a plate → Gemini vision classifies (grilled salmon, white rice, broccoli) → macro estimation → **longevity swap suggestion**: *"Swap white rice for lentils — +12g fiber, same calories, lower postprandial glucose."* → one-tap log to Today's protein/fiber rings.
 
 **Selling:** nutrition woven in. The brief's third commercial category, made visceral.
 
 ### 5. Records Q&A (1:25 – 1:50) — **the killer moment**
-*"Anna has a folder of PDFs she's never read. Let's fix that."*
+*"Rebecca has a folder of PDFs she's never read. Let's fix that."*
 
-→ Show: *"What did my last blood test say about cholesterol?"* → Gemini 2.5 Pro pulls from indexed EHR via RAG, answers in plain language: *"Your November panel showed LDL at 138 and ApoB at 112. Both slightly elevated — in Germany the target for someone with your family history is below 90. Here's the actual lab report."* → clickable citation opens the record.
+→ Show: *"What did my last blood test say about cholesterol?"* → Gemini 2.5 Pro pulls from indexed EHR via RAG, answers in plain language: *"Your last panel showed total cholesterol at 5.68 mmol/L and LDL at 3.72 mmol/L — both elevated, especially given your diabetes. Your HbA1c is 7.2%, above target despite Metformin. Here's the actual lab report."* → clickable citation opens the record.
 
 **Selling:** the productivity leap. No other healthcare app does this. Records stays scoped strictly to provider data — distinct from Coach.
 
 ### 6. Insights → risk flag → commercial touchpoint (1:50 – 2:15)
-*"And because the AI noticed the ApoB trend, it surfaced this — without an ad banner in sight."*
+*"And because the AI noticed the metabolic trend, it surfaced this — without an ad banner in sight."*
 
-→ Show: Insights tab opens on the four-dimension Signals view; Cardiovascular Fitness card is flagged amber. Tap → risk detail → *"Your cardiovascular markers suggest a prevention panel. Our Hamburg cardio-prevention package is 80% covered by your insurance."* → one-tap route to Care → Diagnostics checkout.
+→ Show: Insights tab opens on the four-dimension Signals view; Lifestyle & Behavioral Risk card is flagged amber. Tap → risk detail → *"Your HbA1c and fasting glucose suggest a metabolic health panel. Our Hamburg diabetes & metabolic package is covered by your GKV."* → one-tap route to Care → Diagnostics checkout.
 
 **Selling:** monetization without disrupting care. The clinic's unique advantage: real in-network specialists + reimbursement. Commerce mirrors the company's diagnostics-centre business.
 
 ### 7. Future-self simulator (2:15 – 2:40) — wow moment
-*"And here's what kept Anna engaged."*
+*"And here's what kept Rebecca engaged."*
 
 → Still in Insights, scroll to Future-self. Slider for sleep + activity + alcohol → animated projection of Vitality Score + biological age at 70, current path vs. improved path.
 

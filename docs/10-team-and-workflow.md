@@ -96,9 +96,9 @@ Everyone uses Claude Code / Gemini Code Assist as a pair programmer. [09-ai-assi
 
 ## Definition of done for the demo
 
-- [ ] Anna account loads in <2s on Cloud Run demo URL
+- [ ] Rebecca account loads in <2s on Cloud Run demo URL
 - [ ] Vitality Score shows real computed value from CSV data
-- [ ] Coach responds in <5s (streamed) with a citation from Anna's real records
+- [ ] Coach responds in <5s (streamed) with a citation from Rebecca's real records
 - [ ] NL record Q&A returns a correct answer with clickable citation
 - [ ] Risk flag surfaces → diagnostic package card → mocked booking works
 - [ ] At least one "wow" feature built (future-self simulator OR polished Capacitor native wrap)
