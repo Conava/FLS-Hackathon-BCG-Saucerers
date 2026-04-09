@@ -7,10 +7,6 @@ wrong patient_id returns None / empty list, not a cross-patient data leak.
 The inline `engine` fixture spins up a real Postgres 16 + pgvector container
 so the tests are self-contained and do not depend on T9's conftest.
 T9's `db_session` fixture will supersede this inline fixture once merged.
-
-If Docker is not available in the current environment, all tests are skipped
-via the `engine` fixture so they don't ERROR but also correctly document that
-they need a real Postgres to run.
 """
 
 from __future__ import annotations
@@ -18,41 +14,22 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
-import pytest
 import pytest_asyncio
-from docker.errors import DockerException  # type: ignore[import-untyped]
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlmodel import SQLModel
 from testcontainers.postgres import PostgresContainer
 
 import app.models  # noqa: F401 — side effect: registers all SQLModel tables
-
+from app.models import EHRRecord
 
 # ---------------------------------------------------------------------------
 # Inline testcontainers fixture (self-contained, superseded by T9 conftest)
 # ---------------------------------------------------------------------------
 
 
-def _is_docker_available() -> bool:
-    """Return True if the Docker daemon is reachable."""
-    try:
-        import docker  # type: ignore[import-untyped]
-
-        docker.from_env().ping()
-        return True
-    except Exception:
-        return False
-
-
 @pytest_asyncio.fixture(scope="module")
 async def engine():  # type: ignore[return]
-    """Session-scoped Postgres+pgvector container with schema created.
-
-    Skips all tests in this module if Docker is not available.
-    """
-    if not _is_docker_available():
-        pytest.skip("Docker not available — skipping integration tests")
-
+    """Session-scoped Postgres+pgvector container with schema created."""
     with PostgresContainer("pgvector/pgvector:pg16") as pg:
         raw_url = pg.get_connection_url()
         # testcontainers returns psycopg2 URL; we need asyncpg
@@ -102,7 +79,7 @@ def make_ehr_record(patient_id: str, record_type: str = "visit") -> app.models.E
     return app.models.EHRRecord(  # type: ignore[attr-defined]
         patient_id=patient_id,
         record_type=record_type,
-        recorded_at=datetime.datetime(2026, 1, 1, tzinfo=datetime.UTC),
+        recorded_at=datetime.datetime(2026, 1, 1, 0, 0, 0),  # naive UTC — matches TIMESTAMP WITHOUT TIME ZONE
         payload={"date": "2026-01-01"},
         source="test",
     )
@@ -118,7 +95,6 @@ class TestGetByIdWrongPatientReturnsNone:
 
     async def test_get_by_id_wrong_patient_returns_none(self, session: AsyncSession) -> None:
         from app.repositories.base import PatientScopedRepository
-        from app.models import EHRRecord, Patient
 
         # Insert patient PT0001 and a record belonging to them
         patient = make_patient("PT0001")
@@ -142,7 +118,6 @@ class TestGetByIdWrongPatientReturnsNone:
 
     async def test_get_by_id_correct_patient_returns_record(self, session: AsyncSession) -> None:
         from app.repositories.base import PatientScopedRepository
-        from app.models import EHRRecord, Patient
 
         patient = make_patient("PT0002")
         session.add(patient)
@@ -167,7 +142,6 @@ class TestListWrongPatientReturnsEmpty:
 
     async def test_list_wrong_patient_returns_empty(self, session: AsyncSession) -> None:
         from app.repositories.base import PatientScopedRepository
-        from app.models import EHRRecord, Patient
 
         patient = make_patient("PT0003")
         session.add(patient)
@@ -190,7 +164,6 @@ class TestListWrongPatientReturnsEmpty:
 
     async def test_list_correct_patient_returns_records(self, session: AsyncSession) -> None:
         from app.repositories.base import PatientScopedRepository
-        from app.models import EHRRecord, Patient
 
         patient = make_patient("PT0004")
         session.add(patient)
@@ -216,7 +189,6 @@ class TestUpsertSetsPatientId:
         self, session: AsyncSession
     ) -> None:
         from app.repositories.base import PatientScopedRepository
-        from app.models import EHRRecord, Patient
 
         patient = make_patient("PT0005")
         session.add(patient)
@@ -226,7 +198,7 @@ class TestUpsertSetsPatientId:
         record = app.models.EHRRecord(  # type: ignore[attr-defined]
             patient_id="WRONG_INITIAL",  # will be overwritten by upsert
             record_type="visit",
-            recorded_at=datetime.datetime(2026, 1, 2, tzinfo=datetime.UTC),
+            recorded_at=datetime.datetime(2026, 1, 2, 0, 0, 0),  # naive UTC — matches TIMESTAMP WITHOUT TIME ZONE
             payload={"date": "2026-01-02"},
             source="test",
         )
@@ -245,7 +217,6 @@ class TestUpsertSetsPatientId:
         self, session: AsyncSession
     ) -> None:
         from app.repositories.base import PatientScopedRepository
-        from app.models import EHRRecord, Patient
 
         patient = make_patient("PT0006")
         session.add(patient)
@@ -268,7 +239,6 @@ class TestListRespectsAdditionalFiltersWithIsolation:
         self, session: AsyncSession
     ) -> None:
         from app.repositories.base import PatientScopedRepository
-        from app.models import EHRRecord, Patient
 
         patient_a = make_patient("PT0007")
         patient_b = make_patient("PT0008")
@@ -297,7 +267,6 @@ class TestListRespectsAdditionalFiltersWithIsolation:
         self, session: AsyncSession
     ) -> None:
         from app.repositories.base import PatientScopedRepository
-        from app.models import EHRRecord, Patient
 
         patient_c = make_patient("PT0009")
         patient_d = make_patient("PT0010")
