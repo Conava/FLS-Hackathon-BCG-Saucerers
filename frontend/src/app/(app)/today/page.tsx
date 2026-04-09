@@ -25,6 +25,7 @@ import {
 } from "@/components/design";
 import { VitalityTap } from "./_components/VitalityTap";
 import { ProtocolList } from "./_components/ProtocolList";
+import { QuickLogGrid } from "./_components/QuickLogGrid";
 import { COPY } from "@/lib/copy/copy";
 import { backendFetch } from "@/lib/backend-fetch";
 import type {
@@ -115,6 +116,38 @@ function findUrgentInsight(insights: InsightsListOut | null) {
   );
 }
 
+/**
+ * Format today's date as "Today · Wed 9 Apr".
+ */
+function formatTodayTitle(date: Date): string {
+  const weekday = date.toLocaleDateString("en-GB", { weekday: "short" });
+  const day = date.getDate();
+  const month = date.toLocaleDateString("en-GB", { month: "short" });
+  return `Today · ${weekday} ${day} ${month}`;
+}
+
+/**
+ * Extract meaningful first name — skips generic "Patient PT0199" placeholders.
+ */
+function extractFirstName(fullName: string | undefined): string {
+  const nameParts = (fullName ?? "").trim().split(/\s+/).filter(Boolean);
+  const meaningfulName =
+    nameParts.length > 1 && nameParts[0]?.toLowerCase() === "patient"
+      ? (nameParts[nameParts.length - 1] ?? "")
+      : (nameParts[0] ?? "");
+  return meaningfulName || "";
+}
+
+/**
+ * Compute initials (up to 2 chars) for the avatar button.
+ */
+function getInitials(fullName: string | undefined): string {
+  const parts = (fullName ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "Me";
+  if (parts.length === 1) return (parts[0]?.slice(0, 2) ?? "Me").toUpperCase();
+  return `${parts[0]?.[0] ?? ""}${parts[parts.length - 1]?.[0] ?? ""}`.toUpperCase();
+}
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -141,23 +174,17 @@ export default async function TodayPage() {
     ]);
 
   // Pick the 6-month outlook horizon, falling back to the largest available.
-  const outlook: OutlookOut | null = Array.isArray(outlookList) && outlookList.length > 0
-    ? (outlookList.find((o) => o.horizon_months === 6) ??
-       outlookList.reduce((best, cur) =>
-         cur.horizon_months > best.horizon_months ? cur : best
-       ))
-    : null;
+  const outlook: OutlookOut | null =
+    Array.isArray(outlookList) && outlookList.length > 0
+      ? (outlookList.find((o) => o.horizon_months === 6) ??
+          outlookList.reduce((best, cur) =>
+            cur.horizon_months > best.horizon_months ? cur : best,
+          ))
+      : null;
 
   // 3. Derive display values
-  // "Patient PT0199" → skip the generic "Patient" placeholder; use the last
-  // non-"Patient" word, or fall back to empty string so the greeting reads
-  // "Good morning" without an awkward placeholder.
-  const nameParts = (profile?.name ?? "").trim().split(/\s+/).filter(Boolean);
-  const meaningfulName =
-    nameParts.length > 1 && nameParts[0]?.toLowerCase() === "patient"
-      ? (nameParts[nameParts.length - 1] ?? "")
-      : (nameParts[0] ?? "");
-  const firstName = meaningfulName || "";
+  const firstName = extractFirstName(profile?.name);
+  const initials = getInitials(profile?.name);
   const score = vitality?.score ?? 0;
   const delta = vitality ? computeDelta(vitality) : 0;
   const streak = computeStreak(protocol);
@@ -165,6 +192,10 @@ export default async function TodayPage() {
   const actions = protocol?.actions ?? [];
   const urgentInsight = findUrgentInsight(insights);
   const insightsList = insights?.insights ?? [];
+
+  // Protocol progress
+  const doneCount = actions.filter((a) => a.completed_today).length;
+  const totalCount = actions.length;
 
   // 4. Compute macro ring values from today's meal logs
   const todayLog = mealLogs?.logs?.[0] ?? null;
@@ -188,6 +219,8 @@ export default async function TodayPage() {
         : 0,
   };
 
+  const todayTitle = formatTodayTitle(new Date());
+
   return (
     <div
       style={{
@@ -209,37 +242,63 @@ export default async function TodayPage() {
         }}
       >
         <div>
-          <p className="t-caption text-ink-3">
+          <p
+            style={{ fontSize: 13, fontWeight: 500, color: "var(--color-ink-3)" }}
+          >
             {COPY.today.greeting(firstName)}
           </p>
           <h1
-            className="t-h1 text-ink"
-            style={{ lineHeight: 1.2, marginTop: 2 }}
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              letterSpacing: "-0.01em",
+              lineHeight: 1.2,
+              marginTop: 2,
+              color: "var(--color-ink)",
+            }}
           >
-            {new Date().toLocaleDateString("en-GB", {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-            })}
+            {todayTitle}
           </h1>
         </div>
+
+        {/* Avatar button — 28px circle, accent bg, white initials, links to /me */}
+        <Link
+          href="/me"
+          aria-label="Profile"
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            background: "var(--color-accent)",
+            color: "#fff",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 11,
+            fontWeight: 700,
+            textDecoration: "none",
+            flexShrink: 0,
+          }}
+        >
+          {initials}
+        </Link>
       </div>
 
       {/* AI Disclosure Banner — required on AI-powered screens */}
-      <AiDisclosureBanner />
+      <AiDisclosureBanner
+        model="general wellness guidance"
+        region="GDPR · EU"
+      />
 
       {/* ── Hero card: Vitality ring + streak + outlook ─────────────────── */}
       <div
-        className="bg-surface shadow-app-sm"
+        className="card"
         style={{
-          borderRadius: 20,
-          border: "1px solid var(--color-border)",
-          padding: 18,
           marginTop: 12,
           textAlign: "center",
         }}
       >
-        {/* Row: "Vitality Score" label + streak badge */}
+        {/* Row: "VITALITY SCORE" label + streak badge */}
         <div
           style={{
             display: "flex",
@@ -249,8 +308,13 @@ export default async function TodayPage() {
           }}
         >
           <span
-            className="t-micro text-ink-3"
-            style={{ letterSpacing: "0.06em" }}
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: "var(--color-ink-3)",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
           >
             Vitality Score
           </span>
@@ -261,7 +325,7 @@ export default async function TodayPage() {
         <div style={{ display: "flex", justifyContent: "center" }}>
           {vitality ? (
             <VitalityTap
-              score={score}
+              score={Math.round(score)}
               delta={delta}
               insights={insightsList}
             />
@@ -276,8 +340,13 @@ export default async function TodayPage() {
         {/* Outlook narrative text */}
         {outlook?.narrative && (
           <p
-            className="t-caption text-ink-2"
-            style={{ marginTop: 8, padding: "0 8px" }}
+            style={{
+              fontSize: 12,
+              color: "var(--color-ink-2)",
+              marginTop: 8,
+              padding: "0 8px",
+              lineHeight: 1.5,
+            }}
           >
             {outlook.narrative}
           </p>
@@ -288,12 +357,20 @@ export default async function TodayPage() {
           <OutlookCurve
             points={outlookPoints}
             nowLabel={`Now · ${Math.round(score)}`}
-            endLabel={`${outlook?.horizon_months ?? 6}mo · ${Math.round(outlook?.projected_score ?? outlookPoints[outlookPoints.length - 1] ?? score)}`}
+            endLabel={`${
+              outlook?.horizon_months === 6
+                ? "Oct"
+                : `${outlook?.horizon_months ?? 6}mo`
+            } · ${Math.round(
+              outlook?.projected_score ??
+                outlookPoints[outlookPoints.length - 1] ??
+                score,
+            )}`}
           />
         )}
       </div>
 
-      {/* ── Nudge Card (conditional) ─────────────────────────────────────── */}
+      {/* ── Nudge Card (conditional — only when there is a high/moderate insight) ── */}
       {urgentInsight && (
         <div style={{ marginTop: 14 }}>
           <NudgeCard
@@ -301,99 +378,158 @@ export default async function TodayPage() {
               .replace(/_/g, " ")
               .replace(/\b\w/g, (c) => c.toUpperCase())}
             description={urgentInsight.message}
-            ctaLabel="Learn more"
+            ctaLabel="Add walk to protocol"
+            secondaryLabel="Dismiss"
           />
         </div>
       )}
 
       {/* ── Today's Protocol ─────────────────────────────────────────────── */}
-      <div style={{ marginTop: 20 }}>
-        <SectionHeader title="Today's protocol" />
+      <div style={{ marginTop: 14 }}>
+        <SectionHeader
+          title="Today's protocol"
+          action={
+            totalCount > 0 ? (
+              <span className="chip chip-muted">
+                {doneCount} / {totalCount} done
+              </span>
+            ) : undefined
+          }
+        />
         <ProtocolList actions={actions} />
       </div>
 
+      {/* ── Quick Log — 4-col grid ─────────────────────────────────────────── */}
+      <div style={{ marginTop: 14 }}>
+        <SectionHeader title="Quick log" />
+        <QuickLogGrid />
+      </div>
+
       {/* ── Nutrition Today (Macro Rings) ─────────────────────────────────── */}
-      <div style={{ marginTop: 20 }}>
+      <div style={{ marginTop: 14 }}>
         <SectionHeader
           title="Nutrition rings"
           action={
-            <Link
-              href="/meal-log"
-              className="t-support text-accent font-semibold"
-            >
-              Log a meal
-            </Link>
+            <span className="chip chip-good">
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "currentColor",
+                  display: "inline-block",
+                }}
+              />
+              On track
+            </span>
           }
         />
 
-        {todayLog ? (
+        <div className="card">
           <div
-            className="bg-surface shadow-app-sm"
             style={{
-              borderRadius: 20,
-              border: "1px solid var(--color-border)",
-              padding: 18,
+              display: "flex",
+              gap: 14,
+              justifyContent: "space-around",
             }}
           >
-            <div
+            <MacroRing
+              nutrient="protein"
+              value={macros.protein_g}
+              target={50}
+              label="Protein"
+            />
+            <MacroRing
+              nutrient="fiber"
+              value={macros.fiber_g}
+              target={30}
+              label="Fiber"
+            />
+            <MacroRing
+              nutrient="polyphenols"
+              value={macros.polyphenol_score}
+              target={100}
+              label="Polyphenols"
+            />
+            <MacroRing
+              nutrient="alcohol"
+              value={macros.alcohol_units}
+              target={14}
+              label="Alcohol"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Weekly micro-survey card ──────────────────────────────────────── */}
+      <div
+        className="card"
+        style={{
+          marginTop: 14,
+          background: "var(--color-accent-lt)",
+          borderColor: "var(--color-accent-md)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+          }}
+        >
+          <div>
+            <p
               style={{
-                display: "flex",
-                gap: 14,
-                justifyContent: "space-around",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "var(--color-accent)",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
               }}
             >
-              <MacroRing
-                nutrient="protein"
-                value={macros.protein_g}
-                target={50}
-                label="Protein"
-              />
-              <MacroRing
-                nutrient="fiber"
-                value={macros.fiber_g}
-                target={30}
-                label="Fiber"
-              />
-              <MacroRing
-                nutrient="polyphenols"
-                value={macros.polyphenol_score}
-                target={100}
-                label="Polyphenols"
-              />
-              <MacroRing
-                nutrient="alcohol"
-                value={macros.alcohol_units}
-                target={14}
-                label="Alcohol"
-              />
-            </div>
+              30-sec check-in
+            </p>
+            <p
+              style={{
+                fontSize: 11.5,
+                color: "var(--color-ink-2)",
+                marginTop: 2,
+              }}
+            >
+              How did this week feel?
+            </p>
           </div>
-        ) : (
-          <EmptyState
-            heading={COPY.today.noActivity}
-            subtext="Log a meal to see your nutrition rings."
-            action={
-              <Link
-                href="/meal-log"
-                className="t-support font-semibold text-accent"
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: 999,
-                  background: "var(--color-accent-lt)",
-                  textDecoration: "none",
-                }}
-              >
-                Log a meal
-              </Link>
-            }
-          />
-        )}
+          <button
+            type="button"
+            style={{
+              padding: "8px 12px",
+              borderRadius: 14,
+              background: "var(--color-accent)",
+              color: "#fff",
+              fontSize: 12.5,
+              fontWeight: 600,
+              border: "none",
+              cursor: "pointer",
+              minHeight: 36,
+              flexShrink: 0,
+            }}
+          >
+            Start
+          </button>
+        </div>
       </div>
 
       {/* Fine print */}
       <p
-        className="t-legal text-ink-3"
-        style={{ textAlign: "center", marginTop: 14, padding: "0 12px" }}
+        style={{
+          fontSize: 10.5,
+          color: "var(--color-ink-3)",
+          textAlign: "center",
+          marginTop: 14,
+          padding: "0 12px",
+          lineHeight: 1.5,
+        }}
       >
         Not medical advice. Wellness and lifestyle guidance only.
       </p>

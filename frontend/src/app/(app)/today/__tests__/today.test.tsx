@@ -10,6 +10,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ProtocolList } from "../_components/ProtocolList";
 import { VitalityTap } from "../_components/VitalityTap";
 import { SignalsSheet } from "../_components/SignalsSheet";
+import { QuickLogGrid } from "../_components/QuickLogGrid";
 import type { ProtocolActionOut } from "@/lib/api/schemas";
 import type { InsightOut } from "@/lib/api/schemas";
 
@@ -201,5 +202,31 @@ describe("SignalsSheet", () => {
       <SignalsSheet open={true} onClose={vi.fn()} insights={[]} />
     );
     expect(screen.getByText(/no signals/i)).toBeInTheDocument();
+  });
+});
+
+// ── QuickLogGrid ──────────────────────────────────────────────────────────────
+
+describe("QuickLogGrid", () => {
+  it("renders all 4 quick log buttons", () => {
+    render(<QuickLogGrid />);
+    expect(screen.getByText("Meal")).toBeInTheDocument();
+    expect(screen.getByText("Sleep")).toBeInTheDocument();
+    expect(screen.getByText("Workout")).toBeInTheDocument();
+    expect(screen.getByText("Water")).toBeInTheDocument();
+  });
+
+  it("renders 4 emoji icons", () => {
+    render(<QuickLogGrid />);
+    expect(screen.getByText("🍽️")).toBeInTheDocument();
+    expect(screen.getByText("😴")).toBeInTheDocument();
+    expect(screen.getByText("🏃")).toBeInTheDocument();
+    expect(screen.getByText("💧")).toBeInTheDocument();
+  });
+
+  it("Meal button has a link to /meal-log", () => {
+    render(<QuickLogGrid />);
+    const mealBtn = screen.getByRole("link", { name: /meal/i });
+    expect(mealBtn).toHaveAttribute("href", "/meal-log");
   });
 });
