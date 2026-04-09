@@ -46,6 +46,11 @@ Return valid JSON matching this schema exactly:
 5. Each action is tagged with exactly one longevity dimension.
 6. Generate between 3 and 7 actions (inclusive).
 7. Actions for users with `injuries_or_limitations` must not aggravate them.
+8. Never use ICD-10 codes, disease names, or diagnostic language in action
+   titles, targets, or rationales. Frame everything as wellness habits
+   (e.g. "support joint mobility" not "treat arthritis").
+9. The protocol is AI-generated. Include in the top-level `rationale` field
+   a note such as "This AI-generated protocol..." to disclose AI authorship.
 
 ---
 

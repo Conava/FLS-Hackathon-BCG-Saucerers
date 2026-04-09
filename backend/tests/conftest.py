@@ -31,9 +31,10 @@ from __future__ import annotations
 # docker.from_env() finds the right socket without requiring shell config.
 import os as _os
 
-_rootless_sock = f"/run/user/{_os.getuid()}/docker.sock"
-if not _os.environ.get("DOCKER_HOST") and _os.path.exists(_rootless_sock):
-    _os.environ["DOCKER_HOST"] = f"unix://{_rootless_sock}"
+if hasattr(_os, "getuid"):
+    _rootless_sock = f"/run/user/{_os.getuid()}/docker.sock"
+    if not _os.environ.get("DOCKER_HOST") and _os.path.exists(_rootless_sock):
+        _os.environ["DOCKER_HOST"] = f"unix://{_rootless_sock}"
 
 from collections.abc import AsyncIterator  # noqa: E402
 

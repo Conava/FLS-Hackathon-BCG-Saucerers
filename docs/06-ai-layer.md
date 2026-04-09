@@ -150,7 +150,10 @@ class GeneratedProtocol(BaseModel):
 3. Never contradict `dietary_restrictions` or `known_allergies`.
 4. Every action must carry a one-line rationale the user can act on.
 5. Each action is tagged with exactly one of the four longevity dimensions.
-6. No diagnostic verbs (see safety table below).
+6. Generate between 3 and 7 actions (inclusive).
+7. Actions for users with `injuries_or_limitations` must not aggravate them.
+8. Never use ICD-10 codes, disease names, or diagnostic language in action titles, targets, or rationales — use wellness framing (e.g. "support joint mobility" not "treat arthritis").
+9. The top-level `rationale` field must include AI-disclosure phrasing (e.g. "This AI-generated protocol…").
 
 ## Meal Vision — structured output contract
 
