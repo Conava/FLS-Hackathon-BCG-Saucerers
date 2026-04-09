@@ -7,14 +7,9 @@ dependency is required.
 
 from __future__ import annotations
 
-import os
-
 import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-
-os.environ.setdefault("API_KEY", "test-key")
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://ignored")
 
 HEADERS = {"X-API-Key": "test-key"}
 
@@ -76,7 +71,7 @@ async def test_get_appointments_returns_stub_list(
     appointments_client: AsyncClient,
     db_session: AsyncSession,
 ) -> None:
-    """PT0282 should receive 2 appointments from the stub."""
+    """PT0282 should receive 2 appointments from the T15 StaticAppointmentSource."""
     await _seed_patient(db_session, "PT0282", "Anna Weber")
 
     resp = await appointments_client.get(
@@ -87,7 +82,7 @@ async def test_get_appointments_returns_stub_list(
     data = resp.json()
     assert data["patient_id"] == "PT0282"
     appointments = data["appointments"]
-    # Stub returns 2 for PT0282.
+    # T15 StaticAppointmentSource returns 2 for PT0282.
     assert len(appointments) == 2
     # Each appointment must have required fields.
     for appt in appointments:
@@ -96,6 +91,14 @@ async def test_get_appointments_returns_stub_list(
         assert "provider" in appt
         assert "starts_at" in appt
         assert "duration_minutes" in appt
+
+    # Verify we're actually using T15's StaticAppointmentSource (not fallback).
+    # The first appointment should be the T15-specific "Cardio-Prevention Panel".
+    titles = [a["title"] for a in appointments]
+    assert "Cardio-Prevention Panel" in titles, (
+        f"Expected T15 appointment title 'Cardio-Prevention Panel' not found in {titles}. "
+        "Silent regression to fallback stub detected."
+    )
 
 
 async def test_get_appointments_returns_one_for_other_patients(

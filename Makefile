@@ -8,8 +8,7 @@ up:
 down:
 	docker compose down
 
-## seed: ingest CSV data into the database via the backend container
-##       (local alternative: cd backend && uv run python -m app.cli.ingest --source=csv --data-dir=../data)
+## seed: ingest CSV data into the database (local: cd backend && uv run python -m app.cli.ingest --source=csv --data-dir=../data)
 seed:
 	docker compose exec -T backend python -m app.cli.ingest --source=csv --data-dir=/app/data
 
@@ -28,4 +27,4 @@ lint:
 
 ## help: show this help message
 help:
-	@grep -E '^##' Makefile | sed 's/## //'
+	@grep -E '^## ' Makefile | sed 's/^## //'

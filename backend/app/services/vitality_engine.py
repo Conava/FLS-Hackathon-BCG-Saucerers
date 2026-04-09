@@ -322,7 +322,6 @@ def _lifestyle_subscore(lifestyle: LifestyleProfile | None) -> float:
 def _derive_risk_flags(
     lab: dict[str, float] | None,
     wearable: list[WearableDay],
-    n_days: int,
 ) -> list[str]:
     """Derive short risk-flag codes from available data.
 
@@ -434,7 +433,7 @@ def compute_vitality(
     )
 
     # Risk flags
-    risk_flags = _derive_risk_flags(lab, window, len(window))
+    risk_flags = _derive_risk_flags(lab, window)
 
     # 7-day trend (sleep + activity only, per spec)
     trend = [TrendPoint(date=day.date, score=_day_score(day)) for day in window]

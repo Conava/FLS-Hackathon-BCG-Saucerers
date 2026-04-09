@@ -61,7 +61,8 @@ class PatientScopedRepository[ModelT: SQLModel]:
         (i.e. for single-column PK tables like Patient, VitalitySnapshot).
         """
         mapper = inspect(self._model)
-        assert mapper is not None, f"SQLAlchemy inspect() returned None for {self._model!r}"
+        if mapper is None:
+            raise RuntimeError(f"SQLAlchemy inspect() returned None for {self._model!r}")
         pk_cols = [col for col in mapper.primary_key]
 
         non_patient_pks = [col for col in pk_cols if col.name != "patient_id"]

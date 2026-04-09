@@ -4,9 +4,6 @@
 appointments for a patient, sourced via the pluggable ``AppointmentSource``
 Protocol (T15).
 
-If T15 has not been implemented yet, a local fallback stub is used so this
-router can be included in tests independently of T15's merge status.
-
 Every route:
   - Requires ``X-API-Key`` authentication (``api_key_auth``).
   - Declares an explicit ``response_model``.
@@ -15,12 +12,12 @@ Every route:
 
 from __future__ import annotations
 
-import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.appointment_source import AppointmentSource, get_appointment_source
 from app.core.security import api_key_auth
 from app.db.session import get_session
 from app.repositories.patient_repo import PatientRepository
@@ -36,68 +33,14 @@ _Session = Annotated[AsyncSession, Depends(get_session)]
 _Auth = Annotated[None, Depends(api_key_auth)]
 
 
-# ---------------------------------------------------------------------------
-# AppointmentSource dependency — uses T15 when available, falls back to stub
-# ---------------------------------------------------------------------------
-
-
-class _FallbackAppointmentSource:
-    """Minimal static stub used when T15 (appointment_source.py) is absent.
-
-    PT0282 (Anna) gets 2 upcoming appointments; all other patients get 1.
-    Dates are fixed relative to 2026-04-10 so tests are deterministic.
-    """
-
-    async def list_for(self, patient_id: str) -> list[AppointmentOut]:
-        base = datetime.datetime(2026, 4, 15, 9, 0, 0)
-        shared = AppointmentOut(
-            id=f"apt-{patient_id}-001",
-            title="Annual Wellness Check",
-            provider="Dr. Müller",
-            location="Hamburg Medical Centre",
-            starts_at=base,
-            duration_minutes=30,
-            price_eur=0.0,
-            covered_percent=100,
-        )
-        if patient_id == "PT0282":
-            lipid = AppointmentOut(
-                id="apt-PT0282-002",
-                title="Lipid Prevention Panel",
-                provider="Dr. Schmidt",
-                location="Hamburg Cardiology Clinic",
-                starts_at=datetime.datetime(2026, 4, 22, 14, 0, 0),
-                duration_minutes=45,
-                price_eur=20.0,
-                covered_percent=80,
-            )
-            return [shared, lipid]
-        return [shared]
-
-
-def _get_appointment_source() -> _FallbackAppointmentSource:
-    """Return the configured AppointmentSource.
-
-    Tries to import ``get_appointment_source`` from ``app.adapters.appointment_source``
-    (T15).  Falls back to the local stub when T15 is not yet available.
-
-    The ``cast`` ensures mypy treats the returned object as
-    ``_FallbackAppointmentSource`` regardless of the imported type; both share
-    the ``list_for(patient_id)`` interface at runtime.
-    """
-    from typing import cast
-
-    try:
-        from app.adapters.appointment_source import get_appointment_source
-
-        return cast(_FallbackAppointmentSource, get_appointment_source())
-    except ImportError:
-        return _FallbackAppointmentSource()
+def _get_appointment_source() -> AppointmentSource:
+    """Return the configured AppointmentSource (T15 StaticAppointmentSource)."""
+    return get_appointment_source()
 
 
 # FastAPI dependency that resolves the appointment source.
 AppointmentSourceDep = Annotated[
-    _FallbackAppointmentSource,
+    AppointmentSource,
     Depends(_get_appointment_source),
 ]
 
@@ -134,5 +77,18 @@ async def list_appointments(
             detail=f"Patient {patient_id!r} not found.",
         )
 
-    appointments = await source.list_for(patient_id)
+    raw_appointments = await source.list_for(patient_id)
+    appointments = [
+        AppointmentOut(
+            id=a.id,
+            title=a.title,
+            provider=a.provider,
+            location=a.location,
+            starts_at=a.starts_at,
+            duration_minutes=a.duration_minutes,
+            price_eur=a.price_eur,
+            covered_percent=a.covered_percent,
+        )
+        for a in raw_appointments
+    ]
     return AppointmentListOut(patient_id=patient_id, appointments=appointments)

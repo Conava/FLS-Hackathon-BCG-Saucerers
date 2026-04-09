@@ -45,8 +45,8 @@ class GDPRExportOut(BaseModel):
         description="Lifestyle survey data (structure varies by adapter)",
     )
     exported_at: datetime.datetime = Field(
-        default_factory=datetime.datetime.utcnow,
-        description="Timestamp of this export",
+        default_factory=lambda: datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        description="Timestamp of this export (naive UTC, matches DB columns)",
     )
 
 

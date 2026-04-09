@@ -284,3 +284,17 @@ def test_insights_metabolic_flag_produces_metabolic_insight() -> None:
     )
     metabolic_insights = [i for i in insights if i.kind == "metabolic"]
     assert metabolic_insights, "Expected a metabolic Insight when metabolic_hba1c_elevated flag is set"
+
+
+def test_insight_disclaimer_matches_constant() -> None:
+    """Every Insight carries the DISCLAIMER constant — locks the default value."""
+    insights = derive_insights(
+        vitality=_ANNA_VITALITY,
+        ehr=[_ANNA_LAB],
+        lifestyle=_ANNA_LIFESTYLE,
+    )
+    assert insights, "Expected at least one Insight for Anna to test disclaimer"
+    for insight in insights:
+        assert insight.disclaimer == DISCLAIMER, (
+            f"Insight.disclaimer mismatch: expected {DISCLAIMER!r}, got {insight.disclaimer!r}"
+        )

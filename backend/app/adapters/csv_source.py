@@ -173,7 +173,7 @@ def _build_medication_records(
     Returns an empty list when ``medications`` is ``"None"`` or empty.
     """
     meds_raw = row.get("medications", "").strip()
-    if not meds_raw or meds_raw == "None":
+    if not meds_raw or meds_raw.lower() == "none":
         return []
 
     medications = [m.strip() for m in meds_raw.split("|") if m.strip()]
@@ -361,7 +361,12 @@ class CSVDataSource:
     async def iter_patients(self) -> AsyncIterator[PatientData]:
         """Yield one PatientData bundle per patient in sorted patient_id order.
 
-        Streaming: only one patient's data is held in memory at a time.
+        Memory note: the EHR CSV is fully materialised for sorting (so patient
+        bundles are emitted in deterministic patient_id order).  The wearable
+        and lifestyle side tables are pre-indexed on startup via
+        ``_load_wearable_index`` / ``_load_lifestyle_index``.  Only one
+        patient's exploded records are held in memory at any time during the
+        yield loop.
 
         Yields
         ------

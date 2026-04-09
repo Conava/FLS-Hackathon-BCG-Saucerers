@@ -68,18 +68,32 @@ class TestConfigureLogging:
         root = logging.getLogger()
         assert root.level == logging.DEBUG
 
-    def test_configure_logging_produces_json_output(self, capfd: pytest.CaptureFixture) -> None:  # type: ignore[type-arg]
+    def test_configure_logging_produces_json_output(self) -> None:
         """Logger emits parseable JSON lines with request_id when set."""
+        import io
+
+        from pythonjsonlogger import json as jsonlogger
+
+        stream = io.StringIO()
+        handler = logging.StreamHandler(stream)
+        handler.setFormatter(jsonlogger.JsonFormatter())
+
         configure_logging(log_level="INFO")
         token = request_id_var.set("req-abc-456")
         try:
-            logger = get_logger("test.json")
+            logger = get_logger("test.json.verify")
+            logger.addHandler(handler)
             logger.info("test message for json")
         finally:
             request_id_var.reset(token)
-        # We can't trivially capture the JSON output in a unit test since handlers
-        # write to stderr/stdout, but we verify get_logger returns a Logger instance.
-        assert isinstance(logger, logging.Logger)
+            logger.removeHandler(handler)
+
+        import json
+
+        output = stream.getvalue().strip()
+        assert output, "Logger produced no output"
+        parsed = json.loads(output)
+        assert parsed.get("message") == "test message for json"
 
 
 class TestLoggerEmitsJsonWithRequestId:

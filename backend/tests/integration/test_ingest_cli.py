@@ -75,17 +75,27 @@ async def test_ingest_idempotent(db_session: AsyncSession) -> None:
     runs: the second run deletes and re-inserts exactly the same rows.
     """
     report1 = await _run_ingest(db_session)
-    report2 = await _run_ingest(db_session)
 
-    # Both runs should report the same patient count
-    assert report1.patients_ingested == report2.patients_ingested
-
-    # DB row counts should be stable after second run
+    # Capture row counts after first ingest.
+    counts_after_run1: dict[str, int] = {}
     for model in (Patient, EHRRecord, WearableDay, LifestyleProfile):
         result = await db_session.execute(select(func.count()).select_from(model))
-        count = result.scalar_one()
-        # Must be positive (something was loaded)
-        assert count > 0
+        counts_after_run1[model.__name__] = result.scalar_one()
+        assert counts_after_run1[model.__name__] > 0, f"{model.__name__} had 0 rows after run 1"
+
+    report2 = await _run_ingest(db_session)
+
+    # Both runs should report the same patient count.
+    assert report1.patients_ingested == report2.patients_ingested
+
+    # Row counts must be identical after run 2 — delete-then-insert must be idempotent.
+    for model in (Patient, EHRRecord, WearableDay, LifestyleProfile):
+        result = await db_session.execute(select(func.count()).select_from(model))
+        count_after_run2 = result.scalar_one()
+        assert count_after_run2 == counts_after_run1[model.__name__], (
+            f"{model.__name__}: count changed from {counts_after_run1[model.__name__]} "
+            f"(run 1) to {count_after_run2} (run 2) — ingest is not idempotent"
+        )
 
 
 @pytest.mark.integration
@@ -176,14 +186,35 @@ async def test_ingest_cross_patient_isolation_after_load(
     pt0001_date = result_w.scalar_one_or_none()
     assert pt0001_date is not None
 
+    # For wearable isolation use a date that is unique to PT0001 — query all of
+    # PT0001's dates and check that none of them appear under PT0282's patient_id
+    # when fetched via the strict isolation query.
+    stmt_w_all_pt0001 = select(WearableDay.date).where(WearableDay.patient_id == "PT0001")
+    result_w_all = await db_session.execute(stmt_w_all_pt0001)
+    pt0001_dates = {row[0] for row in result_w_all.fetchall()}
+    assert pt0001_dates, "PT0001 should have wearable days after ingest"
+
+    # Now fetch all wearable dates that belong to PT0282.
+    stmt_w_pt0282 = select(WearableDay.date).where(WearableDay.patient_id == "PT0282")
+    result_w_pt0282 = await db_session.execute(stmt_w_pt0282)
+    pt0282_dates = {row[0] for row in result_w_pt0282.fetchall()}
+
+    # Any day that appears in PT0282's wearable data AND PT0001's wearable data
+    # is a potential isolation concern only if both patients legitimately have the
+    # same date (acceptable). The stricter check: when we query with PT0282's
+    # patient_id filter, we must NEVER see a row whose patient_id is PT0001.
     stmt_w_cross = select(WearableDay).where(
         WearableDay.patient_id == "PT0282",
         WearableDay.date == pt0001_date,
     )
     result_w_cross = await db_session.execute(stmt_w_cross)
-    leaked_wearable = result_w_cross.scalar_one_or_none()
-    # This may exist if PT0282 also has data on that date — that's fine.
-    # The real test is the EHR record isolation above (by surrogate key).
+    potential_leak = result_w_cross.scalar_one_or_none()
+    # If a row is returned, it must belong to PT0282 (not a cross-patient leak).
+    if potential_leak is not None:
+        assert potential_leak.patient_id == "PT0282", (
+            f"ISOLATION BREACH: WearableDay for date {pt0001_date} returned under PT0282 "
+            f"but patient_id is {potential_leak.patient_id!r}"
+        )
 
 
 @pytest.mark.integration

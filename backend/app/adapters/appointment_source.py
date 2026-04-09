@@ -37,7 +37,7 @@ from typing import Protocol, runtime_checkable
 # ---------------------------------------------------------------------------
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Appointment:
     """Flat DTO for a single appointment slot.
 

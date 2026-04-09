@@ -10,14 +10,10 @@ Uses the same mini-app-factory pattern as test_routers_patients.py.
 from __future__ import annotations
 
 import datetime
-import os
 
 import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-
-os.environ.setdefault("API_KEY", "test-key")
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://ignored")
 
 HEADERS = {"X-API-Key": "test-key"}
 

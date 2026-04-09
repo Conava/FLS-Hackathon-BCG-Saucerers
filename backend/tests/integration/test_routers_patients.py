@@ -14,15 +14,11 @@ All tests assume ``asyncio_mode = "auto"`` (configured in pyproject.toml).
 from __future__ import annotations
 
 import datetime
-import os
 
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-
-os.environ.setdefault("API_KEY", "test-key")
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://ignored")
 
 HEADERS = {"X-API-Key": "test-key"}
 

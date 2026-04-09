@@ -117,7 +117,13 @@ class TestDataSourceProtocol:
     """DataSource is a @runtime_checkable Protocol — isinstance must work."""
 
     def test_datasource_protocol_runtime_checkable_conforming_class(self) -> None:
-        """A class with name + iter_patients passes isinstance check."""
+        """A class with name + iter_patients passes isinstance check.
+
+        NOTE: @runtime_checkable only checks for the *presence* of the
+        protocol's attributes/methods — it does NOT verify signatures.
+        A sync ``iter_patients`` with the wrong return type would also pass
+        this isinstance check.  Rely on mypy for signature correctness.
+        """
         source = _FakeDataSource()
         assert isinstance(source, DataSource)
 
@@ -148,7 +154,21 @@ class TestDataSourceProtocol:
 
 
 class TestRegistry:
-    """Registry tests use a dedicated name to avoid polluting the global registry."""
+    """Registry tests use an autouse fixture to snapshot/restore _registry.
+
+    This ensures test adapters registered during a test are cleaned up
+    afterwards, so test order never affects registry state.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _restore_registry(self) -> pytest.FixtureType:  # type: ignore[type-arg]
+        """Snapshot the adapter _registry before each test; restore after."""
+        import app.adapters as _adapters_module
+
+        snapshot = dict(_adapters_module._registry)
+        yield
+        _adapters_module._registry.clear()
+        _adapters_module._registry.update(snapshot)
 
     def test_register_and_get_source(self) -> None:
         """@register adds a class; get_source returns a correctly-typed instance."""

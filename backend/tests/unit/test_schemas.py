@@ -9,10 +9,9 @@ Tests cover:
 from __future__ import annotations
 
 import datetime
-from typing import get_type_hints
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app.schemas.appointments import AppointmentListOut, AppointmentOut
 from app.schemas.gdpr import GDPRDeleteAck, GDPRExportOut
@@ -257,7 +256,6 @@ def test_vitality_out_round_trip() -> None:
 
 def test_vitality_out_disclaimer_is_default() -> None:
     """VitalityOut.disclaimer does not need to be supplied — it has a default."""
-    trend = [{"date": "2024-01-15", "score": 70.0}]
     obj = VitalityOut(
         score=70.0,
         subscores={"sleep": 70.0, "activity": 70.0, "metabolic": 70.0, "cardio": 70.0, "lifestyle": 70.0},
@@ -293,7 +291,7 @@ def test_insight_out_round_trip() -> None:
 
 def test_insight_out_severity_validation() -> None:
     """InsightOut.severity only accepts 'low', 'moderate', 'high'."""
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         InsightOut.model_validate(
             {
                 "kind": "test",
@@ -423,5 +421,5 @@ def test_gdpr_delete_ack_round_trip() -> None:
 
 def test_gdpr_delete_ack_status_is_literal() -> None:
     """GDPRDeleteAck.status only accepts 'scheduled'."""
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         GDPRDeleteAck.model_validate({"status": "deleted", "message": "..."})

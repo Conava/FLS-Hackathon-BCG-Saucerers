@@ -107,7 +107,8 @@ class VitalityRepository:
 
         # Re-fetch to return a fully-populated ORM instance.
         persisted = await self.get(patient_id=patient_id)
-        assert persisted is not None, (
-            f"upsert succeeded but subsequent get returned None for {patient_id!r}"
-        )
+        if persisted is None:
+            raise RuntimeError(
+                f"upsert succeeded but subsequent get returned None for {patient_id!r}"
+            )
         return persisted

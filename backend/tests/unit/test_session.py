@@ -29,3 +29,19 @@ async def test_get_session_yields_asyncsession() -> None:
     finally:
         # Clean up: close generator without hitting the DB commit/close path
         await gen.aclose()
+
+
+def test_validate_url_rewrites_bare_postgresql() -> None:
+    """_validate_url rewrites bare ``postgresql://`` to ``postgresql+asyncpg://``."""
+    from app.db.session import _validate_url
+
+    result = _validate_url("postgresql://user:pass@localhost:5432/db")
+    assert result == "postgresql+asyncpg://user:pass@localhost:5432/db"
+
+
+def test_validate_url_rejects_invalid_scheme() -> None:
+    """_validate_url raises ValueError for unsupported URL schemes."""
+    from app.db.session import _validate_url
+
+    with pytest.raises(ValueError, match="postgresql\\+asyncpg"):
+        _validate_url("mysql://user:pass@localhost:3306/db")

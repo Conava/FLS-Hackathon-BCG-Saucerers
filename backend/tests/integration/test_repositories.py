@@ -376,22 +376,27 @@ async def test_cross_patient_isolation_parameterized(
     await db_session.flush()
 
     if repo_label == "patient":
-        # PatientRepository: PT_B querying for PT_A's patient_id → None
+        # PatientRepository: patient_id IS the PK, so isolation means:
+        # - get(pid_a) returns PT_A's record (their own data is accessible).
+        # - get(pid_b) returns PT_B's record (their own data is accessible).
+        # - get(pid_a) never returns PT_B's data and vice-versa.
         from app.repositories.patient_repo import PatientRepository
 
         repo: Any = PatientRepository(db_session)
-        # PT_A exists; query from PT_B's perspective (different patient_id)
-        result = await repo.get(patient_id=pid_b)
-        # PT_B only has themselves — we're really testing that PT_B can't get
-        # PT_A by passing PT_A's id.  Here, since Patient PK IS patient_id,
-        # the isolation is: getting PT_A when you pass pid_b returns None.
-        result_cross = await repo.get(patient_id=pid_a)
-        # result_cross returns PT_A's own record — that's correct behaviour.
-        # The isolation test: patient B's id returns patient B (not A).
+
+        # Each patient can fetch their own record.
+        result_a = await repo.get(patient_id=pid_a)
+        assert result_a is not None, f"PT_A ({pid_a}) should be fetchable by its own id"
+        assert result_a.patient_id == pid_a, "PT_A's record must have pid_a as patient_id"
+
         result_b = await repo.get(patient_id=pid_b)
-        assert result_b is not None and result_b.patient_id == pid_b
-        result_a_via_b = await repo.get(patient_id=pid_b)
-        assert result_a_via_b is None or result_a_via_b.patient_id == pid_b
+        assert result_b is not None, f"PT_B ({pid_b}) should be fetchable by its own id"
+        assert result_b.patient_id == pid_b, "PT_B's record must have pid_b as patient_id"
+
+        # The records must be different — not the same row returned for both.
+        assert result_a.patient_id != result_b.patient_id, (
+            "PT_A and PT_B should be distinct patients but got the same patient_id"
+        )
 
     elif repo_label == "ehr":
         from app.repositories.ehr_repo import EHRRepository

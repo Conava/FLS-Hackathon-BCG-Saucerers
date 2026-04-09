@@ -218,21 +218,21 @@ class UnifiedProfileService:
         if patient_data.lifestyle is not None:
             await session.merge(patient_data.lifestyle)
 
-        # 3. Delete-then-insert EHR records (idempotent per patient)
-        if patient_data.ehr_records:
-            await session.execute(
-                delete(EHRRecord).where(EHRRecord.patient_id == pid)  # type: ignore[arg-type]
-            )
-            for record in patient_data.ehr_records:
-                session.add(record)
+        # 3. Delete-then-insert EHR records (idempotent per patient).
+        # Delete always runs so stale records are cleared even on empty re-ingest.
+        await session.execute(
+            delete(EHRRecord).where(EHRRecord.patient_id == pid)  # type: ignore[arg-type]
+        )
+        for record in patient_data.ehr_records:
+            session.add(record)
 
-        # 4. Delete-then-insert wearable days (idempotent per patient)
-        if patient_data.wearable_days:
-            await session.execute(
-                delete(WearableDay).where(WearableDay.patient_id == pid)  # type: ignore[arg-type]
-            )
-            for day in patient_data.wearable_days:
-                session.add(day)
+        # 4. Delete-then-insert wearable days (idempotent per patient).
+        # Delete always runs so stale days are cleared even on empty re-ingest.
+        await session.execute(
+            delete(WearableDay).where(WearableDay.patient_id == pid)  # type: ignore[arg-type]
+        )
+        for day in patient_data.wearable_days:
+            session.add(day)
 
         # Flush after each patient so FK constraints are satisfied before
         # child rows are inserted in the same unit of work
