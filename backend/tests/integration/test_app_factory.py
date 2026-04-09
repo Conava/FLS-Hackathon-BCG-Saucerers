@@ -67,12 +67,12 @@ async def test_app_openapi_lists_expected_routes(client: AsyncClient) -> None:
 
     expected = {
         "/healthz",
-        "/patients/{patient_id}",
-        "/patients/{patient_id}/vitality",
-        "/patients/{patient_id}/records",
-        "/patients/{patient_id}/insights",
-        "/patients/{patient_id}/appointments/",
-        "/patients/{patient_id}/gdpr/export",
+        "/v1/patients/{patient_id}",
+        "/v1/patients/{patient_id}/vitality",
+        "/v1/patients/{patient_id}/records",
+        "/v1/patients/{patient_id}/insights",
+        "/v1/patients/{patient_id}/appointments/",
+        "/v1/patients/{patient_id}/gdpr/export",
     }
     missing = expected - paths
     assert not missing, f"OpenAPI spec is missing paths: {missing}"
@@ -130,4 +130,32 @@ async def test_app_title_and_version(client: AsyncClient) -> None:
     )
     assert info.get("version") == "0.1.0", (
         f"Unexpected version: {info.get('version')!r}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_v1_prefix_migration_old_path_404_new_path_in_spec(
+    client: AsyncClient,
+) -> None:
+    """Regression: old root paths must be gone (404); /v1 paths must exist in spec.
+
+    Asserts that:
+    - GET /patients/PT0001/profile (old, root-mounted path) returns 404.
+    - /v1/patients/{patient_id} is present in the OpenAPI spec.
+
+    This is the canonical regression guard for the T1 /v1 prefix migration.
+    """
+    # Old path must not exist — 404 (or 405 for wrong method, but 404 for path not found).
+    old_path_resp = await client.get("/patients/PT0001/profile")
+    assert old_path_resp.status_code == 404, (
+        f"Old path /patients/PT0001/profile must return 404 after /v1 migration, "
+        f"got {old_path_resp.status_code}"
+    )
+
+    # New /v1 path must be declared in the OpenAPI spec.
+    openapi_resp = await client.get("/openapi.json")
+    assert openapi_resp.status_code == 200
+    paths = set(openapi_resp.json()["paths"].keys())
+    assert "/v1/patients/{patient_id}" in paths, (
+        f"/v1/patients/{{patient_id}} not found in OpenAPI paths: {paths}"
     )

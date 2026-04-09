@@ -31,8 +31,8 @@ async def appointments_client(db_session: AsyncSession) -> AsyncClient:  # type:
 
     app = FastAPI()
     app.include_router(health.router)
-    app.include_router(patients.router)
-    app.include_router(appointments.router)
+    app.include_router(patients.router, prefix="/v1")
+    app.include_router(appointments.router, prefix="/v1")
 
     async def _override():  # type: ignore[return]
         yield db_session
@@ -75,7 +75,7 @@ async def test_get_appointments_returns_stub_list(
     await _seed_patient(db_session, "PT0282", "Anna Weber")
 
     resp = await appointments_client.get(
-        "/patients/PT0282/appointments/",
+        "/v1/patients/PT0282/appointments/",
         headers=HEADERS,
     )
     assert resp.status_code == 200, resp.text
@@ -109,7 +109,7 @@ async def test_get_appointments_returns_one_for_other_patients(
     await _seed_patient(db_session, "PT0001", "Max Mustermann")
 
     resp = await appointments_client.get(
-        "/patients/PT0001/appointments/",
+        "/v1/patients/PT0001/appointments/",
         headers=HEADERS,
     )
     assert resp.status_code == 200, resp.text
@@ -122,7 +122,7 @@ async def test_get_appointments_404_for_unknown_patient(
 ) -> None:
     """Requesting appointments for an unknown patient must return 404."""
     resp = await appointments_client.get(
-        "/patients/PT9999/appointments/",
+        "/v1/patients/PT9999/appointments/",
         headers=HEADERS,
     )
     assert resp.status_code == 404
@@ -135,5 +135,5 @@ async def test_get_appointments_requires_api_key(
     """Appointments endpoint must reject requests without X-API-Key."""
     await _seed_patient(db_session, "PT0282", "Anna Weber")
 
-    resp = await appointments_client.get("/patients/PT0282/appointments/")
+    resp = await appointments_client.get("/v1/patients/PT0282/appointments/")
     assert resp.status_code == 401

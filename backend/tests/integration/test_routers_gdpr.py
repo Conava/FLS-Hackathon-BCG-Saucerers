@@ -35,9 +35,9 @@ async def gdpr_client(db_session: AsyncSession) -> AsyncClient:  # type: ignore[
 
     app = FastAPI()
     app.include_router(health.router)
-    app.include_router(patients.router)
-    app.include_router(appointments.router)
-    app.include_router(gdpr.router)
+    app.include_router(patients.router, prefix="/v1")
+    app.include_router(appointments.router, prefix="/v1")
+    app.include_router(gdpr.router, prefix="/v1")
 
     async def _override():  # type: ignore[return]
         yield db_session
@@ -124,7 +124,7 @@ async def test_gdpr_export_bundles_all_data(
     """GDPR export must bundle patient profile, EHR records, and wearable data."""
     await _seed_anna_full(db_session)
 
-    resp = await gdpr_client.get("/patients/PT0282/gdpr/export", headers=HEADERS)
+    resp = await gdpr_client.get("/v1/patients/PT0282/gdpr/export", headers=HEADERS)
     assert resp.status_code == 200, resp.text
     data = resp.json()
 
@@ -154,7 +154,7 @@ async def test_gdpr_delete_wellness_framed_ack(
     """DELETE /gdpr must return status='scheduled' with wellness-framed message."""
     await _seed_anna_full(db_session)
 
-    resp = await gdpr_client.delete("/patients/PT0282/gdpr/", headers=HEADERS)
+    resp = await gdpr_client.delete("/v1/patients/PT0282/gdpr/", headers=HEADERS)
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data["status"] == "scheduled"
@@ -167,7 +167,7 @@ async def test_gdpr_export_404_for_unknown_patient(
     gdpr_client: AsyncClient,
 ) -> None:
     """Export for an unknown patient must return 404."""
-    resp = await gdpr_client.get("/patients/PT9999/gdpr/export", headers=HEADERS)
+    resp = await gdpr_client.get("/v1/patients/PT9999/gdpr/export", headers=HEADERS)
     assert resp.status_code == 404
 
 
@@ -175,7 +175,7 @@ async def test_gdpr_delete_404_for_unknown_patient(
     gdpr_client: AsyncClient,
 ) -> None:
     """Delete for an unknown patient must return 404."""
-    resp = await gdpr_client.delete("/patients/PT9999/gdpr/", headers=HEADERS)
+    resp = await gdpr_client.delete("/v1/patients/PT9999/gdpr/", headers=HEADERS)
     assert resp.status_code == 404
 
 
@@ -186,7 +186,7 @@ async def test_gdpr_export_requires_api_key(
     """GDPR export must reject requests without X-API-Key."""
     await _seed_anna_full(db_session)
 
-    resp = await gdpr_client.get("/patients/PT0282/gdpr/export")
+    resp = await gdpr_client.get("/v1/patients/PT0282/gdpr/export")
     assert resp.status_code == 401
 
 
@@ -197,7 +197,7 @@ async def test_gdpr_delete_requires_api_key(
     """GDPR delete must reject requests without X-API-Key."""
     await _seed_anna_full(db_session)
 
-    resp = await gdpr_client.delete("/patients/PT0282/gdpr/")
+    resp = await gdpr_client.delete("/v1/patients/PT0282/gdpr/")
     assert resp.status_code == 401
 
 
@@ -208,5 +208,5 @@ async def test_gdpr_export_isolation_cross_patient(
     """Requesting PT0001's GDPR export when only PT0282 exists must return 404."""
     await _seed_anna_full(db_session)
 
-    resp = await gdpr_client.get("/patients/PT0001/gdpr/export", headers=HEADERS)
+    resp = await gdpr_client.get("/v1/patients/PT0001/gdpr/export", headers=HEADERS)
     assert resp.status_code == 404

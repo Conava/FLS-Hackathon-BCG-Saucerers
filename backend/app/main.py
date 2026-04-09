@@ -73,11 +73,12 @@ def create_app() -> FastAPI:
     2. Register ``RequestIdMiddleware`` so every request gets an
        ``X-Request-ID`` header in both directions.
     3. Include all routers in registration order:
-       - ``health``       → ``GET /healthz`` (unauthenticated liveness probe)
-       - ``patients``     → ``/patients/{patient_id}/…`` (profile, vitality,
+       - ``health``       → ``GET /healthz`` (unauthenticated liveness probe,
+                             no ``/v1`` prefix — kept at root for probes)
+       - ``patients``     → ``/v1/patients/{patient_id}/…`` (profile, vitality,
                              records, wearable, insights)
-       - ``appointments`` → ``/patients/{patient_id}/appointments/``
-       - ``gdpr``         → ``/patients/{patient_id}/gdpr/…``
+       - ``appointments`` → ``/v1/patients/{patient_id}/appointments/``
+       - ``gdpr``         → ``/v1/patients/{patient_id}/gdpr/…``
 
     Returns:
         A ``FastAPI`` instance ready for use with uvicorn or an ASGI test
@@ -96,10 +97,12 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestIdMiddleware)
 
     # Routers are included in a stable order that matches the OpenAPI tag grouping.
+    # health stays at root (unauthenticated liveness probe — no /v1 prefix).
+    # All Slice 1 patient-domain routers are mounted under /v1 per the API contract.
     app.include_router(health.router)
-    app.include_router(patients.router)
-    app.include_router(appointments.router)
-    app.include_router(gdpr.router)
+    app.include_router(patients.router, prefix="/v1")
+    app.include_router(appointments.router, prefix="/v1")
+    app.include_router(gdpr.router, prefix="/v1")
 
     return app
 
