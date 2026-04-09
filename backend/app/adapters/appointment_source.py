@@ -81,8 +81,9 @@ class Appointment:
 class AppointmentSource(Protocol):
     """Protocol for pluggable appointment data sources.
 
-    Any class with a ``name`` attribute and a ``list_for`` coroutine satisfies
-    this Protocol — no inheritance required (structural subtyping).
+    Any class with a ``name`` attribute, a ``list_for`` coroutine, and a
+    ``book`` coroutine satisfies this Protocol — no inheritance required
+    (structural subtyping).
 
     Attributes
     ----------
@@ -95,12 +96,32 @@ class AppointmentSource(Protocol):
         Return the upcoming appointments for a specific patient.  Callers must
         not assume any particular ordering; the static stub orders by
         ``starts_at`` ascending.
+    book:
+        Create a new booking for a patient and return the resulting
+        ``Appointment`` DTO.  Accepts keyword arguments matching the
+        ``Appointment`` dataclass fields (except ``id``, which is assigned by
+        the source).
     """
 
     name: str
 
     async def list_for(self, patient_id: str) -> list[Appointment]:
         """Return upcoming appointments for ``patient_id``."""
+        ...
+
+    async def book(
+        self,
+        patient_id: str,
+        *,
+        title: str,
+        provider: str,
+        location: str,
+        starts_at: dt.datetime,
+        duration_minutes: int,
+        price_eur: float | None = None,
+        covered_percent: int | None = None,
+    ) -> Appointment:
+        """Create a booking for ``patient_id`` and return the booked appointment."""
         ...
 
 
@@ -153,14 +174,27 @@ class StaticAppointmentSource:
     * ``"PT0282"`` → Cardio-Prevention Panel + Sleep Assessment (matches mockup).
     * Any other ID → one generic Annual Check-up.
 
+    Booked appointments are stored in an in-memory dict (``_booked``) keyed by
+    ``patient_id``.  Cross-patient isolation is guaranteed because ``list_for``
+    only reads from the originating patient's own list and the fixture data.
+
     No external I/O; safe to call in unit tests and during local development
     before a real scheduling integration is wired in.
     """
 
     name = "static"
 
+    def __init__(self) -> None:
+        # In-memory store of booked appointments, keyed by patient_id.
+        self._booked: dict[str, list[Appointment]] = {}
+
     async def list_for(self, patient_id: str) -> list[Appointment]:
         """Return upcoming appointments for ``patient_id``.
+
+        Merges fixture data with any in-memory bookings made via ``book()``.
+        Appointments are scoped strictly to ``patient_id`` — no cross-patient
+        leakage is possible because the fixture and booked dicts are both keyed
+        by ``patient_id``.
 
         Parameters
         ----------
@@ -171,12 +205,63 @@ class StaticAppointmentSource:
         -------
         list[Appointment]
             Ordered by ``starts_at`` ascending.  Always returns at least one
-            appointment.
+            appointment (from fixture or bookings).
         """
         if patient_id == "PT0282":
             # Return new list to prevent mutation of the module-level constant.
-            return list(_PT0282_APPOINTMENTS)
-        return [_GENERIC_APPOINTMENT]
+            base: list[Appointment] = list(_PT0282_APPOINTMENTS)
+        else:
+            base = [_GENERIC_APPOINTMENT]
+
+        extra = self._booked.get(patient_id, [])
+        return sorted(base + extra, key=lambda a: a.starts_at)
+
+    async def book(
+        self,
+        patient_id: str,
+        *,
+        title: str,
+        provider: str,
+        location: str,
+        starts_at: dt.datetime,
+        duration_minutes: int,
+        price_eur: float | None = None,
+        covered_percent: int | None = None,
+    ) -> Appointment:
+        """Create an in-memory booking for ``patient_id``.
+
+        Generates a stable slug-based ``id`` from the patient ID and title so
+        the caller receives a consistent identifier across identical requests.
+
+        Parameters
+        ----------
+        patient_id:
+            Patient identifier (e.g. ``"PT0100"``).
+        title, provider, location, starts_at, duration_minutes:
+            Required appointment fields.
+        price_eur, covered_percent:
+            Optional billing fields; default to ``None``.
+
+        Returns
+        -------
+        Appointment
+            The booked appointment DTO with an assigned ``id``.
+        """
+        import uuid
+
+        appt_id = f"appt-{patient_id.lower()}-{uuid.uuid4().hex[:8]}"
+        appt = Appointment(
+            id=appt_id,
+            title=title,
+            provider=provider,
+            location=location,
+            starts_at=starts_at,
+            duration_minutes=duration_minutes,
+            price_eur=price_eur,
+            covered_percent=covered_percent,
+        )
+        self._booked.setdefault(patient_id, []).append(appt)
+        return appt
 
 
 # ---------------------------------------------------------------------------
