@@ -126,7 +126,7 @@ def _model_to_daily_log_out(log: DailyLog) -> DailyLogOut:
         alcohol_units = round(log.alcohol_units)
 
     return DailyLogOut(
-        id=log.id,  # type: ignore[arg-type]
+        id=log.id,
         patient_id=log.patient_id,
         date=log.logged_at.date(),
         mood_score=mood_score,

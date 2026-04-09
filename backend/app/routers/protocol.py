@@ -137,7 +137,7 @@ async def generate_protocol(
 
     action_outs = [
         ProtocolActionOut(
-            id=a.id,  # type: ignore[arg-type]
+            id=a.id,
             protocol_id=a.protocol_id,
             category=a.category,
             title=a.title,
@@ -150,7 +150,7 @@ async def generate_protocol(
     ]
 
     return ProtocolOut(
-        id=protocol.id,  # type: ignore[arg-type]
+        id=protocol.id,
         patient_id=protocol.patient_id,
         created_at=protocol.created_at,
         actions=action_outs,
@@ -204,7 +204,7 @@ async def get_protocol(
 
     action_outs = [
         ProtocolActionOut(
-            id=a.id,  # type: ignore[arg-type]
+            id=a.id,
             protocol_id=a.protocol_id,
             category=a.category,
             title=a.title,
@@ -217,7 +217,7 @@ async def get_protocol(
     ]
 
     return ProtocolOut(
-        id=protocol.id,  # type: ignore[arg-type]
+        id=protocol.id,
         patient_id=protocol.patient_id,
         created_at=protocol.created_at,
         actions=action_outs,
@@ -377,7 +377,7 @@ async def _get_current_vitality_score(
 
     from app.models.vitality_snapshot import VitalitySnapshot
 
-    pid_attr = VitalitySnapshot.patient_id
+    pid_attr = getattr(VitalitySnapshot, "patient_id")  # noqa: B009  # mypy-strict pattern: see CLAUDE.md
     stmt = select(VitalitySnapshot).where(pid_attr == patient_id)
     result = await session.execute(stmt)
     snapshot = result.scalars().first()

@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import AsyncIterator
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Form, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -66,7 +66,7 @@ def _analysis_from_row(row: MealLog) -> MealAnalysis:
     Returns:
         A validated ``MealAnalysis`` instance.
     """
-    macros_raw: dict = row.macros or {}
+    macros_raw: dict[str, Any] = row.macros or {}
     # Extract nested macros dict — exclude non-macro keys
     nested_macros = {
         k: macros_raw[k]
@@ -169,7 +169,7 @@ async def upload_meal_log(
     )
 
     return MealLogUploadResponse(
-        meal_log_id=meal_log.id,  # type: ignore[arg-type]
+        meal_log_id=meal_log.id,
         photo_uri=meal_log.photo_uri,
         analysis=analysis,
         disclaimer=AI_DISCLAIMER,
@@ -214,7 +214,7 @@ async def get_meal_log_history(
 
     log_outs = [
         MealLogOut(
-            id=row.id,  # type: ignore[arg-type]
+            id=row.id,
             patient_id=row.patient_id,
             logged_at=row.analyzed_at,
             photo_uri=row.photo_uri,

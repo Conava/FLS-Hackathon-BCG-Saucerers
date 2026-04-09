@@ -112,7 +112,7 @@ def _map_message(msg: Message) -> MessageOut:
         "inbound" if msg.sender == "patient" else "outbound"
     )
     return MessageOut(
-        id=msg.id,  # type: ignore[arg-type]
+        id=msg.id,
         patient_id=msg.patient_id,
         content=msg.content,
         sent_at=msg.created_at,

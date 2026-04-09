@@ -142,7 +142,7 @@ class NotificationsService:
 
 
 def _parse_llm_output(
-    raw: str | dict,
+    raw: str | dict[str, Any],
     *,
     trigger_kind: str,
 ) -> tuple[str, str, str]:

@@ -281,7 +281,7 @@ class UnifiedProfileService:
 
         # Load all records that still need embeddings.
         stmt = select(EHRRecord).where(
-            EHRRecord.embedding == None  # noqa: E711 — SQLAlchemy IS NULL
+            getattr(EHRRecord, "embedding").is_(None)  # noqa: B009  # mypy-strict pattern: see CLAUDE.md
         )
         result = await session.execute(stmt)
         records = list(result.scalars().all())

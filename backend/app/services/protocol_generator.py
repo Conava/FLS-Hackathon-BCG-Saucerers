@@ -352,7 +352,7 @@ class ProtocolGeneratorService:
         # ------------------------------------------------------------------ #
         for gen_action in generated.actions:
             action = ProtocolAction(
-                protocol_id=persisted_protocol.id,  # type: ignore[arg-type]
+                protocol_id=persisted_protocol.id,
                 category=gen_action.category,
                 title=gen_action.title,
                 rationale=gen_action.rationale,
@@ -438,13 +438,13 @@ class ProtocolGeneratorService:
         assert session is not None
 
         # LifestyleProfile (one row per patient, PK is patient_id)
-        lp_pid = LifestyleProfileModel.patient_id
+        lp_pid = getattr(LifestyleProfileModel, "patient_id")  # noqa: B009  # mypy-strict pattern: see CLAUDE.md
         lp_stmt = select(LifestyleProfileModel).where(lp_pid == patient_id)
         lp_result = await session.execute(lp_stmt)
         lifestyle = lp_result.scalars().first()
 
         # VitalitySnapshot (one row per patient, PK is patient_id)
-        vs_pid = VitalitySnapshotModel.patient_id
+        vs_pid = getattr(VitalitySnapshotModel, "patient_id")  # noqa: B009  # mypy-strict pattern: see CLAUDE.md
         vs_stmt = select(VitalitySnapshotModel).where(vs_pid == patient_id)
         vs_result = await session.execute(vs_stmt)
         snapshot = vs_result.scalars().first()
@@ -453,8 +453,8 @@ class ProtocolGeneratorService:
         now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
         week_ago = now - datetime.timedelta(days=_LOG_LOOKBACK_DAYS)
 
-        dl_pid = DailyLogModel.patient_id
-        dl_logged_at = DailyLogModel.logged_at
+        dl_pid = getattr(DailyLogModel, "patient_id")  # noqa: B009  # mypy-strict pattern: see CLAUDE.md
+        dl_logged_at = getattr(DailyLogModel, "logged_at")  # noqa: B009  # mypy-strict pattern: see CLAUDE.md
         dl_stmt = (
             select(DailyLogModel)
             .where(dl_pid == patient_id)

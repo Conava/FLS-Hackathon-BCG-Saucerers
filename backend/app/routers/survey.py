@@ -26,7 +26,7 @@ which extends PatientScopedRepository.
 from __future__ import annotations
 
 import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -88,7 +88,7 @@ async def _require_patient(session: AsyncSession, patient_id: str) -> None:
 async def _upsert_lifestyle_from_onboarding(
     session: AsyncSession,
     patient_id: str,
-    answers: dict,
+    answers: dict[str, Any],
 ) -> None:
     """Apply onboarding survey answers to the patient's LifestyleProfile.
 
@@ -106,7 +106,7 @@ async def _upsert_lifestyle_from_onboarding(
     from app.models.lifestyle_profile import LifestyleProfile
 
     # Fetch or create the LifestyleProfile.
-    pid_attr = LifestyleProfile.patient_id
+    pid_attr = getattr(LifestyleProfile, "patient_id")  # noqa: B009  # mypy-strict pattern: see CLAUDE.md
     stmt = select(LifestyleProfile).where(pid_attr == patient_id)
     result = await session.execute(stmt)
     lp = result.scalars().first()

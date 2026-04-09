@@ -136,7 +136,7 @@ async def post_clinical_review(
     )
 
     return ClinicalReviewResponse(
-        id=review.id,  # type: ignore[arg-type]
+        id=review.id,
         patient_id=review.patient_id,
         notes=review.reason,
         reason=review.reason,

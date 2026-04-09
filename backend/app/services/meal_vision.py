@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -153,7 +153,7 @@ class MealVisionService:
         # ------------------------------------------------------------------
         # 1. Fetch LifestyleProfile for dietary context
         # ------------------------------------------------------------------
-        pid_attr = LifestyleProfile.patient_id
+        pid_attr = getattr(LifestyleProfile, "patient_id")  # noqa: B009  # mypy-strict pattern: see CLAUDE.md
         stmt = select(LifestyleProfile).where(pid_attr == patient_id)
         result = await self._session.execute(stmt)
         profile: LifestyleProfile | None = result.scalars().first()
@@ -214,7 +214,7 @@ class MealVisionService:
         # Store full analysis (classification, macros, swap_rationale) in the
         # JSONB macros column.  longevity_swap gets its own text column for
         # easy querying.  analyzed_at must be naive UTC (CLAUDE.md lesson).
-        macros_payload: dict = {
+        macros_payload: dict[str, Any] = {
             "classification": analysis.classification,
             "kcal": analysis.macros.get("kcal"),
             "protein_g": analysis.macros.get("protein_g"),

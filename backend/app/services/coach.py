@@ -282,7 +282,7 @@ class CoachService:
             lines.append(f"BMI: {patient.bmi:.1f}")
 
         # Lifestyle profile (optional — may be absent for new patients)
-        pid_attr = LifestyleProfile.patient_id
+        pid_attr = getattr(LifestyleProfile, "patient_id")  # noqa: B009  # mypy-strict pattern: see CLAUDE.md
         stmt = select(LifestyleProfile).where(pid_attr == patient_id)
         result = await self._session.execute(stmt)
         lifestyle = result.scalars().first()

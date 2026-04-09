@@ -156,7 +156,7 @@ async def post_referral(
     referral = await service.create(patient_id=patient_id, code=code)
 
     return ReferralResponse(
-        id=referral.id,  # type: ignore[arg-type]
+        id=referral.id,
         patient_id=referral.patient_id,
         code=referral.code,
         specialty=body.specialty,

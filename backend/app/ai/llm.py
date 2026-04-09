@@ -23,7 +23,7 @@ from __future__ import annotations
 import hashlib
 import random
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel
 
@@ -57,7 +57,7 @@ class LLMProvider(Protocol):
         user: str,
         model: str,
         response_schema: type[BaseModel] | None = None,
-    ) -> str | dict:
+    ) -> str | dict[str, Any]:
         """Generate a text (or structured-JSON) response.
 
         Args:
@@ -115,7 +115,7 @@ class LLMProvider(Protocol):
         image_bytes: bytes,
         model: str,
         response_schema: type[BaseModel],
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Analyse an image and return structured JSON.
 
         Args:
@@ -140,7 +140,7 @@ _DISCLAIMER = "This is wellness guidance, not medical advice."
 
 _STREAM_TOKENS = ["Here", " is", " a", " reply", "."]
 
-_FAKE_VISION: dict = {
+_FAKE_VISION: dict[str, Any] = {
     "classification": "grilled salmon, white rice, broccoli",
     "macros": {
         "kcal": 520,
@@ -187,7 +187,7 @@ class FakeLLMProvider:
         user: str,
         model: str,
         response_schema: type[BaseModel] | None = None,
-    ) -> str | dict:
+    ) -> str | dict[str, Any]:
         """Return deterministic text or structured response.
 
         When ``response_schema`` is provided returns a ``dict`` built from the
@@ -242,12 +242,12 @@ class FakeLLMProvider:
         image_bytes: bytes,
         model: str,
         response_schema: type[BaseModel],
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Return a fixed ``MealAnalysis``-shaped dict."""
         return dict(_FAKE_VISION)
 
     @staticmethod
-    def _fake_dict_for_schema(schema: type[BaseModel]) -> dict:
+    def _fake_dict_for_schema(schema: type[BaseModel]) -> dict[str, Any]:
         """Build a default-value dict from a Pydantic schema's field defaults.
 
         This creates a model instance using only default values (no required
@@ -303,7 +303,7 @@ class GeminiProvider:
         user: str,
         model: str,
         response_schema: type[BaseModel] | None = None,
-    ) -> str | dict:
+    ) -> str | dict[str, Any]:
         """Call Gemini to generate text or structured JSON.
 
         When ``response_schema`` is provided, sets ``response_mime_type`` to
@@ -319,7 +319,7 @@ class GeminiProvider:
         Returns:
             Plain text string or ``dict`` (when ``response_schema`` is set).
         """
-        config_kwargs: dict = {
+        config_kwargs: dict[str, Any] = {
             "system_instruction": system,
         }
         if response_schema is not None:
@@ -334,8 +334,11 @@ class GeminiProvider:
         )
         if response_schema is not None:
             import json
-            return json.loads(response.text)
-        return response.text
+            if not response.text:
+                raise ValueError("empty LLM response")
+            result: dict[str, Any] = json.loads(response.text)
+            return result
+        return response.text or ""
 
     def generate_stream(
         self,
@@ -371,7 +374,9 @@ class GeminiProvider:
             model="text-embedding-004",
             contents=texts,
         )
-        return [emb.values for emb in response.embeddings]
+        if response.embeddings is None:
+            return []
+        return [list(emb.values) for emb in response.embeddings if emb.values is not None]
 
     async def generate_vision(
         self,
@@ -381,7 +386,7 @@ class GeminiProvider:
         image_bytes: bytes,
         model: str,
         response_schema: type[BaseModel],
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Analyse an image and return structured JSON via Gemini Vision.
 
         Passes the image as a ``Part`` alongside the text prompt.  Uses
@@ -413,7 +418,10 @@ class GeminiProvider:
             contents=[prompt, image_part],
             config=config,
         )
-        return json.loads(response.text)
+        if not response.text:
+            raise ValueError("empty LLM vision response")
+        vision_result: dict[str, Any] = json.loads(response.text)
+        return vision_result
 
 
 async def _gemini_stream(

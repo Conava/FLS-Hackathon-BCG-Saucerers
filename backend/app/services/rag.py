@@ -269,8 +269,9 @@ def _get_request_id() -> str:
     The lookup is resilient — any failure returns "" rather than raising.
     """
     try:
-        from app.core.request_id import request_id_ctx  # type: ignore[import]
+        from app.core.request_id import request_id_ctx  # type: ignore[import-untyped]
 
-        return request_id_ctx.get("")
+        result = request_id_ctx.get("")
+        return str(result) if result is not None else ""
     except (ImportError, LookupError):
         return ""
