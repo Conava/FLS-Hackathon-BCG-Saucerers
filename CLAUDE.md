@@ -37,12 +37,22 @@ This project uses a self-correcting pipeline. Agents (implementer, reviewer, dee
 
 ## Project Context
 
-<!-- Add non-obvious context here. Examples: -->
-<!-- - Build/test/lint commands if non-standard -->
-<!-- - Naming conventions not enforceable by linters -->
-<!-- - Architectural decisions that differ from common patterns -->
-<!-- - Required environment variables or local services -->
-<!-- - Common gotchas specific to this codebase -->
+This is the **BCG Platinion AI Hackathon** project (Future Leader Summit Hamburg, 09–10.04.2026): a 24-hour build of an **AI-driven longevity MVP** for a European healthcare group. 6-person team.
+
+**Before writing code, read:**
+- [`docs/README.md`](docs/README.md) — documentation index
+- [`docs/04-tech-stack.md`](docs/04-tech-stack.md) — **LOCKED** versions (Next.js 15, FastAPI, SQLModel, Pydantic v2, SQLAlchemy 2.0 async, Cloud SQL Postgres 16 + pgvector, `google-genai` SDK with Gemini 2.5 Flash/Pro, Tailwind v4, Cloud Run europe-west3)
+- [`docs/09-ai-assist-playbook.md`](docs/09-ai-assist-playbook.md) — **REQUIRED** — known AI-assistant hallucination traps for this stack (wrong Gemini SDK, Pydantic v1 syntax, SQLAlchemy 1.x, Tailwind v3 config, Next.js 14 sync params, etc.)
+
+**For any code-writing prompt, include this preamble:**
+> *Stack: FastAPI + SQLModel + SQLAlchemy 2.0 async + Pydantic v2 + `google-genai` SDK (NOT google-generativeai, NOT vertexai.generative_models) + Next.js 15 App Router + Tailwind v4 (no tailwind.config.js). See docs/04-tech-stack.md.*
+
+**Key invariants** (non-negotiable — see docs/08-legal-compliance.md):
+- Every SQL query filters by `patient_id` at the SQL level (hard isolation for GDPR + RAG safety)
+- No PHI in logs — only request IDs, model names, token counts
+- EU-region only (`europe-west3`) — Cloud Run, Cloud SQL, Vertex AI
+- Wellness framing in all user-facing copy — no diagnostic verbs (diagnose/treat/cure/prevent-disease) to stay out of MDR Class IIa
+- Every AI screen discloses "You're talking to an AI"
 
 ## Lessons and Memory
 

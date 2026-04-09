@@ -1,0 +1,2380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Longevity+ · Anna Weber · Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ─── Reset & Base ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #F7F6F3;
+  --surface:   #FFFFFF;
+  --border:    #E8E6E1;
+  --ink:       #0E1726;
+  --ink-2:     #3D4A5C;
+  --ink-3:     #7A8799;
+  --accent:    #1A6B74;
+  --accent-lt: #EAF4F5;
+  --accent-md: #C2E0E3;
+  --good:      #2D7D4E;
+  --good-lt:   #E8F5EE;
+  --warn:      #9C6B15;
+  --warn-lt:   #FDF3DC;
+  --danger:    #B8312F;
+  --danger-lt: #FCEAEA;
+  --shadow-sm: 0 1px 3px rgba(14,23,38,.06), 0 1px 2px rgba(14,23,38,.04);
+  --shadow-md: 0 4px 16px rgba(14,23,38,.08), 0 1px 4px rgba(14,23,38,.05);
+  --shadow-lg: 0 12px 40px rgba(14,23,38,.12), 0 4px 12px rgba(14,23,38,.06);
+  --r-sm:  8px;
+  --r-md:  14px;
+  --r-lg:  20px;
+  --r-xl:  28px;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --tab-h: 72px;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ─── Layout Shell ─────────────────────────────────── */
+.app-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #ECEAE4;
+}
+
+/* Mobile: full-screen */
+@media (max-width: 767px) {
+  .app-shell {
+    background: var(--bg);
+    display: block;
+    min-height: 100vh;
+  }
+}
+
+/* ─── Desktop Phone Frame ──────────────────────────── */
+.desktop-wrapper {
+  display: flex;
+  gap: 36px;
+  align-items: flex-start;
+  padding: 32px;
+  max-width: 1140px;
+  width: 100%;
+}
+
+.phone-frame {
+  flex-shrink: 0;
+  width: 393px;
+  height: 852px;
+  background: #1A1A1E;
+  border-radius: 52px;
+  padding: 14px;
+  box-shadow: 0 32px 80px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.20), inset 0 0 0 1px rgba(255,255,255,.08);
+  position: relative;
+}
+
+.phone-notch {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 126px;
+  height: 34px;
+  background: #1A1A1E;
+  border-radius: 0 0 20px 20px;
+  z-index: 10;
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 40px;
+  overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.context-panel {
+  flex: 1;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 767px) {
+  .desktop-wrapper { display: none; }
+  .mobile-app { display: flex; flex-direction: column; height: 100vh; }
+}
+
+@media (min-width: 768px) {
+  .mobile-app { display: none; }
+}
+
+/* ─── Phone screen content ─────────────────────────── */
+.screen-viewport {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  padding-top: 48px; /* room for status bar */
+}
+
+.screen-viewport::-webkit-scrollbar { display: none; }
+
+.tab-bar {
+  height: var(--tab-h);
+  background: rgba(255,255,255,.95);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 8px 4px;
+  border: none;
+  background: none;
+  color: var(--ink-3);
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  transition: color .18s;
+  user-select: none;
+}
+
+.tab-item.active { color: var(--accent); }
+.tab-item svg { transition: transform .2s; }
+.tab-item.active svg { transform: translateY(-1px); }
+
+/* ─── Status bar ───────────────────────────────────── */
+.status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  z-index: 20;
+  background: linear-gradient(to bottom, rgba(247,246,243,1) 70%, rgba(247,246,243,0));
+  pointer-events: none;
+}
+
+.status-bar .time { font-variant-numeric: tabular-nums; }
+.status-bar .icons { display: flex; gap: 6px; align-items: center; }
+
+/* ─── Screens (hidden/shown) ───────────────────────── */
+.screen { display: none; padding: 16px 20px 24px; animation: fadeUp .28s ease both; }
+.screen.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Typography ───────────────────────────────────── */
+h1 { font-size: 24px; font-weight: 700; letter-spacing: -.03em; line-height: 1.2; }
+h2 { font-size: 18px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; }
+h3 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.caption { font-size: 12px; color: var(--ink-3); }
+.label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ─── Cards ─────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+.card + .card { margin-top: 12px; }
+
+/* ─── Chips ─────────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.chip-accent  { background: var(--accent-lt); color: var(--accent); }
+.chip-good    { background: var(--good-lt);   color: var(--good); }
+.chip-warn    { background: var(--warn-lt);   color: var(--warn); }
+.chip-danger  { background: var(--danger-lt); color: var(--danger); }
+.chip-neutral { background: #F0EEE9;          color: var(--ink-2); }
+
+/* ─── Buttons ───────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 13px 20px;
+  border-radius: var(--r-md);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  cursor: pointer;
+  border: none;
+  transition: transform .14s, box-shadow .14s, background .14s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active { transform: scale(.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(26,107,116,.25);
+  width: 100%;
+}
+.btn-primary:hover { background: #155e66; box-shadow: 0 4px 16px rgba(26,107,116,.3); }
+
+.btn-secondary {
+  background: var(--accent-lt);
+  color: var(--accent);
+  width: 100%;
+}
+.btn-secondary:hover { background: var(--accent-md); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent-md);
+  width: 100%;
+}
+.btn-ghost:hover { background: var(--accent-lt); }
+
+/* ─── Section header ────────────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-header h2 { font-size: 16px; }
+
+.see-all {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font);
+}
+
+/* ─── AI Disclosure ─────────────────────────────────── */
+.ai-disclosure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F2F0FE;
+  border: 1px solid #D5CEFC;
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.ai-disclosure svg { flex-shrink: 0; color: #5B4FCF; }
+.ai-disclosure p { font-size: 12px; color: #3D3580; line-height: 1.4; }
+
+/* ─── EU Trust chip ─────────────────────────────────── */
+.eu-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #EFF8F4;
+  border: 1px solid #BAE0CC;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: #246840;
+  text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 1 — DASHBOARD
+   ══════════════════════════════════════════════════════ */
+
+/* Top greeting bar */
+.greeting-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.greeting-text h1 { font-size: 20px; }
+.greeting-text p  { font-size: 13px; color: var(--ink-3); margin-top: 1px; }
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1A6B74, #2D9DA8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(26,107,116,.3);
+  transition: transform .15s;
+}
+.avatar:hover { transform: scale(1.06); }
+
+/* Score ring */
+.score-ring-wrap {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 12px;
+}
+
+.ring-container {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+}
+
+.ring-container svg { transform: rotate(-90deg); }
+
+.ring-track  { fill: none; stroke: var(--border); stroke-width: 9; }
+.ring-fill   { fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round;
+               stroke-dasharray: 283; stroke-dashoffset: 283; transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1); }
+.ring-fill.animated { stroke-dashoffset: 96; } /* 68/100 = 68% → offset = 283*(1-0.68) ≈ 90.6 → 283-192=91 */
+
+.ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring-score { font-size: 30px; font-weight: 700; letter-spacing: -.04em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ring-label { font-size: 10px; color: var(--ink-3); font-weight: 600; letter-spacing: .03em; text-transform: uppercase; margin-top: -1px; }
+
+.score-meta { flex: 1; min-width: 0; }
+.score-meta h2 { font-size: 17px; margin-bottom: 4px; }
+.score-meta .delta { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--warn); font-weight: 500; margin-bottom: 12px; }
+
+/* Sparkline */
+.sparkline-wrap { margin-top: 10px; }
+.sparkline-label { font-size: 10px; color: var(--ink-3); margin-bottom: 4px; font-weight: 500; }
+
+svg.sparkline { overflow: visible; }
+.spark-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.spark-area { fill: url(#sparkGrad); }
+.spark-dot  { fill: var(--accent); }
+
+/* Nudge card */
+.nudge-card {
+  background: linear-gradient(135deg, #EAF4F5 0%, #F0F8F9 100%);
+  border: 1px solid var(--accent-md);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.nudge-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.nudge-card h3 { font-size: 13px; color: var(--accent); margin-bottom: 3px; }
+.nudge-card p  { font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+
+/* Insight cards */
+.insight-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: box-shadow .18s, transform .18s;
+}
+
+.insight-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+.insight-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.insight-card h3 { font-size: 13px; margin-bottom: 2px; }
+.insight-card p  { font-size: 12px; color: var(--ink-3); line-height: 1.4; }
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 2 — AI COACH
+   ══════════════════════════════════════════════════════ */
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.coach-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1A6B74, #0F4A52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.chat-header-text h2 { font-size: 16px; }
+.chat-header-text p  { font-size: 12px; color: var(--ink-3); }
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  min-height: 260px;
+}
+
+.msg {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.msg-coach { align-items: flex-start; }
+.msg-user  { justify-content: flex-end; }
+
+.msg-bubble {
+  padding: 11px 14px;
+  border-radius: 18px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  max-width: 82%;
+}
+
+.msg-coach .msg-bubble {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top-left-radius: 4px;
+  color: var(--ink);
+}
+
+.msg-user .msg-bubble {
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.msg-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.msg-source:hover { text-decoration: underline; }
+
+.typing-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  animation: blink 1.2s infinite;
+  display: inline-block;
+}
+.typing-dot:nth-child(2) { animation-delay: .2s; }
+.typing-dot:nth-child(3) { animation-delay: .4s; }
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: .2; transform: scale(.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* Chips */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.suggest-chip {
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1.5px solid var(--accent-md);
+  background: var(--accent-lt);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .14s, border-color .14s;
+  font-family: var(--font);
+}
+
+.suggest-chip:hover { background: var(--accent-md); }
+.suggest-chip:active { transform: scale(.97); }
+
+/* Chat input */
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 8px 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.chat-input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+}
+
+.chat-input::placeholder { color: var(--ink-3); }
+
+.send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .14s, transform .14s;
+}
+.send-btn:hover { background: #155e66; }
+.send-btn:active { transform: scale(.93); }
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 3 — MY RECORDS
+   ══════════════════════════════════════════════════════ */
+
+.lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 12px 0;
+}
+
+.lab-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 0 0 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.lab-table td {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.lab-table tr:last-child td { border-bottom: none; }
+
+.lab-val { font-variant-numeric: tabular-nums; font-weight: 600; }
+.lab-range { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+
+.flag-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.plain-lang {
+  background: var(--accent-lt);
+  border: 1px solid var(--accent-md);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin: 12px 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+.plain-lang strong { color: var(--ink); }
+
+.record-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.record-list-item:last-child { border-bottom: none; }
+
+.record-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.record-list-item h3 { font-size: 13px; margin-bottom: 2px; }
+.record-list-item .caption { display: block; }
+
+.chevron { color: var(--ink-3); margin-left: auto; }
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 4 — INSIGHTS & RISKS
+   ══════════════════════════════════════════════════════ */
+
+.risk-hero {
+  background: linear-gradient(145deg, #FEF3F2 0%, #FBE8E8 100%);
+  border: 1px solid #FCCECE;
+  border-radius: var(--r-xl);
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.risk-hero-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.risk-icon {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: var(--danger-lt);
+  border: 1px solid #FCCECE;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: var(--danger);
+}
+
+.risk-hero h2 { font-size: 16px; color: var(--danger); }
+.risk-hero .chip { margin-bottom: 10px; }
+.risk-hero p { font-size: 13px; color: var(--ink-2); line-height: 1.55; }
+
+.risk-factors {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 12px 0;
+}
+
+.risk-factor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.rf-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+}
+
+/* Offer card */
+.offer-card {
+  background: linear-gradient(135deg, #EAF4F5 0%, #F5FBFC 100%);
+  border: 1.5px solid var(--accent-md);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.offer-card::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: rgba(26,107,116,.06);
+}
+
+.offer-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+
+.offer-price .current { font-size: 24px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.offer-price .was { font-size: 12px; color: var(--ink-3); text-decoration: line-through; font-variant-numeric: tabular-nums; }
+
+.offer-card h2 { font-size: 15px; margin-bottom: 4px; }
+.offer-card p  { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; margin-bottom: 14px; }
+
+.offer-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.offer-detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.offer-detail svg { color: var(--good); flex-shrink: 0; }
+
+/* Sleep insight */
+.sleep-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px;
+}
+
+.sleep-bars {
+  display: flex;
+  gap: 3px;
+  height: 40px;
+  align-items: flex-end;
+  margin: 10px 0;
+}
+
+.sleep-bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent-md);
+  transition: background .2s;
+  position: relative;
+}
+
+.sleep-bar.low { background: #F5C7C7; }
+.sleep-bar.today { background: var(--accent); }
+.sleep-bar:hover { opacity: .8; }
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 5 — FUTURE SELF
+   ══════════════════════════════════════════════════════ */
+
+.future-hero {
+  background: linear-gradient(160deg, #0E1726 0%, #1A3344 50%, #0F4A52 100%);
+  border-radius: var(--r-xl);
+  padding: 24px 20px;
+  margin-bottom: 16px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.future-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; right: -40px;
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: rgba(26,107,116,.18);
+}
+
+.future-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; left: -40px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.04);
+}
+
+.future-paths {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  position: relative;
+  z-index: 2;
+}
+
+.path-col { flex: 1; }
+.path-label { font-size: 10px; font-weight: 600; letter-spacing: .06em; opacity: .6; margin-bottom: 6px; text-transform: uppercase; }
+
+.age-num {
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.age-unit { font-size: 13px; opacity: .6; margin-top: 2px; }
+.vitality-line { font-size: 14px; margin-top: 8px; opacity: .8; }
+.vitality-score { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.path-divider {
+  width: 1px;
+  background: rgba(255,255,255,.15);
+  height: 80px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.path-improved .age-num { color: #5DDBB5; }
+.path-improved .vitality-score { color: #5DDBB5; }
+
+.future-disclaimer {
+  font-size: 10px;
+  opacity: .5;
+  margin-top: 14px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Sliders */
+.slider-section { margin-bottom: 16px; }
+
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.slider-label h3 { font-size: 13.5px; }
+.slider-value { font-size: 13.5px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--accent-md);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 2px 8px rgba(26,107,116,.3);
+  border: 3px solid #fff;
+  cursor: pointer;
+  transition: box-shadow .15s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+  box-shadow: 0 2px 12px rgba(26,107,116,.45);
+}
+
+.gain-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #EEF9F4;
+  border: 1px solid #BAE0CC;
+  border-radius: var(--r-md);
+}
+
+.gain-bar svg { color: var(--good); flex-shrink: 0; }
+.gain-bar p { font-size: 12.5px; color: #1D6038; font-weight: 500; }
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 6 — APPOINTMENTS
+   ══════════════════════════════════════════════════════ */
+
+.appt-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: box-shadow .18s, transform .15s;
+}
+
+.appt-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+.appt-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.appt-date-col {
+  text-align: center;
+  background: var(--accent-lt);
+  border: 1px solid var(--accent-md);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  flex-shrink: 0;
+  min-width: 46px;
+}
+
+.appt-month { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.appt-day   { font-size: 22px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
+
+.appt-info h3 { font-size: 14px; margin-bottom: 4px; }
+.appt-info p  { font-size: 12px; color: var(--ink-3); line-height: 1.4; }
+
+/* ═══════════════════════════════════════════════════
+   CONTEXT PANEL (Desktop sidebar)
+   ═══════════════════════════════════════════════════ */
+
+.patient-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.patient-avatar-lg {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1A6B74, #2D9DA8);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 18px; font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.patient-card h2 { font-size: 16px; margin-bottom: 2px; }
+.patient-card .sub { font-size: 13px; color: var(--ink-3); }
+
+.patient-meta {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.meta-item { font-size: 12px; }
+.meta-item .meta-label { color: var(--ink-3); margin-bottom: 2px; font-size: 11px; }
+.meta-item .meta-value { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.demo-badge {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #FDF3DC;
+  border: 1px solid #F5D98B;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: #9C6B15;
+}
+
+.context-legend {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.context-legend h3 { font-size: 13px; margin-bottom: 10px; }
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-bottom: 8px;
+}
+
+.legend-dot {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Profile overlay */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(14,23,38,.45);
+  z-index: 50;
+  display: none;
+  align-items: flex-end;
+  backdrop-filter: blur(2px);
+}
+
+.overlay.open { display: flex; animation: overlayIn .22s ease; }
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.overlay-sheet {
+  background: var(--surface);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 28px 20px 36px;
+  width: 100%;
+  animation: sheetUp .25s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.sheet-handle {
+  width: 36px; height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  margin: 0 auto 20px;
+}
+
+/* ─── Booked confirmation ───────────────────────────── */
+.booked-confirm {
+  background: var(--good-lt);
+  border: 1px solid #BAE0CC;
+  border-radius: var(--r-md);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  display: none;
+}
+.booked-confirm.show { display: flex; animation: fadeUp .3s ease; }
+.booked-confirm p { font-size: 13px; color: var(--good); font-weight: 500; }
+
+/* ─── Scroll hint ───────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .ring-fill { transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ring-fill { transition: none; }
+  * { animation-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     MOBILE APP (≤ 767px)
+     ═══════════════════════════════════════════════════════ -->
+<div class="mobile-app" id="mobileApp">
+  <!-- Phone screen contents rendered here via JS clone -->
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     DESKTOP: Phone frame + Context panel
+     ═══════════════════════════════════════════════════════ -->
+<div class="app-shell">
+  <div class="desktop-wrapper">
+
+    <!-- Phone frame -->
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" id="phoneScreen">
+
+        <!-- Status bar -->
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">
+            <!-- Signal -->
+            <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
+              <rect x="0" y="7" width="3" height="4" rx="1" fill="currentColor" opacity=".4"/>
+              <rect x="4.5" y="5" width="3" height="6" rx="1" fill="currentColor" opacity=".6"/>
+              <rect x="9" y="3" width="3" height="8" rx="1" fill="currentColor" opacity=".8"/>
+              <rect x="13.5" y="0" width="2.5" height="11" rx="1" fill="currentColor"/>
+            </svg>
+            <!-- WiFi -->
+            <svg width="15" height="11" viewBox="0 0 15 11" fill="none">
+              <path d="M7.5 9L7.5 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M5 6.5C5.7 5.8 6.5 5.5 7.5 5.5C8.5 5.5 9.3 5.8 10 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <path d="M2.5 4C4 2.5 5.7 1.5 7.5 1.5C9.3 1.5 11 2.5 12.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".6"/>
+              <path d="M0 1.5C2 0 4.6 -0.2 7.5 0C10.4 0.2 12.8 1 15 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".3"/>
+            </svg>
+            <!-- Battery -->
+            <svg width="22" height="11" viewBox="0 0 22 11" fill="none">
+              <rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1" opacity=".35"/>
+              <rect x="2" y="2" width="13" height="7" rx="1.5" fill="currentColor"/>
+              <path d="M19.5 3.5V7.5C20.4 7.1 21 6.1 21 5.5C21 4.9 20.4 3.9 19.5 3.5Z" fill="currentColor" opacity=".4"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Scrollable screen area -->
+        <div class="screen-viewport" id="screenViewport">
+
+          <!-- ── SCREEN 1: DASHBOARD ── -->
+          <div class="screen active" id="s-dashboard">
+
+            <div class="greeting-bar">
+              <div class="greeting-text">
+                <h1>Good morning, Anna</h1>
+                <p>Thursday, 9 April 2026</p>
+              </div>
+              <div class="avatar" onclick="openProfile()" title="Anna Weber — PT0282">AW</div>
+            </div>
+
+            <!-- Vitality Score ring -->
+            <div class="score-ring-wrap">
+              <div class="ring-container">
+                <svg width="110" height="110" viewBox="0 0 110 110">
+                  <defs>
+                    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#1A6B74"/>
+                      <stop offset="100%" stop-color="#2DAABB"/>
+                    </linearGradient>
+                  </defs>
+                  <circle class="ring-track" cx="55" cy="55" r="45"/>
+                  <circle class="ring-fill" id="ringFill" cx="55" cy="55" r="45"/>
+                </svg>
+                <div class="ring-center">
+                  <div class="ring-score num" id="ringNum">0</div>
+                  <div class="ring-label">Vitality</div>
+                </div>
+              </div>
+
+              <div class="score-meta">
+                <h2>Your Vitality Score</h2>
+                <div class="delta">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>
+                  </svg>
+                  <span>6 below 7-day avg (74)</span>
+                </div>
+                <!-- Sparkline -->
+                <div class="sparkline-wrap">
+                  <div class="sparkline-label">Last 7 days</div>
+                  <svg class="sparkline" width="100%" height="36" viewBox="0 0 140 36" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#1A6B74" stop-opacity=".18"/>
+                        <stop offset="100%" stop-color="#1A6B74" stop-opacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    <!-- Points: 74,76,73,75,72,70,68 mapped to 36px height -->
+                    <!-- Min=68 Max=76 → range 8. y = 36 - ((v-68)/8)*30 -->
+                    <!-- 74→21.5, 76→6, 73→28.5, 75→13.5, 72→30, 70→7.5 wait recalc -->
+                    <!-- y = 33 - ((v-68)/8)*28: 74→12, 76→5, 73→15.5, 75→8.5, 72→19, 70→26, 68→33 -->
+                    <path class="spark-area" d="M0,12 L20,5 L40,15.5 L60,8.5 L80,19 L110,26 L140,33 L140,36 L0,36 Z"/>
+                    <path class="spark-line" d="M0,12 L20,5 L40,15.5 L60,8.5 L80,19 L110,26 L140,33"/>
+                    <circle class="spark-dot" cx="140" cy="33" r="3.5"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right-moment nudge -->
+            <div class="nudge-card">
+              <div class="nudge-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+                </svg>
+              </div>
+              <div>
+                <h3>Today's Guidance</h3>
+                <p>You slept 5h&nbsp;40m. Skip HIIT today — a 25-min walk keeps your recovery on track.</p>
+              </div>
+            </div>
+
+            <!-- Today's Focus -->
+            <div class="section-header">
+              <h2>Today's Focus</h2>
+              <button class="see-all" onclick="goTo('insights')">See all</button>
+            </div>
+
+            <div class="insight-card" onclick="goTo('insights')">
+              <div class="insight-icon" style="background:#FCEAEA;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B8312F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+                  <h3>Cardiovascular signal</h3>
+                  <span class="chip chip-danger" style="font-size:10px;padding:2px 7px;">Action</span>
+                </div>
+                <p>Elevated cholesterol markers flagged. Prevention panel recommended.</p>
+              </div>
+            </div>
+
+            <div class="insight-card" onclick="goTo('future')">
+              <div class="insight-icon" style="background:#EAF4F5;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A6B74" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+                  <h3>Sleep quality</h3>
+                  <span class="chip chip-warn" style="font-size:10px;padding:2px 7px;">Below target</span>
+                </div>
+                <p>3 nights below 7h. Your resting HR is up 6 bpm vs. baseline.</p>
+              </div>
+            </div>
+
+            <div class="insight-card" onclick="goTo('future')">
+              <div class="insight-icon" style="background:#E8F5EE;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D7D4E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+                  <h3>Future Self projection</h3>
+                  <span class="chip chip-good" style="font-size:10px;padding:2px 7px;">Explore</span>
+                </div>
+                <p>See how small changes affect your biological age at 70.</p>
+              </div>
+            </div>
+
+            <div style="height:8px;"></div>
+          </div><!-- /dashboard -->
+
+          <!-- ── SCREEN 2: AI COACH ── -->
+          <div class="screen" id="s-coach">
+
+            <div class="ai-disclosure">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <p>You're talking to an AI. This is wellness guidance, not medical advice. For clinical decisions, please consult your physician.</p>
+            </div>
+
+            <div class="chat-header">
+              <div class="coach-avatar">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2z"/><path d="M12 14c-5 0-8 2-8 4v1h16v-1c0-2-3-4-8-4z"/>
+                </svg>
+              </div>
+              <div class="chat-header-text">
+                <h2>Longevity+ Coach</h2>
+                <p>Wellness guidance · Powered by AI</p>
+              </div>
+              <div style="margin-left:auto;">
+                <span class="eu-chip">
+                  <svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6" cy="6" r="2" fill="currentColor"/></svg>
+                  EU · Frankfurt
+                </span>
+              </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+              <!-- Seed message -->
+              <div class="msg msg-coach">
+                <div class="msg-bubble">
+                  Good morning, Anna. I've reviewed your overnight data. Your sleep last night was 5h&nbsp;40m — shorter than your usual 7h&nbsp;20m — and your resting heart rate is up 6&nbsp;bpm from baseline. These are recovery signals worth watching. I'd suggest skipping high-intensity training today.<br><br>
+                  <span class="msg-source" onclick="goTo('records')">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    Source: Wearable sync, 09 Apr 2026
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Suggestion chips -->
+            <div class="chip-row" id="chipRow">
+              <button class="suggest-chip" onclick="sendChip('why is my score down')">Why is my score down?</button>
+              <button class="suggest-chip" onclick="sendChip('cholesterol')">My cholesterol</button>
+              <button class="suggest-chip" onclick="sendChip('family history')">Family history</button>
+              <button class="suggest-chip" onclick="sendChip('book cardio panel')">Book cardio panel</button>
+            </div>
+
+            <!-- Input row -->
+            <div class="chat-input-row">
+              <input type="text" class="chat-input" id="chatInput" placeholder="Ask anything about your health…" onkeydown="if(event.key==='Enter')sendMessage()"/>
+              <button class="send-btn" onclick="sendMessage()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
+            </div>
+            <div style="height:8px;"></div>
+          </div><!-- /coach -->
+
+          <!-- ── SCREEN 3: MY RECORDS ── -->
+          <div class="screen" id="s-records">
+
+            <div class="greeting-bar" style="margin-bottom:16px;">
+              <h1>My Records</h1>
+              <span class="eu-chip">
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6" cy="6" r="2" fill="currentColor"/></svg>
+                EU · Frankfurt
+              </span>
+            </div>
+
+            <!-- Lipid panel -->
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                <h2 style="font-size:15px;">Lipid Panel</h2>
+                <span class="chip chip-warn">Nov 2025</span>
+              </div>
+              <p class="caption">Ordered by Dr. Kessler · Lab: Synlab Hamburg</p>
+
+              <table class="lab-table">
+                <thead>
+                  <tr>
+                    <th>Marker</th>
+                    <th>Result</th>
+                    <th>Range</th>
+                    <th>Flag</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Total Cholesterol</strong></td>
+                    <td><span class="lab-val">7.05 mmol/L</span></td>
+                    <td><div class="lab-range">&lt; 5.18</div></td>
+                    <td><span class="flag-dot" style="background:var(--danger)"></span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>LDL</strong></td>
+                    <td><span class="lab-val">3.84 mmol/L</span></td>
+                    <td><div class="lab-range">&lt; 2.59</div></td>
+                    <td><span class="flag-dot" style="background:var(--danger)"></span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>HDL</strong></td>
+                    <td><span class="lab-val">1.62 mmol/L</span></td>
+                    <td><div class="lab-range">&gt; 1.29</div></td>
+                    <td><span class="flag-dot" style="background:var(--good)"></span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Triglycerides</strong></td>
+                    <td><span class="lab-val">1.10 mmol/L</span></td>
+                    <td><div class="lab-range">&lt; 1.70</div></td>
+                    <td><span class="flag-dot" style="background:var(--good)"></span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>SBP</strong></td>
+                    <td><span class="lab-val">128 mmHg</span></td>
+                    <td><div class="lab-range">&lt; 120</div></td>
+                    <td><span class="flag-dot" style="background:var(--warn)"></span></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Plain-language summary -->
+              <div class="plain-lang">
+                <strong>In plain language:</strong> Your total cholesterol and LDL (sometimes called "bad cholesterol") are elevated. Given your family history, your physician may recommend discussing a prevention plan. Your HDL (protective cholesterol) and triglycerides are in a healthy range.
+              </div>
+
+              <button class="btn btn-primary" onclick="goTo('coach')" style="margin-top:4px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Ask about this record
+              </button>
+            </div>
+
+            <!-- Other records -->
+            <div class="card" style="margin-top:12px;">
+              <h2 style="font-size:15px;margin-bottom:12px;">Other Records</h2>
+
+              <div class="record-list-item">
+                <div class="record-icon" style="background:#F0EEE9;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D4A5C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <h3>GP Consultation</h3>
+                  <span class="caption">June 2025 · Dr. Kessler, Hamburg</span>
+                </div>
+                <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </div>
+
+              <div class="record-list-item">
+                <div class="record-icon" style="background:#EAF4F5;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A6B74" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                  </svg>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <h3>Vaccinations</h3>
+                  <span class="caption">2024 · Influenza, COVID booster</span>
+                </div>
+                <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </div>
+
+              <div class="record-list-item">
+                <div class="record-icon" style="background:#F2F0FE;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4FCF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>
+                  </svg>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <h3>Chest Imaging</h3>
+                  <span class="caption">March 2022 · Radiology, Eppendorf</span>
+                </div>
+                <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </div>
+            </div>
+
+            <div style="height:8px;"></div>
+          </div><!-- /records -->
+
+          <!-- ── SCREEN 4: INSIGHTS & RISKS ── -->
+          <div class="screen" id="s-insights">
+
+            <div class="greeting-bar" style="margin-bottom:16px;">
+              <h1>Insights</h1>
+            </div>
+
+            <!-- AI Disclosure -->
+            <div class="ai-disclosure">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <p>AI-generated insights. Wellness guidance only — not a clinical assessment. Always confirm with your physician.</p>
+            </div>
+
+            <!-- Risk hero card -->
+            <div class="risk-hero">
+              <div class="risk-hero-top">
+                <div class="risk-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  </svg>
+                </div>
+                <div>
+                  <span class="chip chip-danger" style="margin-bottom:4px;">Elevated cardiovascular signal</span>
+                  <h2>Cardiovascular Risk Factors</h2>
+                </div>
+              </div>
+
+              <p>Your November lipid panel showed total cholesterol at 7.05 mmol/L and LDL at 3.84 mmol/L — both above optimal range. Combined with your father's cardiac event at age 68, these are signals worth discussing with a specialist.</p>
+
+              <div class="risk-factors">
+                <div class="risk-factor">
+                  <div class="rf-dot"></div>
+                  <span>Total cholesterol 7.05 mmol/L (flagged)</span>
+                </div>
+                <div class="risk-factor">
+                  <div class="rf-dot"></div>
+                  <span>LDL 3.84 mmol/L — above optimal for family history</span>
+                </div>
+                <div class="risk-factor">
+                  <div class="rf-dot"></div>
+                  <span>Family history: father, MI at age 68</span>
+                </div>
+                <div class="risk-factor">
+                  <div class="rf-dot"></div>
+                  <span>SBP 128 mmHg — high-normal</span>
+                </div>
+              </div>
+
+              <button class="btn btn-ghost" onclick="goTo('coach')" style="border-color:rgba(184,49,47,.3);color:var(--danger);background:rgba(184,49,47,.06);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Ask the coach about this
+              </button>
+            </div>
+
+            <!-- Commercial offer card -->
+            <div class="offer-card">
+              <div class="offer-top">
+                <div>
+                  <span class="chip chip-accent" style="margin-bottom:6px;">In-network · Covered</span>
+                  <h2>Hamburg Cardio-Prevention Panel</h2>
+                </div>
+                <div class="offer-price" style="text-align:right;flex-shrink:0;">
+                  <div class="current">€79</div>
+                  <div class="was">was €249</div>
+                </div>
+              </div>
+
+              <p>Comprehensive cardiovascular assessment with an in-network cardiologist. Your insurance covers 80% of the cost.</p>
+
+              <div class="offer-details">
+                <div class="offer-detail">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>In-network cardiologist, Hamburg-Eppendorf</span>
+                </div>
+                <div class="offer-detail">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>45-minute consultation slot</span>
+                </div>
+                <div class="offer-detail">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>80% covered by your insurance (TK)</span>
+                </div>
+                <div class="offer-detail">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Results shared with your care team</span>
+                </div>
+              </div>
+
+              <button class="btn btn-primary" onclick="bookAppointment(this)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                Book Tuesday 14 Apr · 14:30
+              </button>
+
+              <div class="booked-confirm" id="bookedConfirm">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D7D4E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <p>Booked — Tuesday 14 Apr, 14:30 with Dr. Mehlhorn. Confirmation sent to your email.</p>
+              </div>
+            </div>
+
+            <!-- Sleep insight -->
+            <div class="sleep-card">
+              <div class="section-header" style="margin-bottom:8px;">
+                <h2 style="font-size:15px;">Sleep Quality — Last 7 Days</h2>
+                <span class="chip chip-warn" style="font-size:10px;">Below target</span>
+              </div>
+
+              <div class="sleep-bars">
+                <!-- Heights as % of 8h target, values: 6.8, 7.2, 6.5, 7.4, 6.1, 6.9, 5.67 -->
+                <div class="sleep-bar" style="height:85%;"></div>
+                <div class="sleep-bar" style="height:90%;"></div>
+                <div class="sleep-bar" style="height:81%;"></div>
+                <div class="sleep-bar" style="height:92%;"></div>
+                <div class="sleep-bar low" style="height:76%;"></div>
+                <div class="sleep-bar" style="height:86%;"></div>
+                <div class="sleep-bar low today" style="height:70%;"></div>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;margin-top:6px;">
+                <span class="caption">Thu</span><span class="caption">Fri</span><span class="caption">Sat</span>
+                <span class="caption">Sun</span><span class="caption">Mon</span><span class="caption">Tue</span>
+                <span class="caption" style="color:var(--ink);">Wed</span>
+              </div>
+
+              <div style="margin-top:14px;display:flex;gap:8px;align-items:flex-start;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <p style="font-size:12.5px;color:var(--ink-2);line-height:1.5;">Sleep below 7h for 3 of the last 7 nights is suppressing your Vitality Score. Try a consistent 22:30 bedtime for the next 5 nights.</p>
+              </div>
+            </div>
+
+            <div style="height:8px;"></div>
+          </div><!-- /insights -->
+
+          <!-- ── SCREEN 5: FUTURE SELF ── -->
+          <div class="screen" id="s-future">
+
+            <div class="greeting-bar" style="margin-bottom:16px;">
+              <h1>Future Self</h1>
+            </div>
+
+            <!-- Projection hero -->
+            <div class="future-hero">
+              <p style="font-size:11px;opacity:.5;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;position:relative;z-index:2;">Projection at age 70</p>
+
+              <div class="future-paths">
+                <div class="path-col">
+                  <div class="path-label">Current path</div>
+                  <div class="age-num num" id="projAgeCurrent">71</div>
+                  <div class="age-unit">bio. age</div>
+                  <div class="vitality-line">Vitality <span class="vitality-score num" id="projVitCurrent">52</span></div>
+                </div>
+
+                <div class="path-divider"></div>
+
+                <div class="path-col path-improved">
+                  <div class="path-label">Improved path</div>
+                  <div class="age-num num" id="projAgeImproved">66</div>
+                  <div class="age-unit">bio. age</div>
+                  <div class="vitality-line">Vitality <span class="vitality-score num" id="projVitImproved">74</span></div>
+                </div>
+              </div>
+
+              <div class="future-disclaimer">Projection, not a prediction. For motivation, not clinical guidance. Based on published longevity research.</div>
+            </div>
+
+            <!-- Gain bar -->
+            <div class="gain-bar" id="gainBar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+              <p id="gainText">Improving all three areas could give you 5 additional healthy years.</p>
+            </div>
+
+            <!-- Sliders -->
+            <div class="card" style="margin-top:14px;">
+              <div class="slider-section">
+                <div class="slider-label">
+                  <h3>Sleep quality</h3>
+                  <span class="slider-value" id="sleepVal">5.7h / night</span>
+                </div>
+                <input type="range" min="5" max="9" step="0.1" value="5.7" id="sleepSlider" oninput="updateProjection()"/>
+              </div>
+
+              <div class="slider-section" style="margin-top:18px;">
+                <div class="slider-label">
+                  <h3>Weekly active minutes</h3>
+                  <span class="slider-value" id="activeVal">90 min / wk</span>
+                </div>
+                <input type="range" min="0" max="300" step="10" value="90" id="activeSlider" oninput="updateProjection()"/>
+              </div>
+
+              <div class="slider-section" style="margin-top:18px;">
+                <div class="slider-label">
+                  <h3>LDL target</h3>
+                  <span class="slider-value" id="ldlVal">3.84 mmol/L</span>
+                </div>
+                <input type="range" min="1.5" max="4.5" step="0.01" value="3.84" id="ldlSlider" oninput="updateProjection()"/>
+              </div>
+            </div>
+
+            <!-- Action prompt -->
+            <div style="margin-top:12px;">
+              <button class="btn btn-primary" onclick="goTo('appointments')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                Start with a cardio check-up
+              </button>
+            </div>
+
+            <div style="height:8px;"></div>
+          </div><!-- /future -->
+
+          <!-- ── SCREEN 6: APPOINTMENTS ── -->
+          <div class="screen" id="s-appointments">
+
+            <div class="greeting-bar" style="margin-bottom:16px;">
+              <h1>Appointments</h1>
+            </div>
+
+            <div class="section-header">
+              <h2>Suggested for You</h2>
+            </div>
+
+            <!-- Cardio panel -->
+            <div class="appt-card" id="cardioPanelCard">
+              <div class="appt-top">
+                <div class="appt-date-col">
+                  <div class="appt-month">APR</div>
+                  <div class="appt-day num">14</div>
+                </div>
+                <div class="appt-info">
+                  <h3>Cardio-Prevention Panel</h3>
+                  <p>Dr. Eva Mehlhorn · Hamburg-Eppendorf<br>Tuesday, 14:30 · 45 min</p>
+                </div>
+                <span class="chip chip-warn" style="flex-shrink:0;align-self:flex-start;">Suggested</span>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-primary" style="font-size:13px;padding:11px 16px;" onclick="confirmAppt(this, 'cardioPanelCard')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Confirm booking
+                </button>
+                <button class="btn btn-ghost" style="font-size:13px;padding:11px 16px;border-color:var(--border);color:var(--ink-2);">Other times</button>
+              </div>
+              <div class="booked-confirm" id="apptConfirm1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D7D4E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <p>Booked — Tue 14 Apr, 14:30, Dr. Mehlhorn. Confirmation sent to anna.weber@email.de</p>
+              </div>
+            </div>
+
+            <!-- Sleep assessment -->
+            <div class="appt-card">
+              <div class="appt-top">
+                <div class="appt-date-col">
+                  <div class="appt-month">APR</div>
+                  <div class="appt-day num">17</div>
+                </div>
+                <div class="appt-info">
+                  <h3>Sleep Assessment</h3>
+                  <p>Dr. Anke Brauer · Tele-consult<br>Friday, 16:00 · 30 min</p>
+                </div>
+                <span class="chip chip-accent" style="flex-shrink:0;align-self:flex-start;">Tele</span>
+              </div>
+              <button class="btn btn-secondary" style="font-size:13px;padding:11px 16px;" onclick="confirmAppt(this, null)">Schedule this</button>
+            </div>
+
+            <div class="section-header" style="margin-top:20px;">
+              <h2>Upcoming</h2>
+            </div>
+
+            <!-- Annual check-up -->
+            <div class="appt-card">
+              <div class="appt-top">
+                <div class="appt-date-col" style="background:#F0EEE9;border-color:var(--border);">
+                  <div class="appt-month" style="color:var(--ink-3);">JUN</div>
+                  <div class="appt-day num">22</div>
+                </div>
+                <div class="appt-info">
+                  <h3>Annual Health Check-up</h3>
+                  <p>Dr. Kessler · Clinic Eppendorf<br>Sunday, 10:00 · 60 min</p>
+                </div>
+                <span class="chip chip-good" style="flex-shrink:0;align-self:flex-start;">Confirmed</span>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-ghost" style="font-size:13px;padding:11px 16px;border-color:var(--border);color:var(--ink-2);">Reschedule</button>
+                <button class="btn btn-ghost" style="font-size:13px;padding:11px 16px;border-color:var(--border);color:var(--ink-2);">Details</button>
+              </div>
+            </div>
+
+            <div style="height:8px;"></div>
+          </div><!-- /appointments -->
+
+        </div><!-- /screen-viewport -->
+
+        <!-- Tab bar -->
+        <nav class="tab-bar" id="tabBar">
+          <button class="tab-item active" data-screen="dashboard" onclick="goTo('dashboard')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            Home
+          </button>
+          <button class="tab-item" data-screen="coach" onclick="goTo('coach')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Coach
+          </button>
+          <button class="tab-item" data-screen="records" onclick="goTo('records')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Records
+          </button>
+          <button class="tab-item" data-screen="insights" onclick="goTo('insights')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+            </svg>
+            Insights
+          </button>
+          <button class="tab-item" data-screen="future" onclick="goTo('future')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Future
+          </button>
+          <button class="tab-item" data-screen="appointments" onclick="goTo('appointments')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Book
+          </button>
+        </nav>
+
+        <!-- Profile overlay (inside phone) -->
+        <div class="overlay" id="profileOverlay" onclick="closeProfile(event)">
+          <div class="overlay-sheet" onclick="event.stopPropagation()">
+            <div class="sheet-handle"></div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+              <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#1A6B74,#2D9DA8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700;">AW</div>
+              <div>
+                <h2 style="font-size:18px;">Anna Weber</h2>
+                <p style="font-size:13px;color:var(--ink-3);">anna.weber@email.de</p>
+              </div>
+              <div style="margin-left:auto;">
+                <span class="demo-badge">PT0282 · Demo</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+              <div style="background:var(--bg);border-radius:var(--r-md);padding:12px;">
+                <div style="font-size:10px;color:var(--ink-3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;">Age</div>
+                <div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;">43</div>
+              </div>
+              <div style="background:var(--bg);border-radius:var(--r-md);padding:12px;">
+                <div style="font-size:10px;color:var(--ink-3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;">BMI</div>
+                <div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;">22.7</div>
+              </div>
+              <div style="background:var(--bg);border-radius:var(--r-md);padding:12px;">
+                <div style="font-size:10px;color:var(--ink-3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;">Patient since</div>
+                <div style="font-size:15px;font-weight:700;">2011</div>
+              </div>
+              <div style="background:var(--bg);border-radius:var(--r-md);padding:12px;">
+                <div style="font-size:10px;color:var(--ink-3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;">Location</div>
+                <div style="font-size:15px;font-weight:700;">Hamburg</div>
+              </div>
+            </div>
+            <div style="background:var(--bg);border-radius:var(--r-md);padding:12px;margin-bottom:14px;">
+              <div style="font-size:10px;color:var(--ink-3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px;">Clinical notes</div>
+              <div style="font-size:12.5px;color:var(--ink-2);line-height:1.5;">43F · Ex-smoker · BMI 22.7 · No active diagnoses · Family: Father MI age 68</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <span class="eu-chip" style="flex:1;justify-content:center;">EU · Frankfurt</span>
+              <span class="demo-badge" style="flex:1;justify-content:center;">Longevity+ Premium</span>
+            </div>
+            <button class="btn btn-ghost" style="margin-top:14px;" onclick="closeProfile(event)">Close</button>
+          </div>
+        </div>
+
+      </div><!-- /phone-screen -->
+    </div><!-- /phone-frame -->
+
+    <!-- Context panel (desktop sidebar) -->
+    <div class="context-panel">
+
+      <!-- Patient card -->
+      <div class="patient-card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div class="patient-avatar-lg">AW</div>
+          <div>
+            <h2>Anna Weber</h2>
+            <p class="sub">anna.weber@email.de</p>
+          </div>
+        </div>
+        <div class="patient-meta">
+          <div class="meta-item">
+            <div class="meta-label">Age</div>
+            <div class="meta-value">43 · Female</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">BMI</div>
+            <div class="meta-value">22.7</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Patient since</div>
+            <div class="meta-value">2011</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Location</div>
+            <div class="meta-value">Hamburg, DE</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">History</div>
+            <div class="meta-value">Ex-smoker</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Diagnoses</div>
+            <div class="meta-value">None active</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="demo-badge">PT0282 · Demo</span>
+          <span class="eu-chip">EU · Frankfurt</span>
+        </div>
+      </div>
+
+      <!-- AI disclosure panel -->
+      <div class="patient-card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FCF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <h3 style="font-size:13px;color:#3D3580;">You're talking to an AI</h3>
+        </div>
+        <p style="font-size:12px;color:#5B4FCF;line-height:1.5;background:#F2F0FE;border-radius:var(--r-sm);padding:10px;">Longevity+ Coach is an AI. Insights are wellness guidance — not clinical assessments. Always confirm with your physician for medical decisions.</p>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:6px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--good)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span style="font-size:11px;color:var(--good);font-weight:600;">GDPR compliant · EU-hosted · End-to-end encrypted</span>
+        </div>
+      </div>
+
+      <!-- Nav legend -->
+      <div class="context-legend">
+        <h3>Screens in this prototype</h3>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#EAF4F5;color:var(--accent);">1</div>
+          <span><strong>Dashboard</strong> — Vitality score + daily nudge</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#F2F0FE;color:#5B4FCF;">2</div>
+          <span><strong>AI Coach</strong> — Chat with data-grounded responses</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#F0EEE9;color:var(--ink-2);">3</div>
+          <span><strong>Records</strong> — Nov 2025 lipid panel + history</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#FCEAEA;color:var(--danger);">4</div>
+          <span><strong>Insights</strong> — Risk flags + commercial offer</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#0E1726;color:#5DDBB5;">5</div>
+          <span><strong>Future Self</strong> — Live biological age projection</span>
+        </div>
+        <div class="legend-item" style="margin-bottom:0;">
+          <div class="legend-dot" style="background:#EAF4F5;color:var(--accent);">6</div>
+          <span><strong>Appointments</strong> — Suggested + upcoming</span>
+        </div>
+      </div>
+
+      <!-- Build info -->
+      <div style="text-align:center;padding:4px 0;">
+        <p style="font-size:11px;color:var(--ink-3);line-height:1.6;">
+          Longevity+ · BCG Platinion Hackathon<br>
+          FLS Hamburg · 09–10 April 2026<br>
+          High-fidelity prototype · Not production code
+        </p>
+      </div>
+
+    </div><!-- /context-panel -->
+  </div><!-- /desktop-wrapper -->
+</div><!-- /app-shell -->
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   STATE & ROUTING
+   ═══════════════════════════════════════════════════════ */
+
+const SCREENS = ['dashboard','coach','records','insights','future','appointments'];
+let currentScreen = 'dashboard';
+
+function goTo(id) {
+  if (!SCREENS.includes(id)) return;
+
+  // Hide all screens
+  SCREENS.forEach(s => {
+    const el = document.getElementById('s-'+s);
+    if (el) el.classList.remove('active');
+  });
+
+  // Update tab states
+  document.querySelectorAll('.tab-item').forEach(t => {
+    t.classList.toggle('active', t.dataset.screen === id);
+  });
+
+  // Show target
+  const target = document.getElementById('s-'+id);
+  if (target) {
+    target.classList.add('active');
+    // Reset scroll
+    const vp = document.getElementById('screenViewport');
+    if (vp) vp.scrollTop = 0;
+  }
+
+  currentScreen = id;
+
+  // Animate score ring on dashboard
+  if (id === 'dashboard') {
+    setTimeout(animateRing, 120);
+  }
+
+  // Auto-type coach if navigating there from records
+  if (id === 'coach' && lastCoachTrigger === 'records') {
+    setTimeout(() => sendChip('cholesterol'), 400);
+    lastCoachTrigger = null;
+  }
+}
+
+let lastCoachTrigger = null;
+
+/* Override goTo for records → coach link */
+const origAskRecord = () => { lastCoachTrigger = 'records'; goTo('coach'); };
+document.querySelector && document.querySelectorAll('.btn-primary').forEach(b => {
+  if (b.textContent.includes('Ask about this record')) {
+    b.onclick = origAskRecord;
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   SCORE RING ANIMATION
+   ═══════════════════════════════════════════════════════ */
+
+let ringAnimated = false;
+
+function animateRing() {
+  const fill = document.getElementById('ringFill');
+  const num  = document.getElementById('ringNum');
+  if (!fill || !num) return;
+
+  // stroke-dasharray 283, target score 68
+  // offset = 283 * (1 - 68/100) = 283 * 0.32 = 90.56
+  const target = 68;
+  const circumference = 283;
+  const offset = circumference * (1 - target / 100);
+
+  if (!ringAnimated) {
+    fill.style.strokeDashoffset = circumference;
+    fill.style.stroke = 'url(#ringGrad)';
+    requestAnimationFrame(() => {
+      fill.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1)';
+      fill.style.strokeDashoffset = offset;
+    });
+    // Count up number
+    let cur = 0;
+    const interval = setInterval(() => {
+      cur = Math.min(cur + 2, target);
+      num.textContent = cur;
+      if (cur >= target) clearInterval(interval);
+    }, 1400/34);
+    ringAnimated = true;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   AI COACH — CHAT ENGINE
+   ═══════════════════════════════════════════════════════ */
+
+const RESPONSES = {
+  'why is my score down': {
+    text: "Your Vitality Score dropped from 74 to 68 — a 6-point fall driven primarily by two signals: sleep duration (5h 40m vs. your 7h 20m average) and resting heart rate up 6 bpm above baseline. These are classic under-recovery markers. Both resolve within 1–2 nights of good sleep.",
+    source: "Source: Wearable sync, 09 Apr 2026"
+  },
+  'cholesterol': {
+    text: "Your November lipid panel showed total cholesterol at 7.05 mmol/L and LDL at 3.84 mmol/L — both above the optimal range. For someone with your family history (father, MI at 68), the European guidelines suggest an LDL target below 2.6 mmol/L. Your HDL at 1.62 is protective — that's a positive signal.",
+    source: "Source: Lab record, 14 Nov 2025"
+  },
+  'family history': {
+    text: "Your records note a first-degree family history: your father had a cardiac event at age 68. This is a modifiable risk context — it elevates your baseline cardiovascular consideration but doesn't determine outcomes. Regular screening and lifestyle optimisation are the most effective levers here.",
+    source: "Source: GP consultation, Jun 2025"
+  },
+  'book cardio panel': {
+    text: "Based on your lipid panel and family history, I'd recommend the Hamburg Cardio-Prevention Panel. It's 45 minutes with an in-network cardiologist, currently €79 after insurance — 80% is covered by your TK policy. The earliest available slot is Tuesday 14 April at 14:30 with Dr. Eva Mehlhorn in Hamburg-Eppendorf.",
+    source: "Source: Clinic availability, 09 Apr 2026",
+    action: { label: "Book Tuesday 14 Apr · 14:30", screen: "appointments" }
+  }
+};
+
+function normalise(text) {
+  return text.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
+}
+
+function matchResponse(input) {
+  const n = normalise(input);
+  for (const [key, val] of Object.entries(RESPONSES)) {
+    if (n.includes(normalise(key))) return val;
+  }
+  return {
+    text: "I don't have a specific record for that query in this prototype. In the full product, I'd search across your complete health history. Try: 'why is my score down', 'cholesterol', 'family history', or 'book cardio panel'.",
+    source: null
+  };
+}
+
+function addMessage(content, role, source, action) {
+  const messages = document.getElementById('chatMessages');
+  if (!messages) return;
+
+  const div = document.createElement('div');
+  div.className = `msg msg-${role}`;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = content;
+
+  if (source && role === 'coach') {
+    const src = document.createElement('div');
+    src.innerHTML = `<span class="msg-source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>${source}</span>`;
+    bubble.appendChild(src.firstChild);
+  }
+
+  div.appendChild(bubble);
+  messages.appendChild(div);
+
+  if (action && role === 'coach') {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:0 0 4px 0;';
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-secondary';
+    btn.style.cssText = 'font-size:13px;padding:10px 16px;margin-top:8px;';
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${action.label}`;
+    btn.onclick = () => goTo(action.screen);
+    row.appendChild(btn);
+    messages.appendChild(row);
+  }
+
+  // Scroll to bottom
+  const vp = document.getElementById('screenViewport');
+  if (vp) setTimeout(() => vp.scrollTop = vp.scrollHeight, 60);
+}
+
+function addTypingIndicator() {
+  const messages = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg msg-coach';
+  div.id = 'typingIndicator';
+  div.innerHTML = `<div class="msg-bubble" style="padding:14px 18px;display:flex;gap:5px;align-items:center;">
+    <span class="typing-dot"></span>
+    <span class="typing-dot"></span>
+    <span class="typing-dot"></span>
+  </div>`;
+  messages.appendChild(div);
+  const vp = document.getElementById('screenViewport');
+  if (vp) setTimeout(() => vp.scrollTop = vp.scrollHeight, 60);
+  return div;
+}
+
+function removeTypingIndicator() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+let isSending = false;
+
+function sendChip(text) {
+  const input = document.getElementById('chatInput');
+  if (input) input.value = text;
+  sendMessage();
+}
+
+function sendMessage() {
+  if (isSending) return;
+  const input = document.getElementById('chatInput');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  isSending = true;
+  input.value = '';
+
+  // Hide chips after first user message
+  const chipRow = document.getElementById('chipRow');
+  if (chipRow) chipRow.style.display = 'none';
+
+  // Add user bubble
+  addMessage(text, 'user', null, null);
+
+  // Show typing
+  const typing = addTypingIndicator();
+  const delay = 900 + Math.random() * 800;
+
+  setTimeout(() => {
+    removeTypingIndicator();
+    const resp = matchResponse(text);
+    addMessage(resp.text, 'coach', resp.source, resp.action || null);
+    isSending = false;
+  }, delay);
+}
+
+/* ═══════════════════════════════════════════════════════
+   FUTURE SELF — SLIDER ENGINE
+   ═══════════════════════════════════════════════════════ */
+
+function updateProjection() {
+  const sleep  = parseFloat(document.getElementById('sleepSlider').value);
+  const active = parseFloat(document.getElementById('activeSlider').value);
+  const ldl    = parseFloat(document.getElementById('ldlSlider').value);
+
+  // Update display values
+  document.getElementById('sleepVal').textContent  = sleep.toFixed(1) + 'h / night';
+  document.getElementById('activeVal').textContent = Math.round(active) + ' min / wk';
+  document.getElementById('ldlVal').textContent    = ldl.toFixed(2) + ' mmol/L';
+
+  // Projection algorithm (simplified, for demo motivation)
+  // Baseline age 43, projecting to calendar age 70 (27 years out)
+  // Current path: bio age = 71, vitality = 52
+  // Improved path adjustments:
+  //   Sleep: each hour above 5.7 → -0.4 bio years, +2 vitality
+  //   Active: each 60min/wk → -0.25 bio years, +1.5 vitality
+  //   LDL: each 0.5 below 3.84 → -0.5 bio years, +1.5 vitality
+
+  const sleepGain  = Math.max(0, sleep - 5.7);
+  const activeGain = Math.max(0, active - 90) / 60;
+  const ldlGain    = Math.max(0, 3.84 - ldl) / 0.5;
+
+  const bioImprove  = sleepGain * 0.4 + activeGain * 0.25 + ldlGain * 0.5;
+  const vitImprove  = sleepGain * 2 + activeGain * 1.5 + ldlGain * 1.5;
+
+  const curBioAge = 71;
+  const curVit    = 52;
+  const impBioAge = Math.max(62, Math.round(curBioAge - bioImprove));
+  const impVit    = Math.min(88, Math.round(curVit + vitImprove));
+
+  document.getElementById('projAgeCurrent').textContent  = curBioAge;
+  document.getElementById('projVitCurrent').textContent  = curVit;
+  document.getElementById('projAgeImproved').textContent = impBioAge;
+  document.getElementById('projVitImproved').textContent = impVit;
+
+  // Gain summary
+  const yearGain = curBioAge - impBioAge;
+  const gainText = document.getElementById('gainText');
+  if (gainText) {
+    if (yearGain <= 0) {
+      gainText.textContent = "Adjust the sliders to see your personalised projection.";
+    } else {
+      gainText.textContent = `Improving these areas could give you ${yearGain} additional healthy year${yearGain !== 1 ? 's' : ''} by age 70.`;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   BOOKING CONFIRMATION
+   ═══════════════════════════════════════════════════════ */
+
+function bookAppointment(btn) {
+  btn.textContent = 'Booked';
+  btn.style.background = 'var(--good)';
+  btn.disabled = true;
+  const confirm = document.getElementById('bookedConfirm');
+  if (confirm) confirm.classList.add('show');
+  setTimeout(() => goTo('appointments'), 1200);
+}
+
+function confirmAppt(btn, cardId) {
+  btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Booked`;
+  btn.style.background = 'var(--good)';
+  btn.style.boxShadow = '0 2px 8px rgba(45,125,78,.25)';
+  btn.disabled = true;
+  if (cardId) {
+    const confirm = document.getElementById('apptConfirm1');
+    if (confirm) confirm.classList.add('show');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROFILE OVERLAY
+   ═══════════════════════════════════════════════════════ */
+
+function openProfile() {
+  const overlay = document.getElementById('profileOverlay');
+  if (overlay) overlay.classList.add('open');
+}
+
+function closeProfile(e) {
+  const overlay = document.getElementById('profileOverlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE APP BOOTSTRAP
+   On mobile, clone the phone-screen content into .mobile-app
+   ═══════════════════════════════════════════════════════ */
+
+function initMobile() {
+  const isMobile = window.innerWidth < 768;
+  if (!isMobile) return;
+
+  const mobileApp  = document.getElementById('mobileApp');
+  const phoneScreen = document.getElementById('phoneScreen');
+
+  if (!mobileApp || !phoneScreen) return;
+
+  // On mobile, move phone screen content into mobileApp wrapper
+  // instead of cloning, just transfer ownership
+  mobileApp.innerHTML = '';
+  while (phoneScreen.firstChild) {
+    mobileApp.appendChild(phoneScreen.firstChild);
+  }
+  mobileApp.style.display = 'flex';
+}
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Set ring initial state
+  const fill = document.getElementById('ringFill');
+  if (fill) {
+    fill.style.strokeDashoffset = '283';
+    fill.style.stroke = 'url(#ringGrad)';
+  }
+
+  // Init mobile layout if needed
+  initMobile();
+
+  // Animate ring after paint
+  setTimeout(animateRing, 350);
+});
+</script>
+</body>
+</html>
