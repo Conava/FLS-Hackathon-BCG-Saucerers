@@ -26,6 +26,7 @@ import {
 import { VitalityTap } from "./_components/VitalityTap";
 import { ProtocolList } from "./_components/ProtocolList";
 import { COPY } from "@/lib/copy/copy";
+import { backendFetch } from "@/lib/backend-fetch";
 import type {
   PatientProfileOut,
   VitalityOut,
@@ -39,22 +40,17 @@ import type {
 // Server-side direct fetch helpers
 // ---------------------------------------------------------------------------
 
-const BACKEND = process.env.BACKEND_URL ?? "http://localhost:8000";
-
 /**
  * Fetch a JSON endpoint from the FastAPI backend directly.
  * Should only be called from Server Components.
+ * Uses backendFetch to inject the X-API-Key header.
  */
 async function backendGet<T>(
   patientId: string,
   path: string,
 ): Promise<T | null> {
-  const url = `${BACKEND}/v1/patients/${patientId}/${path}`;
   try {
-    const res = await fetch(url, {
-      // Next.js 15 fetch cache: no-store for live data
-      cache: "no-store",
-    });
+    const res = await backendFetch(`/v1/patients/${patientId}/${path}`);
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {

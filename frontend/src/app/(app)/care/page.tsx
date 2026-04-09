@@ -32,27 +32,24 @@ import type {
 import { MessageComposer } from "./_components/MessageComposer";
 import { CarePillarsClient } from "./_components/CarePillarsClient";
 import ScreenFrame from "@/components/shell/ScreenFrame";
-
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8000";
+import { backendFetch } from "@/lib/backend-fetch";
 
 // ── Server-side fetch helpers ─────────────────────────────────────────────────
 
 /**
  * Fetch a backend endpoint server-side.
  * Returns null on any error (graceful degradation for demo).
+ * Uses backendFetch to inject the X-API-Key header.
  */
 async function fetchFromBackend<T>(
   patientId: string,
   path: string,
 ): Promise<T | null> {
   try {
-    const res = await fetch(
-      `${BACKEND_URL}/v1/patients/${patientId}/${path}`,
-      {
-        headers: { "Content-Type": "application/json" },
-        next: { revalidate: 30 },
-      },
-    );
+    const res = await backendFetch(`/v1/patients/${patientId}/${path}`, {
+      headers: { "Content-Type": "application/json" },
+      next: { revalidate: 30 },
+    });
     if (!res.ok) return null;
     return res.json() as Promise<T>;
   } catch {

@@ -18,8 +18,7 @@ import { EmptyState } from "@/components/design/EmptyState";
 import { COPY } from "@/lib/copy/copy";
 import type { EHRRecordOut } from "@/lib/api/schemas";
 import { RecordsQA } from "./_components/RecordsQA";
-
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8000";
+import { backendFetch } from "@/lib/backend-fetch";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,10 +36,7 @@ interface RecordListPayload {
  */
 async function fetchRecords(patientId: string): Promise<RecordListPayload | null> {
   try {
-    const res = await fetch(
-      `${BACKEND_URL}/v1/patients/${patientId}/records`,
-      { cache: "no-store" },
-    );
+    const res = await backendFetch(`/v1/patients/${patientId}/records`);
     if (!res.ok) return null;
     return (await res.json()) as RecordListPayload;
   } catch {

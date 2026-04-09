@@ -12,6 +12,7 @@ import * as React from "react";
 import { SignalCard, RiskFlag } from "@/components/design";
 import { COPY } from "@/lib/copy/copy";
 import { FutureSelfSimulator } from "./_components/FutureSelfSimulator";
+import { backendFetch } from "@/lib/backend-fetch";
 
 interface InsightItem {
   kind: string;
@@ -26,11 +27,8 @@ interface InsightsPayload {
 }
 
 async function fetchInsights(): Promise<InsightsPayload> {
-  const backendUrl = process.env.BACKEND_URL;
-  if (!backendUrl) return {};
-
   try {
-    const res = await fetch(`${backendUrl}/v1/patients/me/insights`, {
+    const res = await backendFetch(`/v1/patients/me/insights`, {
       next: { revalidate: 60 },
     });
     if (!res.ok) return {};
