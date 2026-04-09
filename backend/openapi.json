@@ -2620,7 +2620,7 @@
     },
     "/v1/patients/{patient_id}/gdpr/": {
       "delete": {
-        "description": "Acknowledge a data-erasure request for *patient_id*.\n\nSTUB \u2014 no data is deleted in this slice.  The response is wellness-framed\nper the product requirement: \"Your wellness data will be removed.\"\n\nThe ``status=\"scheduled\"`` value communicates that erasure is an async\nprocess subject to legal retention obligations \u2014 it does not confirm that\nrecords have been permanently destroyed.\n\nRaises HTTP 404 if the patient does not exist.\n\nArgs:\n    patient_id: Path parameter, e.g. ``PT0282``.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.",
+        "description": "Acknowledge a data-erasure request for *patient_id*.\n\nPerforms the following deletions synchronously:\n\n1. **MealLog rows** \u2014 all rows for the patient are hard-deleted via\n   ``MealLogRepository.delete_for_patient``.\n2. **Meal photo files** \u2014 every stored photo file is removed via\n   ``PhotoStorage.delete_all_for_patient`` (``LocalFsPhotoStorage`` in dev,\n   ``GcsPhotoStorage`` in prod).\n\nFull patient record erasure (Patient, EHRRecord, WearableDay, etc.)\nrequires an async job queue and legal-retention review, both deferred to a\nfuture sprint.  The ``status=\"scheduled\"`` response communicates that\nerasure is an async process subject to legal obligations.\n\nThe response is wellness-framed per the product requirement:\n\"Your wellness data will be removed.\"\n\nRaises HTTP 404 if the patient does not exist.\n\nArgs:\n    patient_id:    Path parameter, e.g. ``PT0282``.\n    session:       Injected ``AsyncSession``.\n    _auth:         ``api_key_auth`` result.\n    photo_storage: Injected ``PhotoStorage`` backend (overridable in tests).",
         "operationId": "gdpr_delete_v1_patients__patient_id__gdpr__delete",
         "parameters": [
           {
@@ -2687,7 +2687,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Request data erasure for a patient (GDPR Art. 17 \u2014 stub)",
+        "summary": "Request data erasure for a patient (GDPR Art. 17)",
         "tags": [
           "gdpr",
           "gdpr"
