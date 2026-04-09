@@ -20,7 +20,7 @@ This doc is both an engineering checklist (what to bake into the MVP) and a pitc
 | **DPO** | Clinic group already has one. Product team reports into them. |
 | **Lawful basis** | Art. 9(2)(h) — provision of healthcare — for clinical features; explicit consent for optional/wellness features. |
 | **Data residency** | EU-only. Cloud SQL + Cloud Run in `europe-west3` (Frankfurt). No US sub-processors for PHI without SCCs + Transfer Impact Assessment. |
-| **Right to access / erasure** | API endpoints `GET /patients/me/export` and `DELETE /patients/me` — MVP stub + pitch slide. Erasure must cascade through `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `SurveyResponse`, `VitalitySnapshot`, `VitalityOutlook` — not just `Patient` + `EHRRecord`. |
+| **Right to access / erasure** | `GET /patients/{id}/gdpr/export` (Art. 15) — **shipped**: returns a bundled export of Patient, EHR records, wearable telemetry, and lifestyle data. `DELETE /patients/{id}/gdpr` (Art. 17) — **shipped as a wellness-framed stub**: responds `{"status": "scheduled", "message": "Your wellness data will be removed."}` and does not modify data. Actual deletion (cascading through `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `SurveyResponse`, `VitalitySnapshot`, `VitalityOutlook` and Cloud Storage meal photo objects) is deferred pending async job queue + legal-retention review. |
 | **Patient isolation** | SQL-level `WHERE patient_id = :pid` on every query. See [03-architecture.md](03-architecture.md). |
 | **New PHI categories in v1 scope** | Beyond EHR: **meal photos** (uploaded images — Cloud Storage, EU bucket, patient-scoped ACLs, deletable), **detailed survey answers** (`SurveyResponse` — dietary restrictions, alcohol intake, budget, injuries — all Art. 9 territory), **self-tracked logs** (`DailyLog` — mood, sleep, workouts), **protocol adherence** (streaks + completion). All patient-scoped, EU-hosted, consent-gated. |
 | **Meal photo retention** | Stored only as long as the `MealLog` row references them. Erasure request deletes the Cloud Storage object. Consider an opt-out: "analyze but don't store the photo" — v2. |
@@ -97,16 +97,22 @@ Nine countries means nine slightly different consent + cookie + telemedicine reg
 - No third-party trackers on health-data screens
 - Telemedicine features gated per country (deferred to v2 — mock a single country for demo)
 
-## Engineering checklist — bake into MVP now
+## Engineering checklist — slice 1 status
 
-- [ ] Every SQL query filters by `patient_id` (hard isolation) — including new tables: `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `SurveyResponse`, `VitalityOutlook`
-- [ ] Every AI prompt contains "not medical advice" framing + wellness-language rules — including `protocol-generator.system.md`, `meal-vision.system.md`, `outlook-narrator.system.md`
-- [ ] Every AI screen has a visible "You're talking to an AI" disclosure — Coach, Records Q&A, Meal Vision result, Protocol rationale, Outlook narration, Future-self simulator
-- [ ] Log only request IDs + model name + tokens, never PHI content (never log meal photo bytes, survey free-text, or protocol contents)
-- [ ] EU-region only — verify Cloud Run, Cloud SQL, Vertex AI, **and Cloud Storage (meal photo bucket)** all in `europe-west3`
-- [ ] `GET /patients/me/export` and `DELETE /patients/me` endpoints — cascade through all new tables and delete Cloud Storage meal photo objects
-- [ ] No ICD-10 codes, no disease names, no diagnostic verbs in user-facing copy **or in protocol action titles/rationales**
-- [ ] Consent checkbox on onboarding (single checkbox OK for MVP, note real granularity is v2)
+- [x] Every SQL query filters by `patient_id` (hard isolation) — enforced by `PatientScopedRepository` base class; all slice-1 repos inherit it
+- [x] Wellness-framed copy in all response schemas — no diagnostic verbs in `EHRRecordOut`, `InsightOut`, `VitalityOut`, or GDPR router messages
+- [x] Log only request IDs + model name + tokens — `RequestIdMiddleware` injects `X-Request-ID`; no PHI in any log statement
+- [x] `GET /patients/{id}/gdpr/export` (Art. 15) — shipped, returns Patient + EHR + wearable + lifestyle bundle
+- [x] `DELETE /patients/{id}/gdpr` (Art. 17) — shipped as wellness-framed stub; schedules erasure, does not delete data
+- [x] EU-region only — `cloudrun.yaml` targets `europe-west3`; Cloud SQL + Vertex AI region pinned in docs/04
+
+Deferred to slice 2 (requires AI layer):
+- [ ] Every AI prompt contains "not medical advice" framing — `protocol-generator.system.md`, `meal-vision.system.md`, `outlook-narrator.system.md`
+- [ ] Every AI screen has a visible "You're talking to an AI" disclosure
+- [ ] `patient_id` isolation extended to slice-2 tables: `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `SurveyResponse`, `VitalityOutlook`
+- [ ] Art. 17 cascading deletion through all tables + Cloud Storage meal photo objects
+- [ ] Cloud Storage meal photo bucket in `europe-west3`
+- [ ] Consent checkbox on onboarding
 - [ ] Survey retake flow re-confirms consent for new categories (photo, detailed lifestyle)
 
 ## Pitch slide content

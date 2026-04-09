@@ -126,6 +126,16 @@ The pivotal grounding mechanism for recommendations — and the only way users w
 ### Storage strategy
 Survey answers are stored **both** as typed structured fields (drives the protocol generator, commerce gating, nutrition rings) **and** as embedded free-text chunks (RAG-able by Coach for nuanced retrieval).
 
+## Build state
+
+The checkboxes below track the product scope commitment, not implementation completeness. For implementation status:
+
+**Backend slice 1 — done:** unified patient profile ingestion, vitality score + sub-scores, EHR/wearable/insights/appointments/GDPR read endpoints, API-key auth, CI.
+
+**Backend slice 2 — next:** Gemini integration, RAG + embeddings, coach, Protocol/DailyLog/MealLog/Outlook/Survey endpoints.
+
+**Frontend — not yet started.** The mockup (`mockup/index.html`) is the UI contract.
+
 ## Must-have (from the brief + our extension)
 
 From the BCG brief:

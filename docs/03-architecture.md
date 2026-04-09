@@ -2,6 +2,8 @@
 
 High-level: **API-first backend, multi-platform clients, pluggable data sources, Gemini-powered AI layer, all on GCP.**
 
+> **Build status (slice 1 complete):** The backend read API, data adapter layer, vitality engine, and all repos are shipped. The AI Layer component (coach, RAG, embeddings, protocol generation) is the slice-2 target.
+
 For locked versions see [04-tech-stack.md](04-tech-stack.md). For the adapter pattern in detail see [05-data-model.md](05-data-model.md). For AI specifics see [06-ai-layer.md](06-ai-layer.md).
 
 ## Component diagram

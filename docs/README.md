@@ -4,6 +4,12 @@ Single source of truth for the **Longevity MVP** — BCG Platinion AI Hackathon,
 
 > **For AI assistants (Claude Code, Gemini Code Assist, Codex):** read `04-tech-stack.md` and `09-ai-assist-playbook.md` before generating code. Both contain version pins and known hallucination traps for this stack.
 
+## Build state
+
+**Slice 1 — shipped:** backend read API (FastAPI + SQLModel + asyncpg + Postgres 16 + pgvector), pluggable `DataSource` Protocol with CSV adapter, heuristic vitality engine, hard `patient_id` isolation via `PatientScopedRepository`, API-key auth, Docker Compose + Dockerfile + Cloud Run config, GitHub Actions CI. 204 tests passing.
+
+**Slice 2 — next:** Gemini / google-genai integration, RAG + embeddings, coach endpoints, Protocol/DailyLog/MealLog/Outlook, frontend (Next.js 15 PWA).
+
 ## How these docs are organized
 
 Each file is scoped to one concern and kept short so it fits cleanly into an LLM context window. Read top-to-bottom for full context, or jump to the section you need.

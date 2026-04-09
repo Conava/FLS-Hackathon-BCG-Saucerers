@@ -88,19 +88,22 @@ CREATE INDEX ON docs USING hnsw (embedding vector_cosine_ops);
 ## Dev environment
 
 ```bash
-# Backend
-uv sync                                    # install deps from uv.lock
-docker run -d -p 5432:5432 \
-  -e POSTGRES_PASSWORD=dev \
-  pgvector/pgvector:pg16                   # local DB
-uv run fastapi dev app/main.py             # dev server
+# Backend (via docker-compose — recommended)
+make up        # starts db (pgvector/pgvector:pg16) + backend container
+make seed      # ingest CSV datasets into Postgres
+make test      # run pytest (testcontainers, no docker-compose dependency)
 
-# Frontend
+# Backend (directly, from backend/)
+uv sync
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+uv run python -m app.cli.ingest --source=csv --data-dir=../data
+
+# Frontend (not yet built — slice 2)
 pnpm install
 pnpm dev
 ```
 
-One `docker-compose.yml` orchestrates both for new devs.
+`docker-compose.yml` provides: `db` (pgvector/pgvector:pg16), `backend`, and optional `pgadmin` (profile-gated). An `.env` file in the repo root is loaded by the backend service for `API_KEY` and other settings.
 
 ## Why each choice (short form)
 
