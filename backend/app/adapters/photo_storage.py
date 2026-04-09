@@ -134,11 +134,16 @@ class LocalFsPhotoStorage:
     # ------------------------------------------------------------------
 
     def put(self, patient_id: str, filename: str, data: bytes) -> str:
-        """Write *data* to ``<base_dir>/<patient_id>/<uuid><ext>`` and return a ``file://`` URI."""
+        """Write *data* to ``<base_dir>/<patient_id>/<uuid><ext>`` and return a ``file://`` URI.
+
+        The path is resolved to an absolute form before constructing the URI so
+        that the URI remains valid even if the process CWD changes between
+        ``put()`` and a later ``get_bytes()`` / ``delete()`` call.
+        """
         ext = Path(filename).suffix  # e.g. ".jpg"
-        dest_dir = self._base_dir / patient_id
+        dest_dir = (self._base_dir / patient_id).resolve()
         dest_dir.mkdir(parents=True, exist_ok=True)
-        dest_path = dest_dir / f"{uuid.uuid4()}{ext}"
+        dest_path = (dest_dir / f"{uuid.uuid4()}{ext}").resolve()
         dest_path.write_bytes(data)
         return f"file://{dest_path}"
 
@@ -322,13 +327,17 @@ def get_photo_storage(settings: "Settings") -> PhotoStorage:
             raise ValueError(
                 "photo_gcs_bucket must be set when photo_storage_backend='gcs'"
             )
+        # Probe the import eagerly so that a missing dependency raises a clear
+        # ImportError here in the factory, rather than on the first use of
+        # _get_gcs_client() deep inside a request handler.
         try:
-            return GcsPhotoStorage(bucket_name=bucket)
+            from google.cloud import storage as _  # noqa: F401
         except ImportError as exc:
             raise ImportError(
                 "google-cloud-storage is required for the GCS photo storage backend. "
                 "Install it with: uv add google-cloud-storage"
             ) from exc
+        return GcsPhotoStorage(bucket_name=bucket)
 
     raise ValueError(  # pragma: no cover
         f"Unknown photo_storage_backend: {backend!r}. Choose 'local' or 'gcs'."

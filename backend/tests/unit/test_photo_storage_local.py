@@ -6,6 +6,7 @@ The GCS backend is never constructed here (no GCP creds needed).
 """
 from __future__ import annotations
 
+import sys
 import os
 from pathlib import Path
 
@@ -193,3 +194,119 @@ class TestGetPhotoStorageFactory:
             settings = Settings()
             adapter = get_photo_storage(settings)
             assert isinstance(adapter, GcsPhotoStorage)
+
+
+class TestRelativePathURIStability:
+    """Regression: put() with a relative base_dir must produce stable URIs.
+
+    Before the fix, ``LocalFsPhotoStorage(Path("rel/photos")).put(...)``
+    returned a URI like ``file://rel/photos/PT0001/<uuid>.jpg``. After the
+    process CWD changed, ``get_bytes()`` and ``delete()`` could no longer
+    locate the file because ``Path("rel/photos/...")`` resolved to a different
+    absolute path.
+    """
+
+    def test_relative_base_dir_round_trips_after_chdir(
+        self, tmp_path: Path
+    ) -> None:
+        """get_bytes() and delete() work even after the CWD changes post-put().
+
+        Scenario:
+        1. CWD is set to ``tmp_path``.
+        2. Storage is created with a relative directory ``rel/photos``.
+        3. ``put()`` is called — the file is written.
+        4. CWD is changed to a different directory (``tmp_path / "other"``).
+        5. ``get_bytes()`` must return the same bytes.
+        6. ``delete()`` must remove the file without raising.
+        """
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+            storage = LocalFsPhotoStorage(base_dir=Path("rel/photos"))
+            payload = b"relative-path-roundtrip"
+            uri = storage.put("PT0001", "photo.jpg", payload)
+
+            # Confirm URI is absolute (starts with file:/// on POSIX)
+            assert uri.startswith("file:///"), (
+                f"URI must be absolute, got: {uri!r}"
+            )
+
+            # Move CWD so any relative resolution would break
+            other_dir = tmp_path / "other"
+            other_dir.mkdir()
+            os.chdir(other_dir)
+
+            # get_bytes must still work
+            result = storage.get_bytes(uri)
+            assert result == payload
+
+            # delete must still work (idempotent on the now-present file)
+            storage.delete(uri)
+            # Calling get_bytes afterwards must raise FileNotFoundError
+            with pytest.raises(FileNotFoundError):
+                storage.get_bytes(uri)
+        finally:
+            os.chdir(original_cwd)
+
+
+class TestFactoryImportErrorProbe:
+    """Regression: get_photo_storage() must surface ImportError eagerly for GCS.
+
+    Before the fix the ``try/except ImportError`` in the factory wrapped
+    ``GcsPhotoStorage(bucket_name=bucket)`` — a call that never imports
+    ``google.cloud.storage`` (the import is lazy inside ``_get_gcs_client``).
+    As a result, a missing ``google-cloud-storage`` package was only detected
+    on the first real upload, not at startup.
+
+    After the fix the factory probes the import explicitly so the error is
+    raised at ``get_photo_storage()`` time.
+    """
+
+    def test_import_error_raised_at_factory_when_gcs_unavailable(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """get_photo_storage() raises ImportError immediately if google-cloud-storage is missing.
+
+        The test must block the import at both levels:
+        1. ``sys.modules["google.cloud.storage"] = None`` — blocks fresh imports.
+        2. Remove the ``storage`` attribute from the ``google.cloud`` package
+           object — necessary when the module was already imported earlier in
+           the test session (Python resolves ``from google.cloud import storage``
+           via the parent package's attribute cache, bypassing ``sys.modules``).
+        """
+        monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@h/db")
+        monkeypatch.setenv("API_KEY", "key")
+        monkeypatch.setenv("PHOTO_STORAGE_BACKEND", "gcs")
+        monkeypatch.setenv("PHOTO_GCS_BUCKET", "my-bucket")
+
+        from app.adapters.photo_storage import get_photo_storage
+        from app.core.config import Settings
+
+        # Block the import at the sys.modules level.
+        monkeypatch.setitem(sys.modules, "google.cloud.storage", None)  # type: ignore[arg-type]
+
+        # Also remove the cached attribute from the parent package so that
+        # ``from google.cloud import storage`` cannot bypass sys.modules.
+        import google.cloud as _gc  # noqa: PLC0415
+        monkeypatch.delattr(_gc, "storage", raising=False)
+
+        settings = Settings()
+        with pytest.raises(ImportError, match="google-cloud-storage is required"):
+            get_photo_storage(settings)
+
+    def test_factory_gcs_raises_value_error_when_bucket_missing(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """get_photo_storage() raises ValueError when backend='gcs' but bucket is unset."""
+        monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@h/db")
+        monkeypatch.setenv("API_KEY", "key")
+        monkeypatch.setenv("PHOTO_STORAGE_BACKEND", "gcs")
+        # Explicitly unset the bucket variable
+        monkeypatch.delenv("PHOTO_GCS_BUCKET", raising=False)
+
+        from app.adapters.photo_storage import get_photo_storage
+        from app.core.config import Settings
+
+        settings = Settings()
+        with pytest.raises(ValueError, match="photo_gcs_bucket"):
+            get_photo_storage(settings)
