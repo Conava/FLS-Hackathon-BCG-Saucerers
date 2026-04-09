@@ -157,6 +157,38 @@ export const COPY = {
     versionLabel: "Version",
   },
 
+  mealLog: {
+    title: "Log a Meal",
+    subtitle: "Take or upload a photo of your plate for instant nutrition analysis",
+    cta: {
+      takePicture: "Take a photo",
+      chooseFile: "Choose from library",
+      analyze: "Analyze my meal",
+      logMeal: "Log this meal",
+      tryAgain: "Try again",
+    },
+    loading: "Looking at your plate\u2026",
+    resultTitle: "Meal Analysis",
+    macros: {
+      protein: "Protein",
+      carbs: "Carbs",
+      fat: "Fat",
+      fiber: "Fiber",
+      polyphenols: "Polyphenols",
+    },
+    longevitySwap: "Longevity Swap",
+    swapRationale: "Why this swap?",
+    history: {
+      title: "Recent Meals",
+      empty: "No meals logged yet. Snap your first plate!",
+    },
+    error:
+      "Couldn\u2019t analyse this image. Please try again with a clearer photo.",
+    successToast: "Meal logged!",
+    disclosure:
+      "You\u2019re talking to an AI \u2014 this is wellness guidance, not medical advice.",
+  },
+
   errors: {
     generic: "Something went wrong. Please try again.",
     network: "Unable to connect. Check your internet connection.",
