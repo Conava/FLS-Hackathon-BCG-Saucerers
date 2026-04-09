@@ -2,7 +2,7 @@
 
 High-level: **API-first backend, multi-platform clients, pluggable data sources, Gemini-powered AI layer, all on GCP.**
 
-> **Build status (slice 2 complete):** The full `/v1` backend API is shipped — 26 endpoints, LLM abstraction layer, pgvector RAG, SSE coach, protocol generator, meal vision, outlook engine, survey loop, self-tracking logs, and stub care-layer services. The committed `backend/openapi.json` is the authoritative contract; see `make openapi` to regenerate.
+> **Build status (frontend PWA complete):** The full `/v1` backend API is shipped — 26 endpoints, LLM abstraction layer, pgvector RAG, SSE coach, protocol generator, meal vision, outlook engine, survey loop, self-tracking logs, and stub care-layer services. The committed `backend/openapi.json` is the authoritative contract; see `make openapi` to regenerate. The Next.js 15 PWA frontend is shipped at `frontend/` — all nine screens wired to the backend via the Route Handler proxy.
 
 For locked versions see [04-tech-stack.md](04-tech-stack.md). For the adapter pattern in detail see [05-data-model.md](05-data-model.md). For AI specifics see [06-ai-layer.md](06-ai-layer.md).
 
@@ -100,6 +100,41 @@ For locked versions see [04-tech-stack.md](04-tech-stack.md). For the adapter pa
 - **Cloud Storage** (optional) — any generated artifacts (future-self visualizations, PDFs)
 
 For frontend: deploy Next.js separately to **Cloud Run** (static export + edge caching) or **Vercel** if faster — doesn't matter for judging as long as the demo URL works.
+
+## Frontend architecture
+
+The `frontend/` directory is a self-contained Next.js 15 App Router application (pnpm, React 19, TypeScript strict, Tailwind v4 CSS-first).
+
+### Route structure
+
+```
+src/app/
+├── (auth)/
+│   ├── login/          # Demo auth — email → httpOnly cookie
+│   └── onboarding/     # Multi-step survey, GDPR consent
+└── (app)/              # Shared layout with glass tab bar
+    ├── today/          # Vitality ring, outlook curve, protocol, nudge, macro rings
+    ├── coach/          # SSE streaming chat, suggested chips, AI disclosure
+    ├── records/        # EHR list + plain-language Q&A with citations
+    ├── insights/       # Longevity dimension signals, future-self simulator, risk flags
+    ├── care/           # Appointments, three service pillars, clinician review, messages
+    ├── meal-log/       # Photo upload → Gemini vision → macro analysis
+    └── me/             # Profile, GDPR export/delete, data sources, consent
+```
+
+### Key design decisions
+
+1. **Route Handler proxy** (`src/app/api/proxy/[...path]/route.ts`) — all browser → FastAPI traffic flows through a Next.js catch-all handler. The `patient_id` lives in an httpOnly cookie set at login and is injected into the `/v1/patients/{id}/…` path server-side. The browser never sees the patient identifier. The proxy streams response bodies through without buffering (critical for SSE).
+
+2. **Demo auth** — `POST /api/auth/login` accepts an email address, looks it up in a hardcoded `DEMO_PATIENT_IDS` env-var map, and sets an httpOnly `patient_id` cookie. No passwords, no JWT. Middleware redirects unauthenticated requests to `/login`.
+
+3. **Typed API client with Zod schemas** — `src/lib/api/client.ts` wraps all 26 endpoints. `src/lib/api/schemas.ts` holds hand-written Zod schemas derived from `backend/openapi.json`. All responses are runtime-validated at the trust boundary. Typed `ApiError` on failure.
+
+4. **Manual service worker** (`public/sw.js`) — precaches the app shell and static assets. Explicitly bypasses `/api/proxy/*/coach/chat` and all POST/PUT/DELETE proxy requests to avoid breaking SSE and mutations. No `next-pwa` dependency.
+
+5. **Server Components by default** — Today, Records, Insights, Care, Me do their initial data fetch on the server. Client Components are used only for interactive surfaces: vitality ring animation, SSE coach chat, future-self sliders, toggle lists, meal upload.
+
+6. **Custom design system** — `src/components/design/` holds all project-specific components (VitalityRing, MacroRing, OutlookCurve, SignalCard, ProtocolCard, ChatBubble, AiDisclosureBanner, etc.). shadcn/ui primitives (Button, Card, Input, Badge, Dialog, Slider, etc.) live in `src/components/ui/` and are remapped to the project's `--color-*` tokens.
 
 ## Security & isolation principles
 

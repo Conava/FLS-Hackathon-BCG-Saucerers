@@ -134,7 +134,7 @@ The checkboxes below track the product scope commitment, not implementation comp
 
 **Backend slice 2 — done:** Full `/v1` API — 26 endpoints, LLM abstraction (FakeLLMProvider/GeminiProvider), pgvector RAG, SSE coach streaming, protocol generator, meal vision, outlook engine + narrator, future-self simulator, survey loop (onboarding/weekly/quarterly), DailyLog, MealLog with photo storage (local + GCS), notifications (LLM-generated copy), clinical review, referral, messages. GDPR delete now removes MealLog rows and photo files. Committed `backend/openapi.json`.
 
-**Frontend — not yet started.** The mockup (`mockup/index.html`) is the UI contract.
+**Frontend PWA — shipped.** All nine screens (Login, Onboarding, Today, Coach, Records, Insights, Care, Meal Log, Me) implemented in `frontend/` and wired to the FastAPI `/v1` stubs via the Route Handler proxy. Installable PWA with manual service worker + web app manifest. See [`frontend/README.md`](../frontend/README.md) for the demo walkthrough.
 
 ## Must-have (from the brief + our extension)
 
@@ -162,7 +162,7 @@ From our product thinking:
 - [x] **Referral program** — backend stub persists `Referral` rows; `GET/POST /v1/patients/{pid}/referral`
 - [x] **Messages to care team** — `GET/POST /v1/patients/{pid}/messages`
 - [x] **Weekly micro-survey prompt** — survey router supports `kind=weekly`; `POST /v1/patients/{pid}/survey`
-- [ ] **Signals drill-down** — four-dimension cards under Vitality Score (frontend only)
+- [x] **Signals drill-down** — four-dimension signal cards in Insights + bottom sheet from Today vitality ring tap
 - [ ] **At-home test-kit checkout** (microbiome / food-intolerance)
 
 ## Deferred (mentioned in pitch, not built)

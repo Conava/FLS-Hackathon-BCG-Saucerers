@@ -67,20 +67,40 @@ Everyone uses Claude Code / Gemini Code Assist as a pair programmer. [09-ai-assi
 │   └── tests/
 │
 ├── frontend/
-│   ├── package.json           # pnpm-managed
+│   ├── package.json           # pnpm-managed, Node >=20
 │   ├── next.config.ts
-│   ├── app/
-│   │   ├── globals.css        # Tailwind v4 @theme config
-│   │   ├── layout.tsx
-│   │   ├── page.tsx           # dashboard
-│   │   ├── coach/page.tsx
-│   │   ├── records/page.tsx
-│   │   ├── appointments/page.tsx
-│   │   └── ...
-│   ├── components/
-│   │   └── ui/                # shadcn components (copied in)
-│   └── lib/
-│       └── api.ts             # typed FastAPI client
+│   ├── vitest.config.ts
+│   ├── public/
+│   │   ├── manifest.webmanifest
+│   │   ├── sw.js              # manual service worker
+│   │   └── icons/             # PWA icons (192, 512, 512-maskable)
+│   └── src/
+│       ├── app/
+│       │   ├── globals.css    # Tailwind v4 @theme tokens
+│       │   ├── layout.tsx
+│       │   ├── (auth)/
+│       │   │   ├── login/     # demo auth screen
+│       │   │   └── onboarding/# multi-step survey
+│       │   ├── (app)/         # shared tab-bar layout
+│       │   │   ├── today/
+│       │   │   ├── coach/
+│       │   │   ├── records/
+│       │   │   ├── insights/
+│       │   │   ├── care/
+│       │   │   ├── meal-log/
+│       │   │   └── me/
+│       │   └── api/
+│       │       ├── auth/      # login + logout route handlers
+│       │       └── proxy/     # catch-all FastAPI proxy
+│       ├── components/
+│       │   ├── design/        # custom design-system components
+│       │   ├── ui/            # shadcn primitives (copied in)
+│       │   ├── shell/         # TabBar, ScreenFrame
+│       │   └── pwa/           # ServiceWorkerRegister
+│       └── lib/
+│           ├── api/           # typed client, Zod schemas, SSE parser
+│           ├── auth/          # session helpers
+│           └── copy/          # wellness-framed user-facing strings
 │
 └── infra/
     ├── cloudrun.sh            # gcloud run deploy commands
@@ -97,11 +117,11 @@ Everyone uses Claude Code / Gemini Code Assist as a pair programmer. [09-ai-assi
 ## Definition of done for the demo
 
 - [ ] Rebecca account loads in <2s on Cloud Run demo URL
-- [ ] Vitality Score shows real computed value from CSV data
-- [ ] Coach responds in <5s (streamed) with a citation from Rebecca's real records
-- [ ] NL record Q&A returns a correct answer with clickable citation
-- [ ] Risk flag surfaces → diagnostic package card → mocked booking works
-- [ ] At least one "wow" feature built (future-self simulator OR polished Capacitor native wrap)
+- [x] Vitality Score shows real computed value from CSV data (backend shipped; frontend wired)
+- [x] Coach responds in <5s (streamed) with a citation from Rebecca's real records (SSE proxy + streaming chat screen shipped)
+- [x] NL record Q&A returns a correct answer with clickable citation (Records Q&A screen shipped)
+- [x] Risk flag surfaces → diagnostic package card → mocked booking works (Insights risk flags + Care booking sheet shipped)
+- [x] At least one "wow" feature built (future-self simulator shipped in Insights)
 - [ ] Pitch deck complete, rehearsed 3× under 3 minutes
 - [ ] Fallback video recorded for wifi-disaster scenario
 - [ ] Legal compliance slide in the deck

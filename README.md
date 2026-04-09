@@ -2,7 +2,7 @@
 
 AI-driven longevity MVP for a European healthcare group — BCG Platinion AI Hackathon, Future Leader Summit Hamburg, 09–10.04.2026.
 
-See [`docs/README.md`](docs/README.md) for the full documentation index. See [`mockup/index.html`](mockup/index.html) for the frontend contract.
+See [`docs/README.md`](docs/README.md) for the full documentation index. See [`frontend/README.md`](frontend/README.md) for the PWA demo guide. See [`mockup/index.html`](mockup/index.html) for the original UI mockup.
 
 ## What's built
 
@@ -29,7 +29,7 @@ See [`docs/README.md`](docs/README.md) for the full documentation index. See [`m
 - Stub care layer: notifications (LLM-generated copy), clinical review, referral, messages
 - Committed `backend/openapi.json`; CI fails if spec drifts from code (`make openapi`)
 
-**Frontend — not yet started.** See `mockup/index.html` for the UI contract.
+**Frontend PWA — shipped.** Next.js 15 App Router, React 19, Tailwind v4, TypeScript strict, installable PWA. All nine screens wired to the FastAPI `/v1` stubs via a Route Handler proxy. See [`frontend/README.md`](frontend/README.md) for setup, demo accounts, and the 3-minute walkthrough.
 
 ## Quick start
 
@@ -61,13 +61,27 @@ uv run python -m app.cli.ingest --source=csv --data-dir=../data
 uv run pytest
 ```
 
+## Quick start — frontend
+
+Requires Node 20+ and pnpm.
+
+```bash
+cd frontend
+cp .env.example .env.local   # set BACKEND_URL + DEMO_PATIENT_IDS
+pnpm install
+pnpm dev                     # http://localhost:3000
+```
+
+See [`frontend/README.md`](frontend/README.md) for demo accounts, available commands, and troubleshooting.
+
 ## Repo layout
 
 ```
 backend/        FastAPI backend — see backend/README.md for full detail
+frontend/       Next.js 15 PWA — see frontend/README.md for setup and demo guide
 data/           Provided CSV datasets (ehr_records, wearable_telemetry, lifestyle_survey)
 docs/           Project documentation — see docs/README.md
-mockup/         Static HTML/CSS/JS frontend mockup (the UI contract)
+mockup/         Static HTML/CSS/JS frontend mockup (the original UI contract)
 cloudrun.yaml   Cloud Run service definition placeholder
 docker-compose.yml
 Makefile        up / down / seed / test / fmt / lint
@@ -79,3 +93,4 @@ Makefile        up / down / seed / test / fmt / lint
 - [`docs/04-tech-stack.md`](docs/04-tech-stack.md) — locked versions (read before writing code)
 - [`docs/09-ai-assist-playbook.md`](docs/09-ai-assist-playbook.md) — AI-assistant hallucination traps for this stack
 - [`backend/README.md`](backend/README.md) — backend commands, folder layout, API key setup
+- [`frontend/README.md`](frontend/README.md) — frontend setup, demo walkthrough, troubleshooting

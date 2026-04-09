@@ -8,7 +8,7 @@
 
 | Layer | Choice |
 |---|---|
-| **Frontend** | Next.js 15 + React 19 + Tailwind v4 + shadcn/ui, deployed as PWA, optional Capacitor wrap |
+| **Frontend** | Next.js 15 + React 19 + Tailwind v4 + shadcn/ui + Zod, deployed as PWA (manual SW), optional Capacitor wrap |
 | **Backend** | Python 3.12 + FastAPI + SQLModel + SQLAlchemy 2.0 async + asyncpg |
 | **Database** | Cloud SQL Postgres 16 + pgvector (europe-west3) |
 | **AI** | `google-genai` SDK → Gemini 2.5 Flash (coach, notifications) + 2.5 Pro (RAG, NL Q&A) + `text-embedding-004` |
@@ -25,7 +25,8 @@
 | **shadcn/ui** | latest | CLI initializes with Tailwind v4 + React 19 natively. Component source is copied into the repo, not imported. |
 | **TypeScript** | 5.x strict | |
 | **Package manager** | pnpm | Faster installs, better monorepo story if we grow |
-| **PWA** | `next-pwa` or manual service worker + manifest | Must be installable on iOS Safari, Android Chrome, desktop |
+| **Zod** | 3.x | Runtime schema validation for all API responses. Schemas in `src/lib/api/schemas.ts`. |
+| **PWA** | Manual service worker + manifest (no `next-pwa`) | Installable on iOS Safari, Android Chrome, desktop. SW precaches app shell; bypasses SSE and mutation endpoints. |
 | **Capacitor** (optional) | latest | Wrap the PWA into iOS/Android binaries if we want to demo on a physical device. ~1h of work. |
 
 ## Backend
@@ -98,7 +99,9 @@ uv sync
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 uv run python -m app.cli.ingest --source=csv --data-dir=../data
 
-# Frontend (not yet built — slice 2)
+# Frontend (from frontend/)
+cd frontend
+cp .env.example .env.local  # set BACKEND_URL + DEMO_PATIENT_IDS
 pnpm install
 pnpm dev
 ```

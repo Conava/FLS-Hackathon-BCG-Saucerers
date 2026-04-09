@@ -10,7 +10,7 @@ Single source of truth for the **Longevity MVP** — BCG Platinion AI Hackathon,
 
 **Slice 2 — shipped:** Full `/v1` API with 26 endpoints across 15 routers. LLM abstraction layer (`FakeLLMProvider` / `GeminiProvider`) with file-loaded prompts. pgvector HNSW index + embeddings populated at ingest. RAG service for Records Q&A. SSE streaming coach. Protocol generator (structured output). Meal vision (multimodal). Outlook engine + narrator. Future-self simulator. Survey loop (onboarding/weekly/quarterly). DailyLog + MealLog self-tracking. Stub services for notifications, clinical review, referral, and messages. Meal photo storage (local-fs + GCS). GDPR delete now removes MealLog rows and photo files. Committed `backend/openapi.json` with CI drift check.
 
-**Frontend — not yet started.** The mockup (`mockup/index.html`) is the UI contract.
+**Frontend PWA — shipped.** Next.js 15 App Router + React 19 + Tailwind v4 + TypeScript strict PWA at `frontend/`. Nine screens (Login, Onboarding, Today, Coach, Records, Insights, Care, Meal Log, Me) wired to the FastAPI `/v1` stubs via a Route Handler proxy. Installable with service worker + web app manifest. See [`frontend/README.md`](../frontend/README.md) for setup and demo walkthrough.
 
 ## How these docs are organized
 
