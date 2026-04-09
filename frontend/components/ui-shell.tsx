@@ -90,26 +90,6 @@ export function StatusPill({
   );
 }
 
-export function StatusBar() {
-  return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-12 items-center justify-between bg-gradient-to-b from-shell to-transparent px-5 text-xs font-semibold text-ink">
-      <span>9:41</span>
-      <div className="flex items-center gap-1.5">
-        <div className="flex items-end gap-0.5">
-          <span className="h-2 w-1 rounded-full bg-current/35" />
-          <span className="h-2.5 w-1 rounded-full bg-current/55" />
-          <span className="h-3.5 w-1 rounded-full bg-current/75" />
-          <span className="h-4.5 w-1 rounded-full bg-current" />
-        </div>
-        <div className="h-2 w-4 rounded-full border border-current/35" />
-        <div className="h-2.5 w-5 rounded-[4px] border border-current/40 p-0.5">
-          <div className="h-full w-3 rounded-[2px] bg-current" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function TabIcon({ tab, active }: { tab: TabKey; active: boolean }) {
   const className = active ? "stroke-[1.9]" : "stroke-[1.8]";
 

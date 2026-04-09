@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import type { AppBootstrap, TabKey } from "@/lib/contracts";
 import { NAV_ITEMS } from "@/lib/contracts";
-import { TabIcon, StatusBar } from "@/components/ui-shell";
+import { TabIcon } from "@/components/ui-shell";
 import {
   CareScreen,
   CoachScreen,
@@ -23,9 +23,7 @@ export function MobileShell({ bootstrap }: { bootstrap: AppBootstrap }) {
     <section className="w-full sm:max-w-[420px]">
       <div className="mx-auto h-dvh w-full overflow-hidden bg-shell sm:h-[844px] sm:max-w-[390px] sm:rounded-[40px] sm:border sm:border-white/70 sm:shadow-phone">
         <div className="relative flex h-full flex-col">
-          <StatusBar />
-
-          <div className="shell-scrollbar flex-1 overflow-y-auto px-5 pb-28 pt-14">
+          <div className="shell-scrollbar flex-1 overflow-y-auto px-5 pb-28 pt-8">
             {activeTab === "today" && (
               <TodayScreen bootstrap={bootstrap} firstName={firstName} />
             )}
