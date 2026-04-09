@@ -4,30 +4,22 @@
  * OnboardingStepper — multi-step onboarding questionnaire.
  *
  * Steps:
- *   1. Welcome
- *   2. Connect your data (lifestyle quick form)
- *   3. Set your goals (goal selection)
- *   4. GDPR consent (required toggles before submit)
+ *   1. Welcome — logo mark, tagline, hero title, subtitle
+ *   2. Lifestyle — sleep, activity, nutrition quick form
+ *   3. Goals — primary goal selection
+ *   4. GDPR consent — required checkbox before submit
  *
  * On final step submit: calls submitSurvey({ kind: "onboarding", answers })
  * then navigates to /today.
+ *
+ * Design matches mockup/mockup.html onboarding screen exactly.
  */
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { StepperProgress } from "@/components/design/StepperProgress";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { submitSurvey } from "@/lib/api/client";
-import { COPY, AI_DISCLOSURE } from "@/lib/copy/copy";
+import { COPY } from "@/lib/copy/copy";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,7 +34,7 @@ interface OnboardingAnswers {
 }
 
 // ---------------------------------------------------------------------------
-// Step content
+// Step content constants
 // ---------------------------------------------------------------------------
 
 const TOTAL_STEPS = 4;
@@ -56,23 +48,23 @@ const GOAL_OPTIONS = [
 
 const SLEEP_OPTIONS = [
   { value: "less_6", label: "Less than 6h" },
-  { value: "6_7", label: "6–7h" },
-  { value: "7_8", label: "7–8h" },
+  { value: "6_7", label: "6\u20137h" },
+  { value: "7_8", label: "7\u20138h" },
   { value: "more_8", label: "More than 8h" },
 ];
 
 const ACTIVITY_OPTIONS = [
   { value: "sedentary", label: "Mostly sedentary" },
-  { value: "light", label: "Light (1–2×/week)" },
-  { value: "moderate", label: "Moderate (3–4×/week)" },
-  { value: "active", label: "Very active (5+×/week)" },
+  { value: "light", label: "Light (1\u20132\u00d7/week)" },
+  { value: "moderate", label: "Moderate (3\u20134\u00d7/week)" },
+  { value: "active", label: "Very active (5+\u00d7/week)" },
 ];
 
 const NUTRITION_OPTIONS = [
   { value: "poor", label: "Needs improvement" },
-  { value: "fair", label: "Fair — room to grow" },
+  { value: "fair", label: "Fair \u2014 room to grow" },
   { value: "good", label: "Good overall" },
-  { value: "excellent", label: "Excellent — mostly whole foods" },
+  { value: "excellent", label: "Excellent \u2014 mostly whole foods" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -87,13 +79,21 @@ interface RadioOptionProps {
   onChange: (value: string) => void;
 }
 
+/**
+ * Row-item radio option styled per mockup:
+ * 22x22 circular radio, selected = inner filled dot + accent-lt bg + accent border.
+ */
 function RadioOption({ name, value, label, selected, onChange }: RadioOptionProps) {
   return (
     <label
-      className="flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-colors"
+      className="flex items-center gap-3 cursor-pointer"
       style={{
-        borderColor: selected ? "var(--color-accent)" : undefined,
-        background: selected ? "var(--color-accent-lt, color-mix(in srgb, var(--color-accent) 8%, transparent))" : undefined,
+        padding: "12px 14px",
+        borderRadius: "var(--radius-md)",
+        border: selected
+          ? "1.5px solid var(--color-accent)"
+          : "1px solid var(--color-border)",
+        background: selected ? "var(--color-accent-lt)" : "transparent",
       }}
     >
       <input
@@ -104,22 +104,34 @@ function RadioOption({ name, value, label, selected, onChange }: RadioOptionProp
         onChange={() => onChange(value)}
         className="sr-only"
       />
-      {/* Custom radio indicator */}
+      {/* 22x22 circular radio indicator */}
       <span
-        className="flex-shrink-0 w-5 h-5 rounded-full border-2 inline-flex items-center justify-center"
+        className="flex-shrink-0 inline-flex items-center justify-center"
         style={{
-          borderColor: selected ? "var(--color-accent)" : undefined,
+          width: 22,
+          height: 22,
+          borderRadius: "999px",
+          border: selected
+            ? "2px solid var(--color-accent)"
+            : "2px solid var(--color-border-2)",
         }}
         aria-hidden="true"
       >
         {selected && (
           <span
-            className="w-2.5 h-2.5 rounded-full"
-            style={{ background: "var(--color-accent)" }}
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: "999px",
+              background: "var(--color-accent)",
+              display: "block",
+            }}
           />
         )}
       </span>
-      <span className="text-sm font-medium">{label}</span>
+      <span className="flex-1 font-medium" style={{ fontSize: 13.5 }}>
+        {label}
+      </span>
     </label>
   );
 }
@@ -133,7 +145,7 @@ interface RadioGroupProps {
 
 function RadioGroup({ name, options, value, onChange }: RadioGroupProps) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col" style={{ gap: 8 }}>
       {options.map((opt) => (
         <RadioOption
           key={opt.value}
@@ -152,38 +164,143 @@ function RadioGroup({ name, options, value, onChange }: RadioGroupProps) {
 // Step screens
 // ---------------------------------------------------------------------------
 
+/**
+ * Step 1 - Welcome screen.
+ * Logo mark (56x56 gradient square with white "h"), "WELCOME TO HELF" tagline,
+ * hero title "Your longevity, in one place.", and subtitle paragraph.
+ */
 function StepWelcome() {
-  const step = COPY.onboarding.steps[0];
   return (
-    <div className="flex flex-col items-center text-center gap-4 py-6">
-      {/* Logo mark */}
+    <div
+      className="flex flex-col items-center text-center"
+      style={{ padding: "24px 10px 16px" }}
+    >
+      {/* Logo mark: 56x56, gradient, border-radius var(--radius-md), "h" 24px/800 */}
       <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black"
+        className="flex items-center justify-center"
         style={{
-          background: "var(--color-accent)",
-          color: "white",
+          width: 56,
+          height: 56,
+          borderRadius: "var(--radius-md)",
+          background:
+            "linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-2) 100%)",
+          color: "#fff",
+          fontSize: 24,
+          fontWeight: 800,
+          marginBottom: 14,
+          letterSpacing: "-0.03em",
+          flexShrink: 0,
         }}
         aria-hidden="true"
       >
         h
       </div>
-      <div>
-        <p
-          className="text-xs font-semibold uppercase tracking-widest"
-          style={{ color: "var(--color-accent)" }}
-        >
-          {COPY.app.title}
-        </p>
-        <h1 className="text-2xl font-extrabold tracking-tight mt-1">
-          {step.title}
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--color-ink-3)" }}>
-          {step.body}
-        </p>
+
+      {/* Tagline: 12px/accent/uppercase/0.1em/700 */}
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "var(--color-accent)",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          marginBottom: 6,
+        }}
+      >
+        Welcome to Helf
       </div>
-      <p className="text-xs" style={{ color: "var(--color-ink-4)" }}>
-        {AI_DISCLOSURE}
+
+      {/* Hero title: 26px/800/-0.02em */}
+      <h1
+        style={{
+          fontSize: 26,
+          fontWeight: 800,
+          letterSpacing: "-0.02em",
+          marginBottom: 8,
+          lineHeight: 1.2,
+        }}
+      >
+        Your longevity, in one place.
+      </h1>
+
+      {/* Subtitle: 13.5px/ink-3/1.55 */}
+      <p
+        style={{
+          fontSize: 13.5,
+          color: "var(--color-ink-3)",
+          lineHeight: 1.55,
+          maxWidth: 300,
+        }}
+      >
+        The only longevity platform where your doctor actually sees the data.
+        Part of your clinic network.
       </p>
+    </div>
+  );
+}
+
+interface StepLifestyleProps {
+  answers: OnboardingAnswers;
+  onChange: (field: keyof OnboardingAnswers, value: string) => void;
+}
+
+/** Reusable card wrapper for lifestyle sub-sections. */
+function LifestyleCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="flex flex-col"
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "0 1px 3px rgba(14,23,38,.06)",
+        padding: 18,
+      }}
+    >
+      <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>{title}</div>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Step 2 - Lifestyle quick form: sleep, activity, nutrition.
+ */
+function StepLifestyle({ answers, onChange }: StepLifestyleProps) {
+  return (
+    <div className="flex flex-col" style={{ gap: 16 }}>
+      <LifestyleCard title="How much do you sleep?">
+        <RadioGroup
+          name="sleepHours"
+          options={SLEEP_OPTIONS}
+          value={answers.sleepHours}
+          onChange={(v) => onChange("sleepHours", v)}
+        />
+      </LifestyleCard>
+
+      <LifestyleCard title="How active are you?">
+        <RadioGroup
+          name="activityLevel"
+          options={ACTIVITY_OPTIONS}
+          value={answers.activityLevel}
+          onChange={(v) => onChange("activityLevel", v)}
+        />
+      </LifestyleCard>
+
+      <LifestyleCard title="How would you rate your nutrition?">
+        <RadioGroup
+          name="nutritionQuality"
+          options={NUTRITION_OPTIONS}
+          value={answers.nutritionQuality}
+          onChange={(v) => onChange("nutritionQuality", v)}
+        />
+      </LifestyleCard>
     </div>
   );
 }
@@ -193,80 +310,47 @@ interface StepGoalProps {
   onChange: (field: keyof OnboardingAnswers, value: string) => void;
 }
 
+/**
+ * Step 3 - Primary goal selection.
+ * Label "YOUR PRIMARY GOAL" (11px/accent/uppercase/0.08em),
+ * Question "What brings you here?" (15px/700), 4 radio options as row-items.
+ */
 function StepGoal({ answers, onChange }: StepGoalProps) {
   return (
-    <Card>
-      <CardHeader>
-        <p
-          className="text-xs font-bold uppercase tracking-wider"
-          style={{ color: "var(--color-accent)" }}
-        >
-          Your primary goal
-        </p>
-        <CardTitle className="text-base mt-1">What brings you here?</CardTitle>
-        <CardDescription>{COPY.onboarding.steps[2].body}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <RadioGroup
-          name="primaryGoal"
-          options={GOAL_OPTIONS}
-          value={answers.primaryGoal}
-          onChange={(v) => onChange("primaryGoal", v)}
-        />
-      </CardContent>
-    </Card>
-  );
-}
+    <div
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "0 1px 3px rgba(14,23,38,.06)",
+        padding: 18,
+      }}
+    >
+      {/* Section label: 11px/accent/uppercase/0.08em */}
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: "var(--color-accent)",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          marginBottom: 4,
+        }}
+      >
+        Your primary goal
+      </div>
 
-interface StepLifestyleProps {
-  answers: OnboardingAnswers;
-  onChange: (field: keyof OnboardingAnswers, value: string) => void;
-}
+      {/* Question: 15px/700 */}
+      <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>
+        What brings you here?
+      </div>
 
-function StepLifestyle({ answers, onChange }: StepLifestyleProps) {
-  return (
-    <div className="flex flex-col gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">How much do you sleep?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup
-            name="sleepHours"
-            options={SLEEP_OPTIONS}
-            value={answers.sleepHours}
-            onChange={(v) => onChange("sleepHours", v)}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">How active are you?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup
-            name="activityLevel"
-            options={ACTIVITY_OPTIONS}
-            value={answers.activityLevel}
-            onChange={(v) => onChange("activityLevel", v)}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">How would you rate your nutrition?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup
-            name="nutritionQuality"
-            options={NUTRITION_OPTIONS}
-            value={answers.nutritionQuality}
-            onChange={(v) => onChange("nutritionQuality", v)}
-          />
-        </CardContent>
-      </Card>
+      <RadioGroup
+        name="primaryGoal"
+        options={GOAL_OPTIONS}
+        value={answers.primaryGoal}
+        onChange={(v) => onChange("primaryGoal", v)}
+      />
     </div>
   );
 }
@@ -276,45 +360,60 @@ interface StepGDPRProps {
   onToggle: (checked: boolean) => void;
 }
 
+/**
+ * Step 4 - GDPR consent.
+ * Native checkbox (per mockup) + consent text + Art. 9(2)(h) legal note with Learn more link.
+ */
 function StepGDPR({ gdprConsent, onToggle }: StepGDPRProps) {
-  const step = COPY.onboarding.steps[3];
   return (
-    <div className="flex flex-col gap-4">
-      <div className="text-center py-4">
-        <h2 className="text-xl font-bold tracking-tight">{step.title}</h2>
-        <p className="mt-2 text-sm" style={{ color: "var(--color-ink-3)" }}>
-          Before we begin, please review and accept our data use terms.
-        </p>
-      </div>
-
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4">
-            <Switch
-              id="gdpr-consent"
-              checked={gdprConsent}
-              onCheckedChange={onToggle}
-              aria-label="I consent to processing my health data for longevity insights"
-            />
-            <Label htmlFor="gdpr-consent" className="cursor-pointer">
-              <span className="font-semibold text-sm leading-tight block">
-                I consent to processing my health data for longevity insights
-              </span>
-              <span
-                className="text-xs mt-1 block leading-relaxed"
-                style={{ color: "var(--color-ink-3)" }}
-              >
-                Art. 9(2)(h) GDPR · EU-hosted (Frankfurt) · Revocable anytime in
-                Me → Privacy
-              </span>
-            </Label>
+    <div className="flex flex-col" style={{ gap: 16 }}>
+      <div
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "0 1px 3px rgba(14,23,38,.06)",
+          padding: 18,
+        }}
+      >
+        <label
+          className="flex cursor-pointer"
+          style={{ gap: 12, alignItems: "flex-start" }}
+          htmlFor="gdpr-consent"
+        >
+          <input
+            id="gdpr-consent"
+            type="checkbox"
+            checked={gdprConsent}
+            onChange={(e) => onToggle(e.target.checked)}
+            style={{
+              marginTop: 3,
+              accentColor: "var(--color-accent)",
+              flexShrink: 0,
+            }}
+            aria-label="I consent to processing my health data for longevity insights"
+          />
+          <div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4 }}>
+              I consent to processing my health data for longevity insights
+            </div>
+            <div
+              style={{
+                fontSize: 10.5,
+                color: "var(--color-ink-3)",
+                marginTop: 4,
+                lineHeight: 1.5,
+              }}
+            >
+              Art. 9(2)(h) GDPR &middot; EU-hosted (Frankfurt) &middot; Revocable
+              anytime.{" "}
+              <a href="#" style={{ color: "var(--color-accent)" }}>
+                Learn more.
+              </a>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <p className="text-xs text-center" style={{ color: "var(--color-ink-4)" }}>
-        {step.body}
-      </p>
+        </label>
+      </div>
     </div>
   );
 }
@@ -374,29 +473,77 @@ export function OnboardingStepper() {
 
   const isLastStep = step === TOTAL_STEPS;
 
+  // Progress bar: step / TOTAL_STEPS * 100 (fills incrementally with each step)
+  const progressPct = Math.round((step / TOTAL_STEPS) * 100);
+
   return (
-    <main className="flex flex-col min-h-screen px-4 pb-8 max-w-lg mx-auto w-full">
-      {/* Progress bar */}
-      <div className="pt-6 pb-3">
-        <StepperProgress total={TOTAL_STEPS} current={step} />
-        <p
-          className="text-xs text-center mt-2"
-          style={{ color: "var(--color-ink-3)" }}
+    <main
+      className="flex flex-col min-h-screen w-full mx-auto"
+      style={{ maxWidth: 448, padding: "0 20px 28px" }}
+    >
+      {/* Step 1: welcome hero block shown before progress bar */}
+      {step === 1 && <StepWelcome />}
+
+      {/* Progress bar — 4px height, bg-2 track, accent inner span */}
+      <div style={{ margin: "10px 0 14px" }}>
+        <div
+          style={{
+            height: 4,
+            background: "var(--color-bg-2)",
+            borderRadius: 999,
+            overflow: "hidden",
+          }}
+          role="progressbar"
+          aria-valuenow={step}
+          aria-valuemin={1}
+          aria-valuemax={TOTAL_STEPS}
+          aria-label={`Step ${step} of ${TOTAL_STEPS}`}
         >
-          Step {step} of {TOTAL_STEPS}
-        </p>
+          <span
+            style={{
+              display: "block",
+              height: "100%",
+              background: "var(--color-accent)",
+              borderRadius: 999,
+              width: `${progressPct}%`,
+              transition: "width 0.4s ease",
+            }}
+          />
+        </div>
+        {/* Caption: 11px/ink-3 */}
+        <div
+          style={{
+            fontSize: 11,
+            color: "var(--color-ink-3)",
+            textAlign: "center",
+            marginTop: 6,
+          }}
+        >
+          Step {step} of {TOTAL_STEPS} &middot; ~3 min
+        </div>
       </div>
 
-      {/* Step content */}
+      {/* Step body */}
       <div className="flex-1">
-        {step === 1 && <StepWelcome />}
         {step === 2 && (
           <>
-            <div className="mb-4">
-              <h2 className="text-xl font-bold tracking-tight">
+            <div style={{ marginBottom: 16 }}>
+              <h2
+                style={{
+                  fontSize: 20,
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
+                }}
+              >
                 {COPY.onboarding.steps[1].title}
               </h2>
-              <p className="mt-1 text-sm" style={{ color: "var(--color-ink-3)" }}>
+              <p
+                style={{
+                  marginTop: 4,
+                  fontSize: 13,
+                  color: "var(--color-ink-3)",
+                }}
+              >
                 {COPY.onboarding.steps[1].body}
               </p>
             </div>
@@ -407,20 +554,10 @@ export function OnboardingStepper() {
           </>
         )}
         {step === 3 && (
-          <>
-            <div className="mb-4">
-              <h2 className="text-xl font-bold tracking-tight">
-                {COPY.onboarding.steps[2].title}
-              </h2>
-              <p className="mt-1 text-sm" style={{ color: "var(--color-ink-3)" }}>
-                {COPY.onboarding.steps[2].body}
-              </p>
-            </div>
-            <StepGoal
-              answers={answers}
-              onChange={(field, value) => setField(field, value)}
-            />
-          </>
+          <StepGoal
+            answers={answers}
+            onChange={(field, value) => setField(field, value)}
+          />
         )}
         {step === 4 && (
           <StepGDPR
@@ -431,7 +568,7 @@ export function OnboardingStepper() {
       </div>
 
       {/* Navigation */}
-      <div className="flex flex-col gap-3 mt-6">
+      <div className="flex flex-col" style={{ gap: 10, marginTop: 18 }}>
         {isLastStep ? (
           <Button
             onClick={handleFinish}
@@ -439,11 +576,11 @@ export function OnboardingStepper() {
             size="lg"
             className="w-full"
           >
-            {submitting ? "Saving…" : COPY.onboarding.cta.finish}
+            {submitting ? "Saving\u2026" : "Finish"}
           </Button>
         ) : (
           <Button onClick={handleNext} size="lg" className="w-full">
-            {COPY.onboarding.cta.next}
+            Continue
           </Button>
         )}
 
@@ -460,12 +597,18 @@ export function OnboardingStepper() {
         )}
       </div>
 
-      {/* Disclaimer */}
+      {/* Disclaimer: 10.5px/ink-3/center */}
       <p
-        className="mt-6 max-w-sm text-center text-xs mx-auto"
-        style={{ color: "var(--color-ink-4)" }}
+        className="text-center mx-auto"
+        style={{
+          marginTop: 16,
+          fontSize: 10.5,
+          color: "var(--color-ink-3)",
+          maxWidth: 320,
+          lineHeight: 1.5,
+        }}
       >
-        General wellness guidance · Not medical advice · GDPR · EU-only
+        Not medical advice. Wellness and lifestyle guidance only.
       </p>
     </main>
   );

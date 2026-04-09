@@ -3,26 +3,41 @@
 /**
  * MealLogUpload — client component for the meal photo vision feature.
  *
- * Flow:
- *  1. User picks / captures an image (file input)
- *  2. Preview rendered via object URL
- *  3. "Analyze my meal" posts multipart FormData to the proxy
- *  4. Loading state ("Looking at your plate…") shown during vision processing
- *  5. Result card: meal name, macros, longevity swap tip
- *  6. "Log this meal" navigates back to /today
+ * Layout matches mockup/mockup.html #s-meal ("Meal vision" screen):
+ *  1. Header: back button (ghost, 14-px chevron) + h1 "Meal vision" (18px/700/-0.01em)
+ *  2. AI disclosure banner: camera icon + "AI meal analysis · Gemini 2.5 Flash Vision"
+ *  3. Meal photo area: full-width 16/10 — gradient placeholder or uploaded image.
+ *     When analyzed: "✓ Analyzed" tag appears top-right.
+ *  4. Hidden file input triggered by a button below the photo.
+ *  5. Detection card: DETECTED label, food description, macro chips (kcal, protein, carbs, fat, fiber).
+ *  6. Longevity swap card: green bg, 🌱 emoji, LONGEVITY SWAP badge, recommendation, rationale.
+ *  7. CTAs: "Log to today" (primary, full-width) + "Analyze but don't store photo" (ghost).
+ *  8. Footer disclaimer: "Meal vision is a wellness tool. Not a nutrition prescription."
  *
- * Dev fallback: if the backend fails, a cached demo result is used so the
- * demo never hard-breaks on a cold backend.
+ * Dev fallback: if the backend fails in development mode, a demo result is used.
  */
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { AiDisclosureBanner, MacroRing } from "@/components/design";
 import { uploadMealLog } from "@/lib/api/client";
 import type { MealLogUploadResponse } from "@/lib/api/schemas";
-import { COPY } from "@/lib/copy/copy";
 
-const { mealLog: copy } = COPY;
+// ---------------------------------------------------------------------------
+// Static copy (inlined to avoid copy.ts shape changes breaking tests)
+// ---------------------------------------------------------------------------
+
+const COPY = {
+  title: "Meal vision",
+  aiDisclosure: "AI meal analysis \u00b7 Gemini 2.5 Flash Vision",
+  takePicture: "Take a photo",
+  analyze: "Analyze my meal",
+  loading: "Looking at your plate\u2026",
+  logToToday: "Log to today",
+  analyzeNoStore: "Analyze but don\u2019t store photo",
+  footer: "Meal vision is a wellness tool. Not a nutrition prescription.",
+  error:
+    "Couldn\u2019t analyse this image. Please try again with a clearer photo.",
+} as const;
 
 // ---------------------------------------------------------------------------
 // Dev-mode fallback result (demo contingency)
@@ -40,62 +55,95 @@ const DEV_FALLBACK: MealLogUploadResponse = {
   meal_log_id: 0,
   photo_uri: "",
   analysis: {
-    classification: "Balanced Plate (Demo)",
+    classification: "Grilled salmon, white rice, broccoli",
     macros: {
-      protein_g: 30,
-      carbs_g: 50,
-      fat_g: 15,
-      fiber_g: 7,
+      kcal: 480,
+      protein_g: 34,
+      carbs_g: 42,
+      fat_g: 18,
+      fiber_g: 4,
       polyphenols_mg: 100,
     },
-    longevity_swap: "Add a handful of mixed berries on the side",
-    swap_rationale: "Berries are rich in anthocyanins linked to reduced oxidative stress",
+    longevity_swap: "Swap white rice for lentils",
+    swap_rationale:
+      "+12g fiber \u00b7 same calories \u00b7 supports a steadier post-meal glucose curve.",
   },
-  disclaimer: "Demo result — backend unavailable.",
+  disclaimer: "Demo result \u2014 backend unavailable.",
 };
 
 // ---------------------------------------------------------------------------
-// Macro row helper
+// Macro parsing helper
 // ---------------------------------------------------------------------------
 
 interface MacroValue {
+  kcal: number;
   protein: number;
   carbs: number;
   fat: number;
   fiber: number;
-  polyphenols: number;
 }
 
 function parseMacros(raw: Record<string, unknown>): MacroValue {
   const n = (k: string) => {
     const v = raw[k];
-    return typeof v === "number" ? v : 0;
+    return typeof v === "number" ? Math.round(v) : 0;
   };
   return {
+    kcal: n("kcal"),
     protein: n("protein_g"),
     carbs: n("carbs_g"),
     fat: n("fat_g"),
     fiber: n("fiber_g"),
-    polyphenols: n("polyphenols_mg"),
   };
 }
 
 // ---------------------------------------------------------------------------
-// Component
+// Chip helper (inline to avoid import coupling)
 // ---------------------------------------------------------------------------
 
+function MacroChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "5px 10px",
+        borderRadius: 999,
+        fontSize: 11,
+        fontWeight: 600,
+        background: "var(--color-accent-lt)",
+        color: "var(--color-accent)",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+/**
+ * Renders the full Meal vision screen with photo capture, analysis, and CTA.
+ * No server-side dependencies — pure client component.
+ */
 export function MealLogUpload() {
   const router = useRouter();
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [status, setStatus] = React.useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
-  const [result, setResult] = React.useState<MealLogUploadResponse | null>(null);
+  const [result, setResult] = React.useState<MealLogUploadResponse | null>(
+    null
+  );
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
-  // Revoke object URL to avoid memory leaks
+  // Revoke object URL on unmount to prevent memory leaks
   React.useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -108,7 +156,6 @@ export function MealLogUpload() {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(URL.createObjectURL(file));
     setSelectedFile(file);
-    // Reset previous result
     setResult(null);
     setErrorMsg(null);
     setStatus("idle");
@@ -127,14 +174,14 @@ export function MealLogUpload() {
       setResult(response);
       setStatus("success");
     } catch (err) {
-      // Dev fallback: use demo result so demo never hard-breaks
+      // Dev fallback: use demo result so the demo never hard-breaks
       if (process.env.NODE_ENV === "development") {
         setResult(DEV_FALLBACK);
         setStatus("success");
         return;
       }
       console.error("[MealLogUpload] upload failed:", err);
-      setErrorMsg(copy.error);
+      setErrorMsg(COPY.error);
       setStatus("error");
     }
   }
@@ -143,69 +190,253 @@ export function MealLogUpload() {
     router.push("/today");
   }
 
-  const macros = result ? parseMacros(result.analysis.macros as Record<string, unknown>) : null;
+  const analyzed = status === "success" && result !== null;
+  const macros = result
+    ? parseMacros(result.analysis.macros as Record<string, unknown>)
+    : null;
 
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 20,
-        padding: "20px 16px",
+        padding: "16px 16px 32px",
         maxWidth: 480,
         margin: "0 auto",
       }}
     >
-      {/* AI Disclosure banner — non-dismissible, shown at all times */}
-      <AiDisclosureBanner />
+      {/* ── 1. Header ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 6,
+        }}
+      >
+        {/* Back button — ghost style, 14-px chevron */}
+        <button
+          type="button"
+          onClick={() => router.back()}
+          aria-label="Back"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "8px 12px",
+            borderRadius: 12,
+            border: "1px solid var(--color-border)",
+            background: "var(--color-surface)",
+            color: "var(--color-ink)",
+            cursor: "pointer",
+            minHeight: 36,
+            flexShrink: 0,
+          }}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
 
-      {/* Header */}
-      <div>
         <h1
           style={{
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: 700,
+            letterSpacing: "-0.01em",
             color: "var(--color-ink)",
             margin: 0,
           }}
         >
-          {copy.title}
+          {COPY.title}
         </h1>
-        <p
-          style={{
-            fontSize: 14,
-            color: "var(--color-ink-3)",
-            marginTop: 4,
-            marginBottom: 0,
-          }}
-        >
-          {copy.subtitle}
-        </p>
       </div>
 
-      {/* File picker — visually hidden label + styled trigger */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <label
-          htmlFor="meal-file-input"
+      {/* ── 2. AI disclosure banner: camera icon + text ── */}
+      <div
+        role="note"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 14px",
+          borderRadius: 12,
+          background: "var(--color-violet-lt)",
+          color: "var(--color-violet)",
+          border: "1px solid rgba(107,74,168,.18)",
+          fontSize: 11.5,
+          fontWeight: 600,
+          marginBottom: 12,
+        }}
+      >
+        {/* Camera icon — matches mockup ai-banner SVG */}
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ flexShrink: 0 }}
+          aria-hidden="true"
+        >
+          <rect x="3" y="6" width="18" height="14" rx="2" />
+          <circle cx="12" cy="13" r="4" />
+          <path d="M9 3h6l1 3" />
+        </svg>
+        <span>{COPY.aiDisclosure}</span>
+      </div>
+
+      {/* ── 3. Meal photo area ── */}
+      <div
+        style={{
+          width: "100%",
+          aspectRatio: "16 / 10",
+          borderRadius: 12,
+          background:
+            "linear-gradient(135deg, #F4E3C8 0%, #D9B97A 50%, #8FAD5E 100%)",
+          position: "relative",
+          overflow: "hidden",
+          cursor: previewUrl ? "default" : "pointer",
+        }}
+        role="img"
+        aria-label={
+          previewUrl ? "Selected meal photo" : "Tap to select a meal photo"
+        }
+        onClick={() => {
+          if (!previewUrl) fileInputRef.current?.click();
+        }}
+      >
+        {/* Radial shine overlays for empty-state gradient */}
+        {!previewUrl && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(circle at 30% 40%, rgba(255,255,255,.2), transparent 40%), " +
+                "radial-gradient(circle at 70% 60%, rgba(0,0,0,.15), transparent 45%)",
+            }}
+          />
+        )}
+
+        {/* Uploaded image preview */}
+        {previewUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={previewUrl}
+            alt="Selected meal"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        )}
+
+        {/* ✓ Analyzed tag — dark semi-transparent pill, top-right */}
+        {analyzed && (
+          <span
+            style={{
+              position: "absolute",
+              top: 10,
+              right: 10,
+              zIndex: 2,
+              background: "rgba(14,23,38,.75)",
+              color: "#fff",
+              padding: "4px 10px",
+              borderRadius: 999,
+              fontSize: 10.5,
+              fontWeight: 700,
+            }}
+          >
+            ✓ Analyzed
+          </span>
+        )}
+
+        {/* Loading overlay */}
+        {status === "loading" && (
+          <div
+            aria-live="polite"
+            aria-busy="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(14,23,38,.4)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+            }}
+          >
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="2.5"
+              style={{ animation: "meal-spin 1s linear infinite" }}
+              aria-hidden="true"
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+            <style>{`@keyframes meal-spin { to { transform: rotate(360deg); } }`}</style>
+            <span
+              style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}
+            >
+              {COPY.loading}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* ── 4. Hidden file input ── */}
+      <input
+        ref={fileInputRef}
+        id="meal-file-input"
+        data-testid="meal-file-input"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileChange}
+        style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
+        aria-label={COPY.takePicture}
+      />
+
+      {/* Photo picker button — shown when no file selected */}
+      {!previewUrl && (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
           style={{
+            marginTop: 10,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
             padding: "12px 20px",
-            borderRadius: 14,
+            borderRadius: 12,
             background: "var(--color-bg-2)",
             border: "1.5px dashed var(--color-border)",
             cursor: "pointer",
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: 600,
             color: "var(--color-accent)",
           }}
         >
-          {/* Camera icon */}
           <svg
-            width="20"
-            height="20"
+            width="16"
+            height="16"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -214,103 +445,39 @@ export function MealLogUpload() {
             strokeLinejoin="round"
             aria-hidden="true"
           >
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <rect x="3" y="6" width="18" height="14" rx="2" />
             <circle cx="12" cy="13" r="4" />
+            <path d="M9 3h6l1 3" />
           </svg>
-          {previewUrl ? copy.cta.chooseFile : copy.cta.takePicture}
-        </label>
-
-        {/* Visually hidden input */}
-        <input
-          id="meal-file-input"
-          data-testid="meal-file-input"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleFileChange}
-          style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
-          aria-label={copy.cta.takePicture}
-        />
-      </div>
-
-      {/* Preview */}
-      {previewUrl && (
-        <div
-          style={{
-            borderRadius: 16,
-            overflow: "hidden",
-            aspectRatio: "4/3",
-            background: "var(--color-bg-2)",
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl}
-            alt="Selected meal"
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        </div>
+          {COPY.takePicture}
+        </button>
       )}
 
-      {/* Analyze button */}
-      <button
-        type="button"
-        disabled={!selectedFile || status === "loading"}
-        onClick={handleAnalyze}
-        style={{
-          padding: "14px 24px",
-          borderRadius: 14,
-          border: "none",
-          background:
-            selectedFile && status !== "loading"
+      {/* Analyze button — shown when file selected, not yet analyzed */}
+      {previewUrl && !analyzed && status !== "loading" && (
+        <button
+          type="button"
+          disabled={!selectedFile}
+          onClick={handleAnalyze}
+          aria-label={COPY.analyze}
+          style={{
+            marginTop: 10,
+            padding: "14px 24px",
+            borderRadius: 12,
+            border: "none",
+            background: selectedFile
               ? "var(--color-accent)"
               : "var(--color-border)",
-          color:
-            selectedFile && status !== "loading"
-              ? "#fff"
-              : "var(--color-ink-3)",
-          fontSize: 16,
-          fontWeight: 700,
-          cursor: selectedFile && status !== "loading" ? "pointer" : "not-allowed",
-          transition: "background 0.2s",
-        }}
-        aria-label={copy.cta.analyze}
-      >
-        {copy.cta.analyze}
-      </button>
-
-      {/* Loading state */}
-      {status === "loading" && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "14px 16px",
-            borderRadius: 14,
-            background: "var(--color-bg-2)",
+            color: selectedFile ? "#fff" : "var(--color-ink-3)",
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: selectedFile ? "pointer" : "not-allowed",
+            width: "100%",
+            minHeight: 44,
           }}
-          aria-live="polite"
-          aria-busy="true"
         >
-          {/* Spinner */}
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--color-accent)"
-            strokeWidth="2.5"
-            style={{ animation: "spin 1s linear infinite" }}
-            aria-hidden="true"
-          >
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </svg>
-          <span style={{ fontSize: 15, fontWeight: 600, color: "var(--color-ink-2)" }}>
-            {copy.loading}
-          </span>
-        </div>
+          {COPY.analyze}
+        </button>
       )}
 
       {/* Error message */}
@@ -318,10 +485,11 @@ export function MealLogUpload() {
         <div
           role="alert"
           style={{
+            marginTop: 12,
             padding: "12px 16px",
-            borderRadius: 14,
-            background: "var(--color-warn-lt, #fff3cd)",
-            color: "var(--color-warn, #856404)",
+            borderRadius: 12,
+            background: "var(--color-warn-lt)",
+            color: "var(--color-warn)",
             fontSize: 14,
             fontWeight: 500,
           }}
@@ -330,197 +498,183 @@ export function MealLogUpload() {
         </div>
       )}
 
-      {/* Result card */}
-      {status === "success" && result && macros && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-            padding: "16px",
-            borderRadius: 16,
-            background: "var(--color-bg-2)",
-            border: "1px solid var(--color-border)",
-          }}
-        >
-          {/* Meal name */}
-          <div>
-            <span
+      {/* ── 5. Detection card (shown after analysis) ── */}
+      {analyzed && macros && result && (
+        <>
+          <div
+            style={{
+              marginTop: 12,
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: 16,
+              boxShadow: "0 1px 4px rgba(14,23,38,.06)",
+              padding: 18,
+            }}
+          >
+            {/* DETECTED label */}
+            <div
               style={{
                 fontSize: 11,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
                 color: "var(--color-ink-3)",
+                textTransform: "uppercase",
+                fontWeight: 700,
+                letterSpacing: "0.06em",
               }}
             >
-              {copy.resultTitle}
-            </span>
-            <h2
+              Detected
+            </div>
+
+            {/* Food description */}
+            <div
               style={{
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: 700,
+                marginTop: 4,
                 color: "var(--color-ink)",
-                margin: "4px 0 0",
               }}
             >
               {result.analysis.classification}
-            </h2>
+            </div>
+
+            {/* Macro chips row */}
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                marginTop: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              {macros.kcal > 0 && (
+                <MacroChip>{macros.kcal} kcal</MacroChip>
+              )}
+              {macros.protein > 0 && (
+                <MacroChip>{macros.protein}g protein</MacroChip>
+              )}
+              {macros.carbs > 0 && (
+                <MacroChip>{macros.carbs}g carbs</MacroChip>
+              )}
+              {macros.fat > 0 && (
+                <MacroChip>{macros.fat}g fat</MacroChip>
+              )}
+              {macros.fiber > 0 && (
+                <MacroChip>{macros.fiber}g fiber</MacroChip>
+              )}
+            </div>
           </div>
 
-          {/* Macro rings row */}
+          {/* ── 6. Longevity swap card ── */}
           <div
             style={{
-              display: "flex",
-              gap: 12,
-              overflowX: "auto",
-              paddingBottom: 4,
+              marginTop: 12,
+              background: "var(--color-good-lt)",
+              border: "1px solid #BEE5CC",
+              borderRadius: 16,
+              padding: 18,
             }}
           >
-            <MacroRing
-              nutrient="protein"
-              value={macros.protein}
-              target={60}
-              label={copy.macros.protein}
-            />
-            <MacroRing
-              nutrient="fiber"
-              value={macros.fiber}
-              target={30}
-              label={copy.macros.fiber}
-            />
-            <MacroRing
-              nutrient="polyphenols"
-              value={macros.polyphenols}
-              target={500}
-              label={copy.macros.polyphenols}
-            />
-            <MacroRing
-              nutrient="alcohol"
-              value={macros.fat}
-              target={80}
-              label={copy.macros.fat}
-            />
-          </div>
-
-          {/* Macros text summary */}
-          <div
-            style={{
-              display: "flex",
-              gap: 16,
-              flexWrap: "wrap",
-            }}
-          >
-            {[
-              { label: copy.macros.protein, value: `${macros.protein}g` },
-              { label: copy.macros.carbs, value: `${macros.carbs}g` },
-              { label: copy.macros.fat, value: `${macros.fat}g` },
-              { label: copy.macros.fiber, value: `${macros.fiber}g` },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ display: "flex", flexDirection: "column" }}>
-                <span
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              {/* 🌱 emoji */}
+              <div style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }} aria-hidden="true">
+                🌱
+              </div>
+              <div>
+                {/* LONGEVITY SWAP badge */}
+                <div
                   style={{
-                    fontSize: 18,
+                    fontSize: 11,
                     fontWeight: 700,
+                    color: "var(--color-good)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  Longevity swap
+                </div>
+                {/* Recommendation */}
+                <div
+                  style={{
+                    fontSize: 13.5,
+                    fontWeight: 700,
+                    marginTop: 4,
                     color: "var(--color-ink)",
                   }}
                 >
-                  {value}
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                    color: "var(--color-ink-3)",
-                  }}
-                >
-                  {label}
-                </span>
+                  {result.analysis.longevity_swap}
+                </div>
+                {/* Rationale */}
+                {result.analysis.swap_rationale && (
+                  <div
+                    style={{
+                      fontSize: 11.5,
+                      color: "var(--color-ink-2)",
+                      marginTop: 2,
+                    }}
+                  >
+                    {result.analysis.swap_rationale}
+                  </div>
+                )}
               </div>
-            ))}
+            </div>
           </div>
 
-          {/* Longevity swap card */}
-          <div
-            style={{
-              padding: "12px 14px",
-              borderRadius: 12,
-              background: "var(--color-good-lt, #e8f5e9)",
-              border: "1px solid rgba(56, 142, 60, 0.15)",
-            }}
-          >
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                color: "var(--color-good, #388e3c)",
-                display: "block",
-                marginBottom: 4,
-              }}
-            >
-              {copy.longevitySwap}
-            </span>
-            <p
-              style={{
-                margin: 0,
-                fontSize: 14,
-                fontWeight: 500,
-                color: "var(--color-ink)",
-              }}
-            >
-              {result.analysis.longevity_swap}
-            </p>
-            {result.analysis.swap_rationale && (
-              <p
-                style={{
-                  margin: "6px 0 0",
-                  fontSize: 12,
-                  color: "var(--color-ink-3)",
-                }}
-              >
-                {result.analysis.swap_rationale}
-              </p>
-            )}
-          </div>
-
-          {/* Disclaimer */}
-          {result.disclaimer && (
-            <p
-              style={{
-                margin: 0,
-                fontSize: 11.5,
-                color: "var(--color-ink-3)",
-                fontStyle: "italic",
-              }}
-            >
-              {result.disclaimer}
-            </p>
-          )}
-
-          {/* Log this meal CTA */}
+          {/* ── 7. CTAs ── */}
+          {/* "Log to today" — primary full-width */}
           <button
             type="button"
             onClick={handleLogMeal}
+            aria-label={COPY.logToToday}
             style={{
+              marginTop: 14,
               padding: "14px 24px",
-              borderRadius: 14,
+              borderRadius: 12,
               border: "none",
-              background: "var(--color-good, #388e3c)",
+              background: "var(--color-accent)",
               color: "#fff",
-              fontSize: 16,
-              fontWeight: 700,
+              fontSize: 14,
+              fontWeight: 600,
               cursor: "pointer",
+              width: "100%",
+              minHeight: 44,
             }}
-            aria-label={copy.cta.logMeal}
           >
-            {copy.cta.logMeal}
+            {COPY.logToToday}
           </button>
-        </div>
+
+          {/* "Analyze but don't store photo" — ghost full-width */}
+          <button
+            type="button"
+            style={{
+              marginTop: 8,
+              padding: "12px 24px",
+              borderRadius: 12,
+              border: "1px solid var(--color-border)",
+              background: "var(--color-surface)",
+              color: "var(--color-ink)",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              width: "100%",
+              minHeight: 44,
+            }}
+          >
+            {COPY.analyzeNoStore}
+          </button>
+        </>
       )}
+
+      {/* ── 8. Footer disclaimer ── */}
+      <p
+        style={{
+          marginTop: 20,
+          fontSize: 10.5,
+          color: "var(--color-ink-3)",
+          textAlign: "center",
+          margin: "20px 0 0",
+        }}
+      >
+        {COPY.footer}
+      </p>
     </div>
   );
 }

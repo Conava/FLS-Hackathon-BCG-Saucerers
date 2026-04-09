@@ -36,6 +36,7 @@ vi.mock("@/lib/api/client", () => ({
 const FAKE_ANALYSIS = {
   classification: "Mediterranean Bowl",
   macros: {
+    kcal: 520,
     protein_g: 32,
     carbs_g: 45,
     fat_g: 18,
@@ -70,9 +71,9 @@ describe("MealLogUpload", () => {
     mockUpload.mockReset();
   });
 
-  it("renders the page title", () => {
+  it("renders the page title 'Meal vision'", () => {
     render(<MealLogUpload />);
-    expect(screen.getByText("Log a Meal")).toBeInTheDocument();
+    expect(screen.getByText("Meal vision")).toBeInTheDocument();
   });
 
   it("renders a file input that accepts images", () => {
@@ -84,14 +85,23 @@ describe("MealLogUpload", () => {
 
   it("shows the AI disclosure banner", () => {
     render(<MealLogUpload />);
-    // AiDisclosureBanner has role="note"
+    // AI banner has role="note"
     expect(screen.getByRole("note")).toBeInTheDocument();
+  });
+
+  it("shows the AI meal analysis text in the banner", () => {
+    render(<MealLogUpload />);
+    expect(
+      screen.getByText(/AI meal analysis/i)
+    ).toBeInTheDocument();
   });
 
   it("analyze button is disabled before a file is selected", () => {
     render(<MealLogUpload />);
-    const btn = screen.getByRole("button", { name: /analyze/i });
-    expect(btn).toBeDisabled();
+    // Analyze button only appears after file is selected — before that there
+    // is only a "Take a photo" button. Verify no enabled analyze button.
+    const analyzeBtn = screen.queryByRole("button", { name: /analyze my meal/i });
+    expect(analyzeBtn).toBeNull();
   });
 
   it("shows loading state after file select + analyze click", async () => {
@@ -104,7 +114,7 @@ describe("MealLogUpload", () => {
     const input = screen.getByTestId("meal-file-input");
     fireEvent.change(input, { target: { files: [file] } });
 
-    const btn = screen.getByRole("button", { name: /analyze/i });
+    const btn = screen.getByRole("button", { name: /analyze my meal/i });
     fireEvent.click(btn);
 
     await waitFor(() => {
@@ -121,7 +131,7 @@ describe("MealLogUpload", () => {
     const input = screen.getByTestId("meal-file-input");
     fireEvent.change(input, { target: { files: [file] } });
 
-    fireEvent.click(screen.getByRole("button", { name: /analyze/i }));
+    fireEvent.click(screen.getByRole("button", { name: /analyze my meal/i }));
 
     await waitFor(() => {
       expect(screen.getByText("Mediterranean Bowl")).toBeInTheDocument();
@@ -131,7 +141,7 @@ describe("MealLogUpload", () => {
     expect(screen.getByText(/replace white rice with quinoa/i)).toBeInTheDocument();
   });
 
-  it("shows the 'Log this meal' button after a successful analysis", async () => {
+  it("shows the 'Log to today' button after a successful analysis", async () => {
     mockUpload.mockResolvedValue(FAKE_RESPONSE);
 
     render(<MealLogUpload />);
@@ -140,13 +150,38 @@ describe("MealLogUpload", () => {
     const input = screen.getByTestId("meal-file-input");
     fireEvent.change(input, { target: { files: [file] } });
 
-    fireEvent.click(screen.getByRole("button", { name: /analyze/i }));
+    fireEvent.click(screen.getByRole("button", { name: /analyze my meal/i }));
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /log this meal/i })
+        screen.getByRole("button", { name: /log to today/i })
       ).toBeInTheDocument();
     });
+  });
+
+  it("shows 'Analyze but don't store photo' ghost button after analysis", async () => {
+    mockUpload.mockResolvedValue(FAKE_RESPONSE);
+
+    render(<MealLogUpload />);
+
+    const file = new File(["(jpeg-data)"], "meal.jpg", { type: "image/jpeg" });
+    const input = screen.getByTestId("meal-file-input");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    fireEvent.click(screen.getByRole("button", { name: /analyze my meal/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/analyze but don/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows the footer disclaimer", () => {
+    render(<MealLogUpload />);
+    expect(
+      screen.getByText(/Meal vision is a wellness tool/i)
+    ).toBeInTheDocument();
   });
 
   it("shows an error message when upload fails", async () => {
@@ -158,7 +193,7 @@ describe("MealLogUpload", () => {
     const input = screen.getByTestId("meal-file-input");
     fireEvent.change(input, { target: { files: [file] } });
 
-    fireEvent.click(screen.getByRole("button", { name: /analyze/i }));
+    fireEvent.click(screen.getByRole("button", { name: /analyze my meal/i }));
 
     await waitFor(() => {
       expect(
@@ -176,12 +211,48 @@ describe("MealLogUpload", () => {
     const input = screen.getByTestId("meal-file-input");
     fireEvent.change(input, { target: { files: [file] } });
 
-    fireEvent.click(screen.getByRole("button", { name: /analyze/i }));
+    fireEvent.click(screen.getByRole("button", { name: /analyze my meal/i }));
 
     await waitFor(() => expect(mockUpload).toHaveBeenCalledOnce());
 
     const formData = (mockUpload.mock.calls[0] as [FormData])[0];
     expect(formData).toBeInstanceOf(FormData);
     expect(formData.get("file")).toBe(file);
+  });
+
+  it("shows the DETECTED label and macro chips after analysis", async () => {
+    mockUpload.mockResolvedValue(FAKE_RESPONSE);
+
+    render(<MealLogUpload />);
+
+    const file = new File(["(jpeg-data)"], "meal.jpg", { type: "image/jpeg" });
+    const input = screen.getByTestId("meal-file-input");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    fireEvent.click(screen.getByRole("button", { name: /analyze my meal/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Detected")).toBeInTheDocument();
+    });
+
+    // Macro chips
+    expect(screen.getByText(/520 kcal/)).toBeInTheDocument();
+    expect(screen.getByText(/32g protein/)).toBeInTheDocument();
+  });
+
+  it("shows the ✓ Analyzed tag after successful analysis", async () => {
+    mockUpload.mockResolvedValue(FAKE_RESPONSE);
+
+    render(<MealLogUpload />);
+
+    const file = new File(["(jpeg-data)"], "meal.jpg", { type: "image/jpeg" });
+    const input = screen.getByTestId("meal-file-input");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    fireEvent.click(screen.getByRole("button", { name: /analyze my meal/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/✓ Analyzed/)).toBeInTheDocument();
+    });
   });
 });
