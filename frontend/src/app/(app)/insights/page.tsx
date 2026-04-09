@@ -150,7 +150,7 @@ export default async function InsightsPage() {
 
   return (
     <main
-      style={{ display: "flex", flexDirection: "column", padding: "0 0 32px" }}
+      style={{ display: "flex", flexDirection: "column", padding: "8px 20px 28px" }}
     >
       {/* -- 1. Header -------------------------------------------------------- */}
       <header style={{ padding: "16px 0 10px" }}>

@@ -48,7 +48,7 @@ export function BottomSheet({
          * visual impact on the page behind.
          */}
         <DialogPrimitive.Overlay
-          className="fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+          className="fixed inset-0 z-50"
           style={{ background: "transparent" }}
         />
 
@@ -56,27 +56,19 @@ export function BottomSheet({
         <DialogPrimitive.Content
           aria-labelledby={title ? "bottom-sheet-title" : undefined}
           className={cn(
-            // Position: anchored to the bottom edge
             "fixed bottom-0 left-0 right-0 z-50",
-            // Size
             "w-full overflow-y-auto",
-            // Shape
             "rounded-t-[24px] rounded-b-none",
-            // Spacing — extra bottom padding for safe-area (home indicator)
             "px-5 pt-5",
-            // Animation (slide up/down)
-            "duration-300 ease-out",
-            "data-[state=open]:animate-in data-[state=closed]:animate-out",
-            "data-[state=open]:slide-in-from-bottom-full data-[state=closed]:slide-out-to-bottom-full",
             className
           )}
           style={{
             maxHeight: "85dvh",
-            // Solid opaque surface — never transparent
-            background: "var(--color-surface)",
+            background: "#FFFFFF",
+            backgroundColor: "#FFFFFF",
+            opacity: 1,
             border: "1px solid var(--color-border)",
-            boxShadow: "var(--shadow-lg)",
-            // Respect iPhone home-indicator notch
+            boxShadow: "0 -8px 32px rgba(14, 23, 38, 0.18)",
             paddingBottom: "calc(1.75rem + env(safe-area-inset-bottom))",
           }}
         >
