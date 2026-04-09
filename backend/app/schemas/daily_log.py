@@ -10,8 +10,13 @@ All metric fields are optional — patients may log a subset of metrics at a tim
 from __future__ import annotations
 
 import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+# Allowed values for workout structured fields
+WorkoutType = Literal["walk", "run", "bike", "strength", "yoga", "other"]
+WorkoutIntensity = Literal["low", "med", "high"]
 
 
 class DailyLogIn(BaseModel):
@@ -55,6 +60,24 @@ class DailyLogIn(BaseModel):
         description="Alcohol units consumed (1 unit ≈ 10 ml pure ethanol)",
     )
 
+    # Structured sleep metadata (B1)
+    sleep_quality: int | None = Field(
+        None,
+        ge=1,
+        le=5,
+        description="Subjective sleep quality on a 1–5 Likert scale",
+    )
+
+    # Structured workout metadata (B1)
+    workout_type: WorkoutType | None = Field(
+        None,
+        description="Type of workout: walk/run/bike/strength/yoga/other",
+    )
+    workout_intensity: WorkoutIntensity | None = Field(
+        None,
+        description="Workout intensity: low/med/high",
+    )
+
 
 class DailyLogOut(BaseModel):
     """API response schema for a single persisted daily log entry."""
@@ -72,6 +95,22 @@ class DailyLogOut(BaseModel):
     logged_at: datetime.datetime = Field(
         ...,
         description="Timestamp when this entry was created (naive UTC)",
+    )
+
+    # Structured sleep metadata (B1)
+    sleep_quality: int | None = Field(
+        None,
+        description="Subjective sleep quality on a 1–5 Likert scale",
+    )
+
+    # Structured workout metadata (B1)
+    workout_type: WorkoutType | None = Field(
+        None,
+        description="Type of workout: walk/run/bike/strength/yoga/other",
+    )
+    workout_intensity: WorkoutIntensity | None = Field(
+        None,
+        description="Workout intensity: low/med/high",
     )
 
 

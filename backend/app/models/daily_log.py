@@ -50,6 +50,13 @@ class DailyLog(SQLModel, table=True):
     water_ml: int | None = Field(default=None)
     alcohol_units: float | None = Field(default=None)
 
+    # Structured sleep metadata
+    sleep_quality: int | None = Field(default=None)  # 1–5 Likert scale
+
+    # Structured workout metadata
+    workout_type: str | None = Field(default=None)  # walk/run/bike/strength/yoga/other
+    workout_intensity: str | None = Field(default=None)  # low/med/high
+
     # Optional FK — set when this log corresponds to completing a protocol action
     protocol_action_id: int | None = Field(
         default=None, foreign_key="protocol_action.id"
