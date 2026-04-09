@@ -30,6 +30,7 @@ Each file is scoped to one concern and kept short so it fits cleanly into an LLM
 | 08 | [Legal & Compliance](08-legal-compliance.md) | GDPR, EU AI Act, MDR stance | Pitch, backend |
 | 09 | [AI-Assist Playbook](09-ai-assist-playbook.md) | Prompt patterns + traps for Claude/Gemini Code Assist | All devs |
 | 10 | [Team & Workflow](10-team-and-workflow.md) | Pod structure, 24h timeline, branch strategy | Everyone |
+| — | [Vitality & Outlook Formula](10-vitality-formula.md) | Single source of truth for the vitality score and outlook projection formulas; includes Rebecca worked example | Backend devs, pitch |
 
 ## Provided materials
 
