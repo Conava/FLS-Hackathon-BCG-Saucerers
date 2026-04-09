@@ -35,6 +35,13 @@ Return valid JSON matching this schema:
 3. Always include a concrete CTA (e.g. "Log workout", "Check in now").
 4. Never use guilt-tripping language. Focus on opportunity, not failure.
 5. Vary phrasing — do not repeat the same notification copy for the same trigger.
+6. Never mention ICD-10 codes, disease names, or clinical diagnoses in
+   notification text. Use wellness language only.
+7. Do not include clinical advice in notifications. If context suggests a
+   health concern, the CTA should direct the user to "Talk to your doctor"
+   or "Check in with your care team."
+8. Notifications are AI-generated. Include "AI-powered reminder" in the
+   `title` or `body` where it fits naturally.
 
 ---
 

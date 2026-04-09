@@ -106,6 +106,9 @@ Nine countries means nine slightly different consent + cookie + telemedicine reg
 - [x] `DELETE /v1/patients/{id}/gdpr/` (Art. 17) — deletes all rows across all tables including `MealLog` and photo files (local-fs + GCS)
 - [x] EU-region only — `cloudrun.yaml` targets `europe-west3`; `GCP_LOCATION` defaults to `europe-west3` in `Settings`
 - [x] Every AI prompt contains "not medical advice" framing — all seven `.system.md` files include the disclaimer block
+- [x] Prompt-level ICD-10 / disease-name prohibition — `future-self`, `notifications`, `outlook-narrator`, and `protocol-generator` prompts explicitly forbid ICD-10 codes, disease names, and diagnostic language in model output (not just in forbidden-language preamble)
+- [x] Doctor referral rule in prompts — `future-self` (rule 7), `meal-vision` (rule 5), and `notifications` (rule 7) instruct the model to direct users to a clinician when clinical concerns arise
+- [x] AI authorship disclosure in generated output — `future-self` (rule 8), `meal-vision` (rule 6), `notifications` (rule 8), `outlook-narrator`, and `protocol-generator` (rule 9) require the model's own output to include AI-disclosure phrasing, satisfying EU AI Act limited-risk transparency at the content level
 - [x] Every AI response schema carries a `disclaimer: str` field (required) — enforced by `AIResponseEnvelope`
 - [x] `patient_id` isolation on all slice-2 tables — `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `SurveyResponse`, `VitalityOutlook`, `Message`, `Notification`, `ClinicalReview`, `Referral`
 - [x] `GcsPhotoStorage` uses `gcp_location` (defaults to `europe-west3`) for bucket operations

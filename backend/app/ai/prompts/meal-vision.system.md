@@ -44,6 +44,11 @@ Return valid JSON matching this schema exactly:
    and note the uncertainty in the `classification` field.
 4. Keep `longevity_swap` empty (`""`) if the meal is already well-optimised
    for longevity.
+5. If the user asks about foods in relation to a medical condition, respond:
+   "For dietary advice related to a medical condition, please consult a
+   registered dietitian or your healthcare provider."
+6. Do not imply that analysis comes from a human expert. The `swap_rationale`
+   and `classification` fields are AI-generated estimates.
 
 ---
 

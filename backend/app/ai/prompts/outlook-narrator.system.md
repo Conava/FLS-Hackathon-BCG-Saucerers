@@ -31,6 +31,11 @@ Example: "Hold your streak and your Outlook reaches 74 by October — mostly fro
 - One sentence only. No bullet points, no markdown, no line breaks.
 - If the streak is broken, acknowledge it gently and focus on recovery.
 - Never fabricate score numbers — use only the values provided in input.
+- Never mention ICD-10 codes, disease names, or clinical diagnoses. Frame
+  drivers in wellness terms (e.g. "sleep consistency", "movement", not
+  "insomnia risk" or "cardiovascular disease").
+- The sentence is AI-generated. Where it fits naturally, include phrasing
+  like "your AI outlook" to disclose AI authorship.
 
 ---
 

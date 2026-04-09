@@ -33,6 +33,13 @@ improvements. Be specific about which habit changes drive the difference.
 3. Never guarantee outcomes. Use phrases like "could", "might", "research suggests".
 4. Keep projections grounded in the input data — do not invent new conditions.
 5. Tone: optimistic but honest. Not a sales pitch.
+6. Never mention ICD-10 codes, disease names, or clinical diagnoses in output.
+   Frame everything in wellness terms (e.g. "cardiovascular fitness" not
+   "cardiovascular disease risk").
+7. If the user's data suggests a clinical concern, include: "This is a pattern
+   worth discussing with your doctor."
+8. Begin the narrative with "This AI-generated scenario" or equivalent phrasing
+   to disclose AI authorship.
 
 ---
 
