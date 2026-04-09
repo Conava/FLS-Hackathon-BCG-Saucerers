@@ -24,7 +24,7 @@ the source CSVs, possible in tests), we use ``datetime(2025, 11, 1, 0, 0, 0)``
 as a documented proxy.
 
 Patient name mapping:
-- ``patient_id == "PT0282"`` → ``"Anna Weber"`` (primary demo persona)
+- Known demo personas → realistic names (see ``_PATIENT_NAMES``)
 - all others → ``f"Patient {patient_id}"``
 """
 
@@ -48,9 +48,18 @@ from app.models import EHRRecord, LifestyleProfile, Patient, WearableDay
 #: Fallback recorded_at for lab_panel when no wearable data exists.
 _LAB_PANEL_FALLBACK_DT = datetime.datetime(2025, 11, 1, 0, 0, 0)
 
-#: Special patient with a named persona for the pitch demo.
-_ANNA_PATIENT_ID = "PT0282"
-_ANNA_NAME = "Anna Weber"
+#: Named personas for demo patients (patient_id → display name).
+#: PT0282 is the primary Anna Weber persona; PT0199 is the Rebecca persona
+#: (see docs/02-persona-and-journey.md); PT0001–PT0005 round out the demo deck.
+_PATIENT_NAMES: dict[str, str] = {
+    "PT0199": "Rebecca Mueller",
+    "PT0282": "Anna Weber",
+    "PT0001": "Marcus Becker",
+    "PT0002": "Sofia Rossi",
+    "PT0003": "Jonas Lindqvist",
+    "PT0004": "Aïsha Diallo",
+    "PT0005": "Tomás Herrera",
+}
 
 #: Lab/BP field names to include in the lab_panel payload (order preserved for docs).
 _LAB_FIELDS: tuple[str, ...] = (
@@ -100,12 +109,12 @@ def _parse_int(value: str) -> int | None:
 def _patient_name(patient_id: str) -> str:
     """Return the display name for a patient.
 
-    PT0282 is the primary demo persona (Anna Weber). All other patients receive
-    a synthetic name based on their ID for demo purposes.
+    Known demo personas (PT0199, PT0282, PT0001–PT0005) get realistic names so
+    the frontend greeting shows "Good morning, Rebecca" rather than the
+    placeholder "Patient PT0199".  All other patients receive a synthetic name
+    based on their ID.
     """
-    if patient_id == _ANNA_PATIENT_ID:
-        return _ANNA_NAME
-    return f"Patient {patient_id}"
+    return _PATIENT_NAMES.get(patient_id, f"Patient {patient_id}")
 
 
 # ---------------------------------------------------------------------------
