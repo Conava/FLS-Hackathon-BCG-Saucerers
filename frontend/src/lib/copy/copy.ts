@@ -69,14 +69,14 @@ export const COPY = {
   },
 
   today: {
-    greeting: (name: string) => `Good morning, ${name}`,
+    greeting: (name: string) => (name ? `Good morning, ${name}` : "Good morning"),
     sections: {
       dailySnapshot: "Daily Snapshot",
       highlights: "Highlights",
       topActions: "Top Actions",
       recentActivity: "Recent Activity",
     },
-    scoreLabel: "Wellness Score",
+    scoreLabel: "out of 100",
     streakLabel: "Day streak",
     noActivity: "No activity logged yet today.",
   },

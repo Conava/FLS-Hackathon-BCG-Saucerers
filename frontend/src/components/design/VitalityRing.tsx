@@ -48,13 +48,14 @@ export function VitalityRing({ score, delta, label }: VitalityRingProps) {
 
   const deltaColor =
     delta > 0 ? "text-good" : delta < 0 ? "text-danger" : "text-ink-3";
-  const deltaSign = delta > 0 ? "+" : "";
+  const deltaArrow = delta > 0 ? "▲" : delta < 0 ? "▼" : "";
+  const deltaAbs = Math.abs(delta);
 
   return (
     <div
       className="relative"
       style={{ width: 168, height: 168 }}
-      aria-label={`Vitality score ${score}`}
+      aria-label={`Vitality score ${Math.round(score)}`}
       role="img"
     >
       <svg
@@ -93,7 +94,7 @@ export function VitalityRing({ score, delta, label }: VitalityRingProps) {
 
       {/* Center overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="t-ring-num text-ink">{score}</span>
+        <span className="t-ring-num text-ink">{Math.round(score)}</span>
         <span
           className="t-micro text-ink-3"
           style={{ marginTop: 4 }}
@@ -103,10 +104,9 @@ export function VitalityRing({ score, delta, label }: VitalityRingProps) {
         {delta !== 0 && (
           <span
             className={`t-micro font-bold ${deltaColor}`}
-            style={{ marginTop: 6 }}
+            style={{ marginTop: 6, display: "inline-flex", alignItems: "center", gap: 3 }}
           >
-            {deltaSign}
-            {delta}
+            {deltaArrow} {deltaAbs} vs last week
           </span>
         )}
       </div>

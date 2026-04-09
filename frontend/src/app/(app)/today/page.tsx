@@ -84,7 +84,8 @@ function computeStreak(protocol: ProtocolOut | null): number {
 
 /**
  * Build outlook curve points from OutlookOut.
- * Returns [current, mid, projected] as a 3-point array, or [] if no data.
+ * Generates 9 interpolated points for a smooth sparkline, or [] if no data.
+ * Uses a slight S-curve easing so the line looks natural.
  */
 function buildOutlookPoints(
   vitality: VitalityOut | null,
@@ -93,8 +94,13 @@ function buildOutlookPoints(
   if (!vitality || !outlook) return [];
   const current = vitality.score;
   const projected = outlook.projected_score;
-  const mid = (current + projected) / 2;
-  return [current, mid, projected];
+  const numPoints = 9;
+  return Array.from({ length: numPoints }, (_, i) => {
+    const t = i / (numPoints - 1);
+    // Ease-in-out cubic: smooth S-curve from current to projected
+    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    return current + (projected - current) * eased;
+  });
 }
 
 /**
@@ -123,18 +129,35 @@ export default async function TodayPage() {
 
   // 2. Parallel fetch all required data
   const today = new Date().toISOString().slice(0, 10);
-  const [profile, vitality, outlook, protocol, insights, mealLogs] =
+  const [profile, vitality, outlookList, protocol, insights, mealLogs] =
     await Promise.all([
       backendGet<PatientProfileOut>(patientId, "profile"),
       backendGet<VitalityOut>(patientId, "vitality"),
-      backendGet<OutlookOut>(patientId, "outlook"),
+      // Backend returns list[OutlookOut] (one per horizon: 3, 6, 12 months).
+      backendGet<OutlookOut[]>(patientId, "outlook"),
       backendGet<ProtocolOut>(patientId, "protocol"),
       backendGet<InsightsListOut>(patientId, "insights"),
       backendGet<MealLogListOut>(patientId, `meal-log?from=${today}&to=${today}`),
     ]);
 
+  // Pick the 6-month outlook horizon, falling back to the largest available.
+  const outlook: OutlookOut | null = Array.isArray(outlookList) && outlookList.length > 0
+    ? (outlookList.find((o) => o.horizon_months === 6) ??
+       outlookList.reduce((best, cur) =>
+         cur.horizon_months > best.horizon_months ? cur : best
+       ))
+    : null;
+
   // 3. Derive display values
-  const firstName = (profile?.name ?? "").split(" ")[0] ?? "there";
+  // "Patient PT0199" → skip the generic "Patient" placeholder; use the last
+  // non-"Patient" word, or fall back to empty string so the greeting reads
+  // "Good morning" without an awkward placeholder.
+  const nameParts = (profile?.name ?? "").trim().split(/\s+/).filter(Boolean);
+  const meaningfulName =
+    nameParts.length > 1 && nameParts[0]?.toLowerCase() === "patient"
+      ? (nameParts[nameParts.length - 1] ?? "")
+      : (nameParts[0] ?? "");
+  const firstName = meaningfulName || "";
   const score = vitality?.score ?? 0;
   const delta = vitality ? computeDelta(vitality) : 0;
   const streak = computeStreak(protocol);
@@ -168,7 +191,7 @@ export default async function TodayPage() {
   return (
     <div
       style={{
-        padding: "16px 20px",
+        padding: "8px 20px 28px",
         display: "flex",
         flexDirection: "column",
         gap: 0,
@@ -176,80 +199,103 @@ export default async function TodayPage() {
         margin: "0 auto",
       }}
     >
-      {/* AI Disclosure Banner — required on AI-powered screens */}
-      <AiDisclosureBanner />
-
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginTop: 16,
-          marginBottom: 8,
+          marginBottom: 10,
         }}
       >
         <div>
+          <p className="t-caption text-ink-3">
+            {COPY.today.greeting(firstName)}
+          </p>
           <h1
             className="t-h1 text-ink"
-            style={{ lineHeight: 1.2 }}
+            style={{ lineHeight: 1.2, marginTop: 2 }}
           >
-            {COPY.today.greeting(firstName)}
-          </h1>
-          <p className="t-caption text-ink-3" style={{ marginTop: 2 }}>
             {new Date().toLocaleDateString("en-GB", {
-              weekday: "long",
+              weekday: "short",
               day: "numeric",
-              month: "long",
+              month: "short",
             })}
-          </p>
+          </h1>
         </div>
-
-        {/* Streak badge — top-right */}
-        {streak > 0 && <StreakBadge days={streak} />}
       </div>
 
-      {/* ── Vitality Ring + tap to open Signals Sheet ──────────────────── */}
+      {/* AI Disclosure Banner — required on AI-powered screens */}
+      <AiDisclosureBanner />
+
+      {/* ── Hero card: Vitality ring + streak + outlook ─────────────────── */}
       <div
-        style={{ display: "flex", justifyContent: "center", marginTop: 20 }}
+        className="bg-surface shadow-app-sm"
+        style={{
+          borderRadius: 20,
+          border: "1px solid var(--color-border)",
+          padding: 18,
+          marginTop: 12,
+          textAlign: "center",
+        }}
       >
-        {vitality ? (
-          <VitalityTap
-            score={score}
-            delta={delta}
-            insights={insightsList}
-          />
-        ) : (
-          <EmptyState
-            heading="Vitality score unavailable"
-            subtext="We could not compute your score yet. Check back after syncing more data."
+        {/* Row: "Vitality Score" label + streak badge */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 4,
+          }}
+        >
+          <span
+            className="t-micro text-ink-3"
+            style={{ letterSpacing: "0.06em" }}
+          >
+            Vitality Score
+          </span>
+          {streak > 0 && <StreakBadge days={streak} />}
+        </div>
+
+        {/* Vitality ring — centered, tappable */}
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          {vitality ? (
+            <VitalityTap
+              score={score}
+              delta={delta}
+              insights={insightsList}
+            />
+          ) : (
+            <EmptyState
+              heading="Vitality score unavailable"
+              subtext="We could not compute your score yet. Check back after syncing more data."
+            />
+          )}
+        </div>
+
+        {/* Outlook narrative text */}
+        {outlook?.narrative && (
+          <p
+            className="t-caption text-ink-2"
+            style={{ marginTop: 8, padding: "0 8px" }}
+          >
+            {outlook.narrative}
+          </p>
+        )}
+
+        {/* Outlook curve — immediately below the ring */}
+        {outlookPoints.length >= 2 && (
+          <OutlookCurve
+            points={outlookPoints}
+            nowLabel={`Now · ${Math.round(score)}`}
+            endLabel={`${outlook?.horizon_months ?? 6}mo · ${Math.round(outlook?.projected_score ?? outlookPoints[outlookPoints.length - 1] ?? score)}`}
           />
         )}
       </div>
 
-      {/* ── Outlook Curve ───────────────────────────────────────────────── */}
-      {outlookPoints.length >= 2 && (
-        <div style={{ marginTop: 20 }}>
-          <SectionHeader title="Outlook" />
-          <OutlookCurve
-            points={outlookPoints}
-            nowLabel="Now"
-            endLabel={`${outlook?.horizon_months ?? 12}mo`}
-          />
-          {outlook?.narrative && (
-            <p
-              className="t-caption text-ink-3"
-              style={{ marginTop: 6, fontStyle: "italic" }}
-            >
-              {outlook.narrative}
-            </p>
-          )}
-        </div>
-      )}
-
       {/* ── Nudge Card (conditional) ─────────────────────────────────────── */}
       {urgentInsight && (
-        <div style={{ marginTop: 16 }}>
+        <div style={{ marginTop: 14 }}>
           <NudgeCard
             title={urgentInsight.kind
               .replace(/_/g, " ")
@@ -261,15 +307,15 @@ export default async function TodayPage() {
       )}
 
       {/* ── Today's Protocol ─────────────────────────────────────────────── */}
-      <div style={{ marginTop: 8 }}>
+      <div style={{ marginTop: 20 }}>
         <SectionHeader title="Today's protocol" />
         <ProtocolList actions={actions} />
       </div>
 
       {/* ── Nutrition Today (Macro Rings) ─────────────────────────────────── */}
-      <div style={{ marginTop: 8 }}>
+      <div style={{ marginTop: 20 }}>
         <SectionHeader
-          title="Nutrition today"
+          title="Nutrition rings"
           action={
             <Link
               href="/meal-log"
@@ -282,36 +328,45 @@ export default async function TodayPage() {
 
         {todayLog ? (
           <div
+            className="bg-surface shadow-app-sm"
             style={{
-              display: "flex",
-              justifyContent: "space-around",
-              padding: "12px 0",
+              borderRadius: 20,
+              border: "1px solid var(--color-border)",
+              padding: 18,
             }}
           >
-            <MacroRing
-              nutrient="protein"
-              value={macros.protein_g}
-              target={50}
-              label="Protein"
-            />
-            <MacroRing
-              nutrient="fiber"
-              value={macros.fiber_g}
-              target={30}
-              label="Fiber"
-            />
-            <MacroRing
-              nutrient="polyphenols"
-              value={macros.polyphenol_score}
-              target={100}
-              label="Polyphenols"
-            />
-            <MacroRing
-              nutrient="alcohol"
-              value={macros.alcohol_units}
-              target={14}
-              label="Alcohol"
-            />
+            <div
+              style={{
+                display: "flex",
+                gap: 14,
+                justifyContent: "space-around",
+              }}
+            >
+              <MacroRing
+                nutrient="protein"
+                value={macros.protein_g}
+                target={50}
+                label="Protein"
+              />
+              <MacroRing
+                nutrient="fiber"
+                value={macros.fiber_g}
+                target={30}
+                label="Fiber"
+              />
+              <MacroRing
+                nutrient="polyphenols"
+                value={macros.polyphenol_score}
+                target={100}
+                label="Polyphenols"
+              />
+              <MacroRing
+                nutrient="alcohol"
+                value={macros.alcohol_units}
+                target={14}
+                label="Alcohol"
+              />
+            </div>
           </div>
         ) : (
           <EmptyState
@@ -334,6 +389,14 @@ export default async function TodayPage() {
           />
         )}
       </div>
+
+      {/* Fine print */}
+      <p
+        className="t-legal text-ink-3"
+        style={{ textAlign: "center", marginTop: 14, padding: "0 12px" }}
+      >
+        Not medical advice. Wellness and lifestyle guidance only.
+      </p>
     </div>
   );
 }

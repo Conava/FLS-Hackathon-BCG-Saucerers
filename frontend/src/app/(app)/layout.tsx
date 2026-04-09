@@ -28,8 +28,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         }}
         aria-hidden="true"
       />
-      {/* Main content — padded to clear the fixed tab bar */}
-      <main className="pb-[var(--tab-h)]" style={{ flex: 1 }}>
+      {/* Main content — padded to clear the fixed tab bar + safe-area */}
+      <main
+        style={{
+          flex: 1,
+          paddingBottom: "calc(var(--tab-h, 74px) + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
         {children}
       </main>
       <TabBar />

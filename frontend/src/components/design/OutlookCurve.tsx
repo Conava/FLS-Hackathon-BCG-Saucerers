@@ -36,8 +36,18 @@ export function OutlookCurve({
   const toY = (v: number) =>
     PAD + (1 - (v - minVal) / range) * (H - PAD * 2);
 
+  // Build a smooth cubic bezier path through the points
   const pathD = points
-    .map((v, i) => `${i === 0 ? "M" : "L"} ${toX(i)} ${toY(v)}`)
+    .map((v, i) => {
+      const x = toX(i);
+      const y = toY(v);
+      if (i === 0) return `M ${x} ${y}`;
+      // Control points: use horizontal tension for natural-looking curve
+      const prevX = toX(i - 1);
+      const prevY = toY(points[i - 1] ?? v);
+      const cpX = (prevX + x) / 2;
+      return `C ${cpX} ${prevY} ${cpX} ${y} ${x} ${y}`;
+    })
     .join(" ");
 
   const areaD =

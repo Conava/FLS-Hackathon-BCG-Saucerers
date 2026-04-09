@@ -20,14 +20,17 @@ describe("VitalityRing", () => {
     expect(screen.getByText("Vitality Score")).toBeInTheDocument();
   });
 
-  it("renders positive delta", () => {
+  it("renders positive delta with arrow and label", () => {
     render(<VitalityRing score={72} delta={3} label="Score" />);
-    expect(screen.getByText("+3")).toBeInTheDocument();
+    // Delta span contains arrow, absolute value, and "vs last week" text
+    expect(screen.getByText(/vs last week/)).toBeInTheDocument();
+    expect(screen.getByText(/▲/)).toBeInTheDocument();
   });
 
-  it("renders negative delta", () => {
+  it("renders negative delta with arrow and label", () => {
     render(<VitalityRing score={60} delta={-5} label="Score" />);
-    expect(screen.getByText("-5")).toBeInTheDocument();
+    expect(screen.getByText(/vs last week/)).toBeInTheDocument();
+    expect(screen.getByText(/▼/)).toBeInTheDocument();
   });
 
   it("omits delta element when delta is 0", () => {
