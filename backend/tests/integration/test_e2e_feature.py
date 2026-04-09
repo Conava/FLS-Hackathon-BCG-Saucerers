@@ -82,6 +82,8 @@ PROTECTED_ROUTES = [
     "/patients/PT0282/gdpr/export",
 ]
 
+PROTECTED_DELETE_ROUTES: list[str] = ["/patients/PT0282/gdpr/"]
+
 
 # ---------------------------------------------------------------------------
 # Module-scoped ingest fixture
@@ -475,7 +477,12 @@ class TestAuthEnforcement:
         for route in PROTECTED_ROUTES:
             resp = await e2e_client.get(route)
             assert resp.status_code == 401, (
-                f"Expected 401 without API key for {route}, got {resp.status_code}"
+                f"GET {route} should be 401"
+            )
+        for route in PROTECTED_DELETE_ROUTES:
+            resp = await e2e_client.delete(route)
+            assert resp.status_code == 401, (
+                f"DELETE {route} should be 401"
             )
 
     async def test_protected_routes_reject_wrong_key(
@@ -483,11 +490,13 @@ class TestAuthEnforcement:
         e2e_client: AsyncClient,
     ) -> None:
         """Every non-health route with a wrong X-API-Key must return 401."""
+        headers = {"X-API-Key": "wrong-key"}
         for route in PROTECTED_ROUTES:
-            resp = await e2e_client.get(route, headers=WRONG_HEADERS)
-            assert resp.status_code == 401, (
-                f"Expected 401 with wrong API key for {route}, got {resp.status_code}"
-            )
+            resp = await e2e_client.get(route, headers=headers)
+            assert resp.status_code == 401
+        for route in PROTECTED_DELETE_ROUTES:
+            resp = await e2e_client.delete(route, headers=headers)
+            assert resp.status_code == 401
 
 
 # ---------------------------------------------------------------------------
