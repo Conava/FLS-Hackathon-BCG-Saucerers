@@ -26,6 +26,7 @@ import { VitalityTap } from "./_components/VitalityTap";
 import { ProtocolList } from "./_components/ProtocolList";
 import { QuickLogGrid } from "./_components/QuickLogGrid";
 import { WeeklyCheckInCard } from "./_components/WeeklyCheckInCard";
+import { RecentlyCard } from "./_components/RecentlyCard";
 import { COPY } from "@/lib/copy/copy";
 import { backendFetch } from "@/lib/backend-fetch";
 import type {
@@ -36,6 +37,7 @@ import type {
   InsightsListOut,
   MealLogListOut,
   SurveyHistoryOut,
+  EHRRecordListOut,
 } from "@/lib/api/schemas";
 
 // ---------------------------------------------------------------------------
@@ -106,6 +108,23 @@ function buildOutlookPoints(
 }
 
 /**
+ * Build a contextual sentence headline for a nudge card from an insight kind
+ * and severity. Avoids bare category labels like "Metabolic".
+ *
+ * Examples:
+ *   "metabolic"      + "high"     → "Elevated metabolic signal — act today"
+ *   "sleep"          + "moderate" → "Watch your sleep pattern"
+ *   "cardiovascular" + "high"     → "Elevated cardiovascular signal — act today"
+ */
+function buildNudgeTitle(kind: string, severity: string): string {
+  const label = kind.replace(/_/g, " ").toLowerCase();
+  if (severity === "high") {
+    return `Elevated ${label} signal — act today`;
+  }
+  return `Watch your ${label} pattern`;
+}
+
+/**
  * Find the most urgent insight — prefer "high", then "moderate".
  */
 function findUrgentInsight(insights: InsightsListOut | null) {
@@ -163,17 +182,27 @@ export default async function TodayPage() {
 
   // 2. Parallel fetch all required data
   const today = new Date().toISOString().slice(0, 10);
-  const [profile, vitality, outlookList, protocol, insights, mealLogs, surveyHistory] =
-    await Promise.all([
-      backendGet<PatientProfileOut>(patientId, "profile"),
-      backendGet<VitalityOut>(patientId, "vitality"),
-      // Backend returns list[OutlookOut] (one per horizon: 3, 6, 12 months).
-      backendGet<OutlookOut[]>(patientId, "outlook"),
-      backendGet<ProtocolOut>(patientId, "protocol"),
-      backendGet<InsightsListOut>(patientId, "insights"),
-      backendGet<MealLogListOut>(patientId, `meal-log?from=${today}&to=${today}`),
-      backendGet<SurveyHistoryOut>(patientId, "survey/history?kind=weekly&limit=1"),
-    ]);
+  const [
+    profile,
+    vitality,
+    outlookList,
+    protocol,
+    insights,
+    mealLogs,
+    surveyHistory,
+    labRecords,
+  ] = await Promise.all([
+    backendGet<PatientProfileOut>(patientId, "profile"),
+    backendGet<VitalityOut>(patientId, "vitality"),
+    // Backend returns list[OutlookOut] (one per horizon: 3, 6, 12 months).
+    backendGet<OutlookOut[]>(patientId, "outlook"),
+    backendGet<ProtocolOut>(patientId, "protocol"),
+    backendGet<InsightsListOut>(patientId, "insights"),
+    backendGet<MealLogListOut>(patientId, `meal-log?from=${today}&to=${today}`),
+    backendGet<SurveyHistoryOut>(patientId, "survey/history?kind=weekly&limit=1"),
+    // Lab records for the Recently card — most recent lab_panel (ordered DESC).
+    backendGet<EHRRecordListOut>(patientId, "records?type=lab_panel"),
+  ]);
 
   // Pick the 6-month outlook horizon, falling back to the largest available.
   const outlook: OutlookOut | null =
@@ -182,6 +211,12 @@ export default async function TodayPage() {
           outlookList.reduce((best, cur) =>
             cur.horizon_months > best.horizon_months ? cur : best,
           ))
+      : null;
+
+  // Derive the most recent lab_panel record for the Recently card.
+  const latestLab =
+    Array.isArray(labRecords?.records) && labRecords.records.length > 0
+      ? (labRecords.records[0] ?? null)
       : null;
 
   // 3. Derive display values
@@ -378,11 +413,9 @@ export default async function TodayPage() {
       {urgentInsight && (
         <div style={{ marginTop: 14 }}>
           <NudgeCard
-            title={urgentInsight.kind
-              .replace(/_/g, " ")
-              .replace(/\b\w/g, (c) => c.toUpperCase())}
+            title={buildNudgeTitle(urgentInsight.kind, urgentInsight.severity)}
             description={urgentInsight.message}
-            ctaLabel="Add walk to protocol"
+            ctaLabel="View in coach"
             secondaryLabel="Dismiss"
           />
         </div>
@@ -463,6 +496,23 @@ export default async function TodayPage() {
             />
           </div>
         </div>
+      </div>
+
+      {/* ── Recently — latest lab + score change ─────────────────────────── */}
+      <div style={{ marginTop: 14 }}>
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: "var(--color-ink-3)",
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            marginBottom: 8,
+          }}
+        >
+          Recently
+        </p>
+        <RecentlyCard latestLab={latestLab} vitality={vitality} />
       </div>
 
       {/* ── Weekly micro-survey card ──────────────────────────────────────── */}
