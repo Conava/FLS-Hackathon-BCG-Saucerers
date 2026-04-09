@@ -554,6 +554,43 @@
             font-family: var(--font-body);
         }
         .save-indicator.show { opacity: 1; }
+
+        /* === VITALITY SCORE RED THREAD === */
+        .score-thread {
+            position: absolute;
+            bottom: clamp(2.5rem, 5vh, 4rem);
+            left: var(--slide-padding);
+            display: flex;
+            align-items: center;
+            gap: clamp(.3rem,.5vw,.4rem);
+            font-family: var(--font-body);
+            font-size: var(--label-size);
+            font-weight: 700;
+            z-index: 5;
+            opacity: .7;
+            transition: opacity .3s;
+        }
+        .score-thread .st-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+        }
+        .score-thread .st-label { color: var(--muted); letter-spacing: .08em; }
+        .score-thread .st-val { letter-spacing: .04em; }
+        /* Color states */
+        .score-thread.st-unknown .st-dot { background: var(--muted); }
+        .score-thread.st-unknown .st-val { color: var(--muted); }
+        .score-thread.st-low .st-dot { background: var(--danger); }
+        .score-thread.st-low .st-val { color: var(--danger); }
+        .score-thread.st-mid .st-dot { background: var(--warn); }
+        .score-thread.st-mid .st-val { color: var(--warn); }
+        .score-thread.st-good .st-dot { background: var(--good); }
+        .score-thread.st-good .st-val { color: var(--good); }
+        .score-thread.st-brand .st-dot { background: var(--accent); }
+        .score-thread.st-brand .st-val { color: var(--accent); }
+        /* On dark slides */
+        .demo-slide .score-thread { opacity: .5; }
+        .demo-slide .score-thread .st-label { color: rgba(255,255,255,.5); }
+        .demo-slide .score-thread.st-good .st-dot { background: #6ee7a0; }
+        .demo-slide .score-thread.st-good .st-val { color: #6ee7a0; }
     </style>
 </head>
 <body>
@@ -588,9 +625,9 @@
     <div class="content-wrap">
         <div class="tag reveal">BCG Platinion AI Hackathon &bull; Hamburg 2026</div>
         <div style="height:clamp(.5rem,1.5vh,1rem)"></div>
-        <h1 class="reveal">From Legacy<br>to <em>Longevity</em></h1>
-        <div style="height:clamp(.4rem,1vh,.8rem)"></div>
-        <p class="subtitle reveal">The only longevity platform where your doctor actually sees the data.</p>
+        <h1 class="reveal">Longevity<em>+</em></h1>
+        <div style="height:clamp(.3rem,.8vh,.6rem)"></div>
+        <p class="subtitle reveal" style="font-family:var(--font-display);font-style:italic;font-size:clamp(1.2rem,2.5vw,1.8rem);color:var(--accent)">think and act vital</p>
         <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
         <div class="score-badge reveal">
             <div class="dot"></div>
@@ -599,7 +636,7 @@
     </div>
     <div class="slide-footer">
         <span>Team Saucerers</span>
-        <span>01 / 10</span>
+        <span>01 / 14</span>
     </div>
 </section>
 
@@ -611,7 +648,7 @@
     <div class="slide-content">
         <div class="tag reveal">The Problem</div>
         <div style="height:clamp(.4rem,1vh,.6rem)"></div>
-        <h2 class="reveal">10M patients. <em>Zero unified profiles.</em></h2>
+        <h2 class="reveal">10M patients. <em>Zero Vitality Scores.</em></h2>
         <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
         <div class="divider reveal"></div>
         <div style="height:clamp(.8rem,2vh,1.5rem)"></div>
@@ -620,26 +657,26 @@
             <div class="card reveal">
                 <span class="chip chip-danger">Barrier 1</span>
                 <div style="height:clamp(.3rem,.6vh,.5rem)"></div>
-                <h3>Fragmented Data</h3>
-                <p>No unified patient profile across clinical, wearable, and lifestyle data. Decades of acquisitions created silos.</p>
+                <h3>Data in Silos</h3>
+                <p>Lab results here, wearable data there, lifestyle nowhere. Nobody sees the full picture.</p>
             </div>
             <div class="card reveal">
                 <span class="chip chip-warn">Barrier 2</span>
                 <div style="height:clamp(.3rem,.6vh,.5rem)"></div>
-                <h3>Capability Gap</h3>
-                <p>Organisation optimised for clinical delivery, not consumer-grade digital products.</p>
+                <h3>No Digital Product</h3>
+                <p>The clinic can treat you. But it can't keep you engaged between visits.</p>
             </div>
             <div class="card reveal">
                 <span class="chip chip-accent">Barrier 3</span>
                 <div style="height:clamp(.3rem,.6vh,.5rem)"></div>
-                <h3>Competitive Pressure</h3>
-                <p>Digital health platforms and retail pharmacies are capturing the patient interface.</p>
+                <h3>Losing the Patient</h3>
+                <p>Apps like Oura and WHOOP talk to patients daily. The clinic talks to them once a year.</p>
             </div>
         </div>
     </div>
     <div class="slide-footer">
         <span>Team Saucerers</span>
-        <span>02 / 10</span>
+        <span>02 / 14</span>
     </div>
 </section>
 
@@ -653,7 +690,7 @@
     <div class="slide-content" style="align-items:center;text-align:center">
         <div class="tag reveal">Our Thesis</div>
         <div style="height:clamp(.5rem,1.5vh,1rem)"></div>
-        <h2 class="reveal" style="max-width:min(90vw,750px)">Combine the engagement of <em>Oura</em> with the clinical depth of <em>Function Health</em> &mdash; wrapped in a real doctor network.</h2>
+        <h2 class="reveal" style="max-width:min(90vw,750px)">Clinical data meets daily habits. <em>For the first time, in one place.</em></h2>
         <div style="height:clamp(1rem,3vh,2rem)"></div>
         <div class="stat-row reveal" style="justify-content:center">
             <div class="stat-item">
@@ -669,34 +706,34 @@
                 <div class="label">Countries</div>
             </div>
             <div class="stat-item">
-                <div class="num">&euro;3B+</div>
+                <div class="num">3B+&euro;</div>
                 <div class="label">Revenue</div>
             </div>
         </div>
     </div>
     <div class="slide-footer">
         <span>Team Saucerers</span>
-        <span>03 / 10</span>
+        <span>03 / 14</span>
     </div>
 </section>
 
 
 <!-- ============================================
-     SLIDE 4 — MEET ANNA
+     SLIDE 4 — MEET REBECCA
      ============================================ -->
 <section class="slide" data-title="Persona">
-    <div class="slide-content">
+    <div class="slide-content" style="align-items:center;text-align:center">
         <div class="tag reveal">Patient Persona</div>
         <div style="height:clamp(.4rem,1vh,.6rem)"></div>
         <h2 class="reveal">Meet <em>Rebecca Mueller</em></h2>
-        <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
+        <div style="height:clamp(1rem,2.5vh,2rem)"></div>
 
-        <div class="persona-card reveal">
+        <div class="persona-card reveal" style="max-width:min(90vw,700px);text-align:left">
             <div class="persona-avatar">R</div>
             <div style="flex:1">
-                <h3 style="margin-bottom:clamp(.2rem,.4vh,.3rem)">40, HR Consultant, Hamburg</h3>
-                <p>Ex-smoker. BMI 27.6. Type 2 Diabetes on Metformin. On her 40th birthday, a back pain episode made her realise the second half needs a different approach.</p>
-                <div style="height:clamp(.5rem,1vh,.8rem)"></div>
+                <h3 style="margin-bottom:clamp(.3rem,.6vh,.5rem)">40, HR Consultant, Hamburg</h3>
+                <p>Two kids. Type 2 Diabetes. On her 40th birthday she realised: nobody has a plan for the second half.</p>
+                <div style="height:clamp(.6rem,1.2vh,.9rem)"></div>
                 <div style="display:flex;gap:clamp(.4rem,.8vw,.6rem);flex-wrap:wrap">
                     <span class="chip chip-danger">HbA1c 7.2%</span>
                     <span class="chip chip-warn">SBP 142</span>
@@ -706,13 +743,13 @@
             </div>
         </div>
 
-        <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
-        <div class="two-col reveal">
+        <div style="height:clamp(1rem,2.5vh,2rem)"></div>
+        <div class="two-col reveal" style="max-width:min(90vw,700px);text-align:left">
             <div>
                 <h3 style="font-size:var(--small-size);color:var(--accent);text-transform:uppercase;letter-spacing:.12em;margin-bottom:clamp(.3rem,.5vh,.4rem)">Motivations</h3>
                 <ul class="bullets">
                     <li>Live the second half healthily, not just longer</li>
-                    <li>Keep up with her two young kids (3 and 5)</li>
+                    <li>Keep up with her two young kids</li>
                     <li>Get diabetes, weight, and stress under control</li>
                 </ul>
             </div>
@@ -728,84 +765,157 @@
     </div>
     <div class="slide-footer">
         <span>Team Saucerers</span>
-        <span>04 / 10</span>
+        <span>04 / 14</span>
     </div>
 </section>
 
 
 <!-- ============================================
-     SLIDE 5 — THE PRODUCT
+     SLIDE 5 — REBECCA'S DISCOVERY
      ============================================ -->
-<section class="slide" data-title="Product">
+<section class="slide" data-title="Discovery">
     <div class="slide-content">
-        <div class="tag reveal">The Product</div>
+        <div class="tag reveal">How She Finds Us</div>
         <div style="height:clamp(.4rem,1vh,.6rem)"></div>
-        <h2 class="reveal">Longevity<em>+</em></h2>
-        <p class="subtitle reveal">Five personal-language tabs. Three time horizons. One Vitality Score.</p>
-        <div style="height:clamp(.8rem,2vh,1.2rem)"></div>
+        <h2 class="reveal">From blood test to <em>Vitality Score</em></h2>
+        <div style="height:clamp(.8rem,2vh,1.5rem)"></div>
 
-        <div class="journey-steps reveal">
-            <div class="journey-step active">
-                <div class="step-num">01</div>
-                Today
+        <div class="three-col" style="gap:clamp(.8rem,2vw,1.5rem)">
+            <div class="card reveal" style="text-align:center">
+                <div style="margin-bottom:clamp(.3rem,.6vh,.5rem)"><i data-lucide="test-tubes" style="width:clamp(28px,4vw,40px);height:clamp(28px,4vw,40px);color:var(--accent)"></i></div>
+                <h3>1. Routine Blood Test</h3>
+                <p>Rebecca visits her doctor. Routine blood work is ordered. Nothing unusual.</p>
             </div>
-            <div class="journey-step">
-                <div class="step-num">02</div>
-                Coach
+            <div class="card reveal" style="text-align:center">
+                <div style="margin-bottom:clamp(.3rem,.6vh,.5rem)"><i data-lucide="smartphone" style="width:clamp(28px,4vw,40px);height:clamp(28px,4vw,40px);color:var(--accent)"></i></div>
+                <h3>2. Results via App</h3>
+                <p>The lab sends results through Longevity+. She downloads the app just to see her numbers.</p>
             </div>
-            <div class="journey-step">
-                <div class="step-num">03</div>
-                Records
-            </div>
-            <div class="journey-step">
-                <div class="step-num">04</div>
-                Insights
-            </div>
-            <div class="journey-step">
-                <div class="step-num">05</div>
-                Care
+            <div class="card-accent card reveal" style="text-align:center">
+                <div style="margin-bottom:clamp(.3rem,.6vh,.5rem)"><i data-lucide="heart-pulse" style="width:clamp(28px,4vw,40px);height:clamp(28px,4vw,40px);color:#fff"></i></div>
+                <h3>3. Score Reveal</h3>
+                <p>No PDF. Instead: <strong>Vitality Score 54.</strong> Her data is already connected. The journey starts without a sign-up.</p>
             </div>
         </div>
 
-        <div style="height:clamp(.8rem,1.5vh,1.2rem)"></div>
+        <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
+        <p class="subtitle reveal" style="text-align:center;margin:0 auto;font-style:italic">&ldquo;Zero CAC. The lab result delivery IS the activation.&rdquo;</p>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>05 / 14</span>
+    </div>
+</section>
 
-        <div class="three-col">
-            <div class="card-accent card reveal">
-                <h3>AI Health Coach</h3>
-                <p>Personalised, evidence-grounded recommendations. Writes back to your daily protocol.</p>
+
+<!-- ============================================
+     SLIDE 6 — REBECCA STAYS
+     ============================================ -->
+<section class="slide" data-title="Retention">
+    <div class="slide-content">
+        <div class="tag reveal">Why She Stays</div>
+        <div style="height:clamp(.4rem,1vh,.6rem)"></div>
+        <h2 class="reveal">From curiosity to <em>daily habit</em></h2>
+        <div style="height:clamp(.8rem,2vh,1.5rem)"></div>
+
+        <div class="two-col" style="gap:clamp(1rem,2.5vw,2rem)">
+            <div>
+                <div class="card reveal" style="margin-bottom:clamp(.5rem,1vh,.8rem)">
+                    <span class="chip chip-accent">Week 1</span>
+                    <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                    <h3>First Streak</h3>
+                    <p>AI Coach: 3 daily actions. Walk 25 min. Lights out at 22:30. Lentils instead of rice. Streak Day 1. Outlook: Score 62 by July.</p>
+                </div>
+                <div class="card reveal">
+                    <span class="chip chip-good">Month 1</span>
+                    <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                    <h3>Sleep Improves</h3>
+                    <p>Score: 54 &rarr; 58. Coach adjusts after a bad week. Meal photos turn nutrition into a 5-second habit.</p>
+                </div>
             </div>
-            <div class="card reveal">
-                <h3>Risk Flagging</h3>
-                <p>Early warning signals from EHR + wearable data with one-tap path to a real doctor.</p>
-            </div>
-            <div class="card reveal">
-                <h3>Smart Commerce</h3>
-                <p>Diagnostics, supplements, nutrition programs &mdash; surfaced contextually, never as ads.</p>
+            <div>
+                <div class="card reveal" style="margin-bottom:clamp(.5rem,1vh,.8rem)">
+                    <span class="chip chip-purple">Month 3</span>
+                    <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                    <h3>Doctor Impressed</h3>
+                    <p>HbA1c: 7.2 &rarr; 6.8. Score: 64. Her doctor notices. Quarterly panel confirms what the app predicted.</p>
+                </div>
+                <div class="card-accent card reveal">
+                    <span class="chip" style="background:rgba(255,255,255,.2);color:#fff">Locked In</span>
+                    <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                    <h3>The Loop Closes</h3>
+                    <p>Quarterly panel &rarr; updated Score &rarr; new protocol &rarr; next streak. Every lab visit deepens engagement.</p>
+                </div>
             </div>
         </div>
     </div>
     <div class="slide-footer">
         <span>Team Saucerers</span>
-        <span>05 / 10</span>
+        <span>06 / 14</span>
+    </div>
+</section>
+
+
+
+<!-- ============================================
+     SLIDE 6 — USER JOURNEY
+     ============================================ -->
+<section class="slide" data-title="Journey">
+    <div class="slide-content">
+        <div class="tag reveal">User Journey</div>
+        <div style="height:clamp(.3rem,.6vh,.4rem)"></div>
+        <h2 class="reveal">What Rebecca <em>actually does</em></h2>
+        <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
+
+        <div class="two-col" style="gap:clamp(1rem,2.5vw,2rem)">
+            <div class="card reveal">
+                <span class="chip chip-accent">Monitor</span>
+                <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                <h3>Healthscore Tracking</h3>
+                <p>See your Score. Drill into the biomarkers driving it. Watch it change week by week.</p>
+            </div>
+            <div class="card reveal">
+                <span class="chip chip-purple">Discover</span>
+                <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                <h3>Personal Optimization</h3>
+                <p>AI finds the highest-impact action for YOUR data. Not generic tips &mdash; the one thing that moves your Score most.</p>
+            </div>
+            <div class="card reveal">
+                <span class="chip chip-good">Manage</span>
+                <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                <h3>Appointment Overview</h3>
+                <p>All appointments in one place. Clinics, diagnostics, home care &mdash; your longevity roadmap, not a scattered calendar.</p>
+            </div>
+            <div class="card reveal">
+                <span class="chip chip-warn">Proactive</span>
+                <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                <h3>Care Coordination</h3>
+                <p>Missing a check-up that would raise your Score? The app flags it. One tap to book. Done.</p>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>08 / 14</span>
     </div>
 </section>
 
 
 <!-- ============================================
-     SLIDE 6 — LIVE DEMO
+     SLIDE 7 — LIVE DEMO
      ============================================ -->
 <section class="slide demo-slide" data-title="Demo">
     <div class="slide-content" style="align-items:center;text-align:center">
-        <div class="tag reveal" style="color:rgba(255,255,255,.6)">It's showtime</div>
+        <div class="tag reveal" style="color:rgba(255,255,255,.6)">Rebecca's Score: 54. Let's change that.</div>
         <div style="height:clamp(.5rem,1.5vh,1rem)"></div>
         <h2 class="reveal" style="font-size:var(--title-size)">Live <em style="color:#fff">Demo</em></h2>
         <div style="height:clamp(.5rem,1.5vh,1rem)"></div>
-        <p class="subtitle reveal" style="color:rgba(255,255,255,.65);max-width:500px;text-align:center;margin:0 auto">Rebecca's morning: Vitality Score &rarr; AI Coach &rarr; Meal Photo &rarr; Records Q&amp;A &rarr; Risk Flag &rarr; Future Self</p>
+        <p class="subtitle reveal" style="color:rgba(255,255,255,.65);max-width:500px;text-align:center;margin:0 auto">She got her lab results. She opened the app. Watch her Score move.</p>
     </div>
     <div class="demo-number">L+</div>
     <div class="slide-footer" style="color:rgba(255,255,255,.5)">
         <span>Team Saucerers</span>
-        <span>06 / 10</span>
+        <span>09 / 14</span>
     </div>
 </section>
 
@@ -841,10 +951,15 @@
             <div class="comp-cell" style="color:var(--warn)">Partial</div>
             <div class="comp-cell ours">&#10003; Native</div>
 
-            <div class="comp-cell">Patient trust</div>
-            <div class="comp-cell" style="color:var(--warn)">Build from 0</div>
-            <div class="comp-cell" style="color:var(--warn)">Transactional</div>
-            <div class="comp-cell ours">&#10003; 15+ years</div>
+            <div class="comp-cell">Pharma R&amp;D data</div>
+            <div class="comp-cell" style="color:var(--danger)">&#10007;</div>
+            <div class="comp-cell" style="color:var(--danger)">&#10007;</div>
+            <div class="comp-cell ours">&#10003; GDPR-native RWE</div>
+
+            <div class="comp-cell">Data portability</div>
+            <div class="comp-cell" style="color:var(--danger)">&#10007;</div>
+            <div class="comp-cell" style="color:var(--danger)">&#10007;</div>
+            <div class="comp-cell ours">&#10003; Share with new doctor</div>
 
             <div class="comp-cell">Own diagnostics labs</div>
             <div class="comp-cell" style="color:var(--danger)">&#10007;</div>
@@ -854,7 +969,7 @@
     </div>
     <div class="slide-footer">
         <span>Team Saucerers</span>
-        <span>07 / 10</span>
+        <span>10 / 14</span>
     </div>
 </section>
 
@@ -867,33 +982,55 @@
         <div class="tag reveal">Business Model</div>
         <div style="height:clamp(.4rem,1vh,.6rem)"></div>
         <h2 class="reveal"><em>&euro;120M</em> ARR potential</h2>
-        <p class="subtitle reveal">10M patients &times; 5% conversion &times; &euro;20/mo &mdash; plus transactional layer.</p>
+        <p class="subtitle reveal">Rebecca went from 54 to 64. Here's how 10M patients do the same &mdash; and pay for it.</p>
         <div style="height:clamp(.8rem,2vh,1.2rem)"></div>
 
-        <div class="three-col">
-            <div class="card reveal">
-                <span class="chip chip-good">Free</span>
-                <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
-                <h3>Freemium</h3>
-                <p>Vitality Score, basic coach, EHR view, 1 clinic booking/year. Acquisition funnel &mdash; existing patients onboard themselves.</p>
+        <!-- DiGA model -->
+        <div class="two-col" style="gap:clamp(.8rem,2vw,1.5rem)">
+            <!-- Left: How the user experiences it -->
+            <div>
+                <div class="card-accent card reveal" style="margin-bottom:clamp(.5rem,1vh,.8rem)">
+                    <span class="chip" style="background:rgba(255,255,255,.2);color:#fff">For the user</span>
+                    <div style="height:clamp(.2rem,.4vh,.3rem)"></div>
+                    <h3 style="color:#fff">&euro;0 &mdash; free until insurer decides</h3>
+                    <p style="color:rgba(255,255,255,.8)">Full access from day one. The app runs on a DiGA prescription &mdash; the insurer pays &euro;100/quarter. The user pays nothing while the claim is processing.</p>
+                </div>
+                <div class="card reveal">
+                    <span class="chip chip-accent">If insurer declines</span>
+                    <div style="height:clamp(.2rem,.4vh,.3rem)"></div>
+                    <h3>&euro;10/mo</h3>
+                    <p>Same full access. Only kicks in if the insurance claim is rejected.</p>
+                </div>
             </div>
-            <div class="card-accent card reveal">
-                <span class="chip" style="background:rgba(255,255,255,.2);color:#fff">Core</span>
-                <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
-                <h3>&euro;15&ndash;25/mo</h3>
-                <p>Quarterly blood panels, unlimited coach, tele-consults, supplement plans, future-self simulator.</p>
+
+            <!-- Right: How the money flows -->
+            <div>
+                <div class="card reveal" style="margin-bottom:clamp(.5rem,1vh,.8rem)">
+                    <span class="chip chip-good">DiGA Revenue</span>
+                    <div style="height:clamp(.2rem,.4vh,.3rem)"></div>
+                    <h3>&euro;100/quarter per patient</h3>
+                    <p>Insurer reimburses &euro;100/quarter (vs. &euro;5.000+/year for unmanaged diabetes). Prevention is 10x cheaper &mdash; they want to pay.</p>
+                </div>
+                <div class="card reveal">
+                    <span class="chip chip-warn">B2B</span>
+                    <div style="height:clamp(.2rem,.4vh,.3rem)"></div>
+                    <h3>Transactional + Pharma</h3>
+                    <p>AI-triggered diagnostics, supplements (40&ndash;60% margin), Pharma R&amp;D as a Service &mdash; clinical trial recruitment.</p>
+                </div>
             </div>
-            <div class="card reveal">
-                <span class="chip chip-accent">Upsell</span>
-                <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
-                <h3>Transactional</h3>
-                <p>Diagnostic packages, supplements (40&ndash;60% margin), full-body scans, genetic testing. Surfaced by AI.</p>
-            </div>
+        </div>
+
+        <div style="height:clamp(.3rem,.6vh,.4rem)"></div>
+        <div class="reveal" style="display:flex;justify-content:center;gap:clamp(.8rem,2vw,1.5rem);font-size:var(--small-size);color:var(--muted)">
+            <span>&#127465;&#127466; DiGA</span>
+            <span>&#127467;&#127479; PECAN</span>
+            <span>&#127463;&#127466; Level 3+</span>
+            <span>&#127466;&#127482; Expanding</span>
         </div>
     </div>
     <div class="slide-footer">
         <span>Team Saucerers</span>
-        <span>08 / 10</span>
+        <span>11 / 14</span>
     </div>
 </section>
 
@@ -1181,7 +1318,7 @@
                 <div class="flow-node source" data-id="s2"><div class="node-icon"><i data-lucide="hospital"></i></div><span>Clinics &amp; EHR</span></div>
                 <div class="flow-node source" data-id="s3"><div class="node-icon"><i data-lucide="test-tubes"></i></div><span>Lab Results</span></div>
                 <div class="flow-node source" data-id="s4"><div class="node-icon"><i data-lucide="clipboard-list"></i></div><span>Lifestyle Survey</span></div>
-                <div class="flow-node source" data-id="s5"><div class="node-icon"><i data-lucide="camera"></i></div><span>Meal Photos</span></div>
+                <div class="flow-node source" data-id="s5"><div class="node-icon"><i data-lucide="camera"></i></div><span>Daily Habits</span></div>
             </div>
 
             <div class="flow-spacer lg"></div>
@@ -1232,39 +1369,152 @@
     </div>
     <div class="slide-footer">
         <span>Team Saucerers</span>
-        <span>09 / 10</span>
+        <span>12 / 14</span>
     </div>
 </section>
 
 
 <!-- ============================================
-     SLIDE 10 — CLOSE
+     SLIDE 10 — ARCHITECTURE: HOW IT'S BUILT
      ============================================ -->
-<section class="slide close-slide" data-title="Close">
-    <div class="pulse-ring" style="position:absolute;width:clamp(350px,50vw,650px);height:clamp(350px,50vw,650px);left:50%;top:50%"></div>
+<section class="slide" data-title="Architecture">
+    <div class="slide-content">
+        <div class="tag reveal">Architecture</div>
+        <div style="height:clamp(.1rem,.3vh,.2rem)"></div>
+        <h2 class="reveal">Modular by design, <em>extensible by default</em></h2>
+        <div style="height:clamp(.3rem,.6vh,.4rem)"></div>
 
-    <div class="slide-content" style="align-items:center;text-align:center">
-        <div class="tag reveal">North Star Metric</div>
-        <div style="height:clamp(.5rem,1vh,.8rem)"></div>
-        <div class="stat-row reveal" style="justify-content:center">
-            <div class="stat-item" style="text-align:center">
-                <div class="num" style="font-size:clamp(3rem,8vw,6rem)">&ge;3</div>
-                <div class="label">Actioned recommendations / week / patient</div>
+        <!-- Main row: Next.js PWA ↔ REST API ↔ FastAPI Backend ↔ LLM Layer -->
+        <div class="reveal" style="display:flex;align-items:center;gap:clamp(.5rem,1.2vw,1rem);max-width:min(96vw,1100px);margin:0 auto;font-size:var(--small-size)">
+
+            <!-- Left: Client -->
+            <div style="background:var(--good-lt);border:1.5px solid rgba(45,125,78,.15);border-radius:clamp(8px,1vw,12px);padding:clamp(.6rem,1vw,.9rem) clamp(.8rem,1.4vw,1.2rem);font-weight:600;color:var(--good);text-align:center;flex-shrink:0">Next.js PWA</div>
+
+            <!-- Arrow -->
+            <div style="color:var(--muted);font-size:clamp(18px,2.2vw,26px);flex-shrink:0">&#10231;</div>
+
+            <!-- REST API -->
+            <div style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:clamp(8px,1vw,12px);padding:clamp(.6rem,1vw,.9rem) clamp(.8rem,1.4vw,1.2rem);font-weight:600;color:var(--text);text-align:center;flex-shrink:0">REST API</div>
+
+            <!-- Arrow -->
+            <div style="color:var(--accent);font-size:clamp(18px,2.2vw,26px);flex-shrink:0">&#10231;</div>
+
+            <!-- Center: FastAPI Backend (more weight, shifted left) -->
+            <div style="flex:1.5;background:var(--bg-card);border:1.5px solid var(--border);border-radius:clamp(10px,1.4vw,16px);padding:clamp(.7rem,1.2vw,1rem);display:flex;flex-direction:column;gap:clamp(.3rem,.6vh,.5rem)">
+                <div style="font-size:var(--label-size);font-weight:700;color:var(--text);letter-spacing:.1em;text-transform:uppercase;text-align:center">FastAPI Backend</div>
+                <div style="background:rgba(26,107,116,.06);border-radius:8px;padding:clamp(.35rem,.6vw,.5rem);text-align:center">
+                    <strong style="color:var(--accent);font-size:var(--small-size)">Unified Patient Profile</strong>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(.25rem,.5vw,.4rem)">
+                    <div style="background:var(--accent-lt);border-radius:8px;padding:clamp(.35rem,.6vw,.5rem);text-align:center"><strong style="color:var(--accent);font-size:var(--small-size)">Vitality Engine</strong></div>
+                    <div style="background:var(--accent-lt);border-radius:8px;padding:clamp(.35rem,.6vw,.5rem);text-align:center"><strong style="color:var(--accent);font-size:var(--small-size)">Protocol Generator</strong></div>
+                    <div style="background:var(--accent-lt);border-radius:8px;padding:clamp(.35rem,.6vw,.5rem);text-align:center"><strong style="color:var(--accent);font-size:var(--small-size)">Records Q&amp;A</strong></div>
+                    <div style="background:var(--accent-lt);border-radius:8px;padding:clamp(.35rem,.6vw,.5rem);text-align:center"><strong style="color:var(--accent);font-size:var(--small-size)">Care &amp; Commerce</strong></div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div style="color:var(--ai-purple);font-size:clamp(18px,2.2vw,26px);flex-shrink:0">&#10231;</div>
+
+            <!-- Right: LLMs -->
+            <div style="flex-shrink:0;display:flex;flex-direction:column;gap:clamp(.3rem,.6vh,.5rem)">
+                <div style="font-size:var(--label-size);font-weight:700;color:var(--ai-purple);letter-spacing:.12em;text-transform:uppercase;text-align:center">LLM Layer</div>
+                <div style="background:var(--ai-purple-lt);border:1.5px solid rgba(91,79,207,.15);border-radius:clamp(8px,1vw,12px);padding:clamp(.5rem,.8vw,.6rem) clamp(.8rem,1.4vw,1.2rem);text-align:center"><strong style="color:var(--ai-purple)">Gemini 2.5 Pro</strong></div>
+                <div style="background:var(--ai-purple-lt);border:1.5px solid rgba(91,79,207,.15);border-radius:clamp(8px,1vw,12px);padding:clamp(.5rem,.8vw,.6rem) clamp(.8rem,1.4vw,1.2rem);text-align:center"><strong style="color:var(--ai-purple)">Gemini 2.5 Flash</strong></div>
+                <div style="background:var(--ai-purple-lt);border:1.5px solid rgba(91,79,207,.15);border-radius:clamp(8px,1vw,12px);padding:clamp(.5rem,.8vw,.6rem) clamp(.8rem,1.4vw,1.2rem);text-align:center"><strong style="color:var(--ai-purple)">text-embedding-004</strong></div>
             </div>
         </div>
-        <div style="height:clamp(1rem,3vh,2rem)"></div>
-        <div class="divider reveal" style="margin:0 auto"></div>
-        <div style="height:clamp(1rem,3vh,2rem)"></div>
-        <p class="moat-line reveal">&ldquo;One platform. 10 million warm leads. Clinics, diagnostics, and home care in one app. The only longevity app where your doctor actually sees the data.&rdquo;</p>
-        <div style="height:clamp(1rem,3vh,2rem)"></div>
-        <div class="score-badge reveal">
-            <div class="dot"></div>
-            <span>Longevity+ by Team Saucerers</span>
+
+        <!-- Data Backends below Backend -->
+        <div class="reveal" style="margin-top:clamp(.5rem,1.2vh,.8rem);display:flex;flex-direction:column;align-items:center;gap:clamp(.2rem,.5vh,.4rem);font-size:var(--small-size)">
+            <div style="color:var(--accent);font-size:clamp(16px,1.8vw,22px)">&#8597;</div>
+            <div style="font-size:var(--label-size);font-weight:700;color:var(--accent);letter-spacing:.14em;text-transform:uppercase">Data Backends</div>
+            <div style="display:flex;gap:clamp(.4rem,.8vw,.7rem);flex-wrap:wrap;justify-content:center">
+                <div style="background:var(--accent-lt);border:1.5px solid rgba(26,107,116,.15);border-radius:clamp(8px,1vw,12px);padding:clamp(.4rem,.7vw,.6rem) clamp(.8rem,1.4vw,1.2rem);font-weight:600;color:var(--accent)">CSV Adapter</div>
+                <div style="background:var(--bg-card);border:1.5px dashed var(--border);border-radius:clamp(8px,1vw,12px);padding:clamp(.4rem,.7vw,.6rem) clamp(.8rem,1.4vw,1.2rem);color:var(--text-2)">FHIR / HL7</div>
+                <div style="background:var(--bg-card);border:1.5px dashed var(--border);border-radius:clamp(8px,1vw,12px);padding:clamp(.4rem,.7vw,.6rem) clamp(.8rem,1.4vw,1.2rem);color:var(--text-2)">Apple Health</div>
+                <div style="background:var(--bg-card);border:1.5px dashed var(--border);border-radius:clamp(8px,1vw,12px);padding:clamp(.4rem,.7vw,.6rem) clamp(.8rem,1.4vw,1.2rem);color:var(--text-2)">Doctolib</div>
+            </div>
         </div>
     </div>
     <div class="slide-footer">
         <span>Team Saucerers</span>
-        <span>10 / 10</span>
+        <span>13 / 14</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 13 — TEAM
+     ============================================ -->
+<section class="slide" data-title="Team">
+    <div class="slide-content" style="align-items:center;text-align:center">
+        <div class="tag reveal">The Team</div>
+        <div style="height:clamp(.4rem,1vh,.6rem)"></div>
+        <h2 class="reveal">Meet the <em>Team</em></h2>
+        <div style="height:clamp(1rem,3vh,2rem)"></div>
+
+        <div class="reveal" style="display:flex;justify-content:center;gap:clamp(1.2rem,3vw,2.5rem);flex-wrap:wrap">
+            <!-- Jasper -->
+            <div style="text-align:center;width:clamp(100px,12vw,140px)">
+                <img src="jasper.jpg" style="width:clamp(60px,8vw,80px);height:clamp(60px,8vw,80px);border-radius:50%;object-fit:cover;margin:0 auto clamp(.4rem,.8vh,.6rem);display:block;border:2px solid var(--accent)">
+                <h3 style="font-size:var(--small-size);margin-bottom:2px">Jasper Kallfelz</h3>
+                <p style="font-size:var(--label-size);color:var(--muted);margin:0">CODE Berlin &bull; Co-Founder Athlaite</p>
+            </div>
+            <!-- Marlon -->
+            <div style="text-align:center;width:clamp(100px,12vw,140px)">
+                <img src="marlon.jpg" style="width:clamp(60px,8vw,80px);height:clamp(60px,8vw,80px);border-radius:50%;object-fit:cover;margin:0 auto clamp(.4rem,.8vh,.6rem);display:block;border:2px solid var(--accent)">
+                <h3 style="font-size:var(--small-size);margin-bottom:2px">Marlon Kranz</h3>
+                <p style="font-size:var(--label-size);color:var(--muted);margin:0">Wirtschaftsinformatik Uni Hamburg &bull; Software Engineer OTTO</p>
+            </div>
+            <!-- Placeholder 1 -->
+            <div style="text-align:center;width:clamp(100px,12vw,140px)">
+                <div style="width:clamp(60px,8vw,80px);height:clamp(60px,8vw,80px);border-radius:50%;background:var(--border);margin:0 auto clamp(.4rem,.8vh,.6rem);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:clamp(1.2rem,2vw,1.6rem);color:var(--muted)">?</div>
+                <h3 style="font-size:var(--small-size);color:var(--muted);margin-bottom:2px">TBD</h3>
+            </div>
+            <!-- Placeholder 2 -->
+            <div style="text-align:center;width:clamp(100px,12vw,140px)">
+                <div style="width:clamp(60px,8vw,80px);height:clamp(60px,8vw,80px);border-radius:50%;background:var(--border);margin:0 auto clamp(.4rem,.8vh,.6rem);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:clamp(1.2rem,2vw,1.6rem);color:var(--muted)">?</div>
+                <h3 style="font-size:var(--small-size);color:var(--muted);margin-bottom:2px">TBD</h3>
+            </div>
+            <!-- Placeholder 3 -->
+            <div style="text-align:center;width:clamp(100px,12vw,140px)">
+                <div style="width:clamp(60px,8vw,80px);height:clamp(60px,8vw,80px);border-radius:50%;background:var(--border);margin:0 auto clamp(.4rem,.8vh,.6rem);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:clamp(1.2rem,2vw,1.6rem);color:var(--muted)">?</div>
+                <h3 style="font-size:var(--small-size);color:var(--muted);margin-bottom:2px">TBD</h3>
+            </div>
+            <!-- Placeholder 4 -->
+            <div style="text-align:center;width:clamp(100px,12vw,140px)">
+                <div style="width:clamp(60px,8vw,80px);height:clamp(60px,8vw,80px);border-radius:50%;background:var(--border);margin:0 auto clamp(.4rem,.8vh,.6rem);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:clamp(1.2rem,2vw,1.6rem);color:var(--muted)">?</div>
+                <h3 style="font-size:var(--small-size);color:var(--muted);margin-bottom:2px">TBD</h3>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>13 / 14</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 14 — CLOSE
+     ============================================ -->
+<section class="slide close-slide" data-title="Close">
+    <div class="pulse-ring" style="position:absolute;width:clamp(350px,50vw,650px);height:clamp(350px,50vw,650px);left:50%;top:50%"></div>
+
+    <div class="slide-content" style="align-items:center;justify-content:center;text-align:center">
+        <h1 class="reveal" style="font-size:var(--h2-size)">Longevity<em>+</em></h1>
+        <div style="height:clamp(.5rem,1.2vh,.8rem)"></div>
+        <p class="reveal" style="font-family:var(--font-display);font-style:italic;font-size:clamp(1.1rem,2.2vw,1.6rem);color:var(--accent)">think and act vital</p>
+        <div style="height:clamp(1.5rem,4vh,3rem)"></div>
+        <div class="score-badge reveal">
+            <div class="dot"></div>
+            <span>Team Saucerers</span>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>14 / 14</span>
     </div>
 </section>
 
@@ -1464,6 +1714,34 @@ class InlineEditor {
 
 new SlidePresentation();
 new InlineEditor();
+
+// === VITALITY SCORE RED THREAD ===
+(function() {
+    const scores = [
+        { val: '???', cls: 'st-unknown' },   // 1  Title
+        { val: '???', cls: 'st-unknown' },   // 2  Problem
+        { val: '???', cls: 'st-unknown' },   // 3  Thesis
+        { val: '???', cls: 'st-unknown' },   // 4  Meet Rebecca
+        { val: '54',  cls: 'st-low' },       // 5  Discovery
+        { val: '54 → 64', cls: 'st-mid' },   // 6  Why She Stays
+        { val: '58',  cls: 'st-mid' },       // 7  Product
+        { val: '58',  cls: 'st-mid' },       // 8  User Journey
+        { val: '64',  cls: 'st-good' },      // 9  Demo
+        { val: '64',  cls: 'st-good' },      // 10 Moat
+        { val: '64',  cls: 'st-good' },      // 11 Monetization
+        { val: '∞',   cls: 'st-brand' },     // 12 Data Flow
+        { val: '∞',   cls: 'st-brand' },     // 14 Architecture
+        { val: '54 → 64 → ?', cls: 'st-brand' }  // 14 Close
+    ];
+    document.querySelectorAll('.slide').forEach((slide, i) => {
+        if (!scores[i]) return;
+        const s = scores[i];
+        const badge = document.createElement('div');
+        badge.className = 'score-thread ' + s.cls;
+        badge.innerHTML = `<div class="st-dot"></div><span class="st-label">Score</span><span class="st-val">${s.val}</span>`;
+        slide.appendChild(badge);
+    });
+})();
 
 // Initialize Lucide icons
 if (window.lucide) lucide.createIcons();
