@@ -23,11 +23,32 @@ vi.mock("@/lib/api/client", () => ({
   }),
   skipProtocolAction: vi.fn().mockResolvedValue({ id: 1 }),
   reorderProtocolActions: vi.fn().mockResolvedValue(undefined),
+  createManualMealLog: vi.fn().mockResolvedValue({}),
+  createDailyLog: vi.fn().mockResolvedValue({}),
+  submitWeeklyCheckIn: vi.fn().mockResolvedValue({}),
 }));
 
 // ── Mock next/navigation ───────────────────────────────────────────────────────
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: vi.fn() }),
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+}));
+
+// ── Mock tracker sheets so QuickLogGrid tests stay isolated ───────────────────
+vi.mock("@/components/trackers/QuickLogMealSheet", () => ({
+  QuickLogMealSheet: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="meal-sheet">MealSheet</div> : null,
+}));
+vi.mock("@/components/trackers/QuickLogSleepSheet", () => ({
+  QuickLogSleepSheet: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="sleep-sheet">SleepSheet</div> : null,
+}));
+vi.mock("@/components/trackers/QuickLogWorkoutSheet", () => ({
+  QuickLogWorkoutSheet: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="workout-sheet">WorkoutSheet</div> : null,
+}));
+vi.mock("@/components/trackers/QuickLogWaterSheet", () => ({
+  QuickLogWaterSheet: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="water-sheet">WaterSheet</div> : null,
 }));
 
 // ── ProtocolList ──────────────────────────────────────────────────────────────
@@ -231,9 +252,35 @@ describe("QuickLogGrid", () => {
     expect(screen.getByText("💧")).toBeInTheDocument();
   });
 
-  it("Meal button has a link to /meal-log", () => {
+  it("Meal tile is a button (not a link)", () => {
     render(<QuickLogGrid />);
-    const mealBtn = screen.getByRole("link", { name: /meal/i });
-    expect(mealBtn).toHaveAttribute("href", "/meal-log");
+    const mealBtn = screen.getByRole("button", { name: /^meal$/i });
+    expect(mealBtn).toBeInTheDocument();
+    expect(mealBtn.tagName).toBe("BUTTON");
+  });
+
+  it("tapping Meal opens the meal sheet", () => {
+    render(<QuickLogGrid />);
+    expect(screen.queryByTestId("meal-sheet")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^meal$/i }));
+    expect(screen.getByTestId("meal-sheet")).toBeInTheDocument();
+  });
+
+  it("tapping Sleep opens the sleep sheet", () => {
+    render(<QuickLogGrid />);
+    fireEvent.click(screen.getByRole("button", { name: /^sleep$/i }));
+    expect(screen.getByTestId("sleep-sheet")).toBeInTheDocument();
+  });
+
+  it("tapping Workout opens the workout sheet", () => {
+    render(<QuickLogGrid />);
+    fireEvent.click(screen.getByRole("button", { name: /^workout$/i }));
+    expect(screen.getByTestId("workout-sheet")).toBeInTheDocument();
+  });
+
+  it("tapping Water opens the water sheet", () => {
+    render(<QuickLogGrid />);
+    fireEvent.click(screen.getByRole("button", { name: /^water$/i }));
+    expect(screen.getByTestId("water-sheet")).toBeInTheDocument();
   });
 });

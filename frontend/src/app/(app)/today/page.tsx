@@ -25,6 +25,7 @@ import {
 import { VitalityTap } from "./_components/VitalityTap";
 import { ProtocolList } from "./_components/ProtocolList";
 import { QuickLogGrid } from "./_components/QuickLogGrid";
+import { WeeklyCheckInCard } from "./_components/WeeklyCheckInCard";
 import { COPY } from "@/lib/copy/copy";
 import { backendFetch } from "@/lib/backend-fetch";
 import type {
@@ -34,6 +35,7 @@ import type {
   ProtocolOut,
   InsightsListOut,
   MealLogListOut,
+  SurveyHistoryOut,
 } from "@/lib/api/schemas";
 
 // ---------------------------------------------------------------------------
@@ -161,7 +163,7 @@ export default async function TodayPage() {
 
   // 2. Parallel fetch all required data
   const today = new Date().toISOString().slice(0, 10);
-  const [profile, vitality, outlookList, protocol, insights, mealLogs] =
+  const [profile, vitality, outlookList, protocol, insights, mealLogs, surveyHistory] =
     await Promise.all([
       backendGet<PatientProfileOut>(patientId, "profile"),
       backendGet<VitalityOut>(patientId, "vitality"),
@@ -170,6 +172,7 @@ export default async function TodayPage() {
       backendGet<ProtocolOut>(patientId, "protocol"),
       backendGet<InsightsListOut>(patientId, "insights"),
       backendGet<MealLogListOut>(patientId, `meal-log?from=${today}&to=${today}`),
+      backendGet<SurveyHistoryOut>(patientId, "survey/history?kind=weekly&limit=1"),
     ]);
 
   // Pick the 6-month outlook horizon, falling back to the largest available.
@@ -191,6 +194,14 @@ export default async function TodayPage() {
   const actions = protocol?.actions ?? [];
   const urgentInsight = findUrgentInsight(insights);
   const insightsList = insights?.insights ?? [];
+
+  // Weekly check-in: compute days since last submission
+  const lastCheckIn = surveyHistory?.responses?.[0]?.submitted_at ?? null;
+  const daysSinceLastCheckIn: number | null = lastCheckIn
+    ? Math.floor(
+        (Date.now() - new Date(lastCheckIn).getTime()) / (1000 * 60 * 60 * 24),
+      )
+    : null;
 
   // Protocol progress
   const doneCount = actions.filter((a) => a.completed_today).length;
@@ -455,63 +466,7 @@ export default async function TodayPage() {
       </div>
 
       {/* ── Weekly micro-survey card ──────────────────────────────────────── */}
-      <div
-        className="card"
-        style={{
-          marginTop: 14,
-          background: "var(--color-accent-lt)",
-          borderColor: "var(--color-accent-md)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-          }}
-        >
-          <div>
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "var(--color-accent)",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-              }}
-            >
-              30-sec check-in
-            </p>
-            <p
-              style={{
-                fontSize: 11.5,
-                color: "var(--color-ink-2)",
-                marginTop: 2,
-              }}
-            >
-              How did this week feel?
-            </p>
-          </div>
-          <button
-            type="button"
-            style={{
-              padding: "8px 12px",
-              borderRadius: 14,
-              background: "var(--color-accent)",
-              color: "#fff",
-              fontSize: 12.5,
-              fontWeight: 600,
-              border: "none",
-              cursor: "pointer",
-              minHeight: 36,
-              flexShrink: 0,
-            }}
-          >
-            Start
-          </button>
-        </div>
-      </div>
+      <WeeklyCheckInCard daysSinceLastCheckIn={daysSinceLastCheckIn} />
 
       {/* Fine print */}
       <p
