@@ -21,6 +21,13 @@ vi.mock("@/lib/api/client", () => ({
     streak_days: 5,
     completed_at: "2026-04-09T10:00:00Z",
   }),
+  skipProtocolAction: vi.fn().mockResolvedValue({ id: 1 }),
+  reorderProtocolActions: vi.fn().mockResolvedValue(undefined),
+}));
+
+// ── Mock next/navigation ───────────────────────────────────────────────────────
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
 }));
 
 // ── ProtocolList ──────────────────────────────────────────────────────────────
