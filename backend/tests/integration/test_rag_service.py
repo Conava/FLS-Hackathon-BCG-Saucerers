@@ -1,15 +1,23 @@
 """Integration tests for RAGService (T9).
 
 Tests:
-  1. test_ask_returns_citations_scoped_to_patient_a
+  1. test_ask_citations_scoped_to_patient_a
        — Two patients seeded with distinguishable EHR content.
          Ask as patient A; assert all citation record_ids belong to A.
   2. test_ask_disclaimer_present
        — Disclaimer is present in the response.
   3. test_ask_uses_records_qa_prompt
        — ai_meta.prompt_name is "records-qa".
-  4. test_no_patient_b_leak
-       — Explicitly check no patient B record IDs appear in the answer or citations.
+  4. test_ask_returns_answer
+       — The response must contain a non-empty answer string.
+  5. test_ask_model_name_in_ai_meta
+       — ai_meta.model must be 'gemini-2.5-pro'.
+  6. test_regex_citation_path_exact_match
+       — FakeLLMProvider subclass returns text with [ref:ehr_record.<id>] tags.
+         Assert: citations contains EXACTLY those record_ids, dedup works, no
+         fallback "all retrieved records" set is used.
+  7. test_no_patient_b_ids_in_answer_text
+       — No patient B record IDs appear in response.answer text (not just citations).
 
 Isolation strategy: We insert records directly via ``db_session``.
 ``FakeLLMProvider.embed`` returns deterministic 768-d vectors keyed by text hash.
@@ -225,3 +233,97 @@ async def test_ask_model_name_in_ai_meta(db_session: AsyncSession) -> None:
     assert response.ai_meta.model == "gemini-2.5-pro", (
         f"Expected model='gemini-2.5-pro', got {response.ai_meta.model!r}"
     )
+
+
+@pytest.mark.integration
+async def test_regex_citation_path_exact_match(db_session: AsyncSession) -> None:
+    """The regex citation parser must extract exact record IDs from [ref:ehr_record.<id>] tags.
+
+    Uses a FakeLLMProvider subclass whose generate() returns a deterministic
+    string that embeds real patient-A record IDs in the ``[ref:ehr_record.<id>]``
+    format.  Verifies:
+
+    - ``response.citations`` contains EXACTLY those IDs (no extra fallback IDs).
+    - The first record ID cited twice deduplicates to a single Citation entry.
+    - No patient B record IDs appear in citations.
+    - The fallback "all retrieved records" path is NOT used (would add B-patient
+      records if it were triggered).
+    """
+    a_ids, b_ids = await _seed(db_session)
+
+    # We need at least one patient-A record ID to embed in the fake answer.
+    assert len(a_ids) >= 1, "seed must produce at least one patient-A record"
+    target_id = a_ids[0]
+
+    class _CitingFakeLLM(FakeLLMProvider):
+        """Override generate() to return an answer with a real ehr_record citation.
+
+        The answer cites ``target_id`` twice (to test dedup) and never cites
+        any patient-B IDs.
+        """
+
+        async def generate(
+            self,
+            *,
+            system: str,
+            user: str,
+            model: str,
+            response_schema: type[BaseModel] | None = None,
+        ) -> str:
+            # Cite the same ID twice to verify deduplication
+            return (
+                f"Your cholesterol was elevated [ref:ehr_record.{target_id}]. "
+                f"A statin was prescribed [ref:ehr_record.{target_id}]. "
+                "This is wellness guidance, not medical advice."
+            )
+
+    llm = _CitingFakeLLM()
+    svc = RAGService(db_session, llm)
+    response = await svc.ask(patient_id="RAGPT_A", question="What is my cholesterol status?")
+
+    cited_ids = [c.record_id for c in response.citations]
+
+    # target_id must appear exactly once (dedup)
+    assert cited_ids.count(target_id) == 1, (
+        f"Expected exactly one citation for record {target_id}, got {cited_ids}"
+    )
+
+    # No patient B IDs must appear in citations
+    cited_set = set(cited_ids)
+    for bid in b_ids:
+        assert bid not in cited_set, (
+            f"ISOLATION BREACH: patient B record {bid} appeared in citations via regex path"
+        )
+
+    # The citations should come from the regex path ONLY — meaning only target_id
+    # is cited (not the whole fallback set of all retrieved records).
+    # The fallback is triggered when citations is empty; since we have at least one
+    # citation from the regex, the fallback must NOT have fired.
+    assert len(cited_ids) == 1, (
+        f"Expected exactly 1 citation (deduped target_id), got {cited_ids} — "
+        "fallback 'all retrieved records' may have fired instead of regex path"
+    )
+
+
+@pytest.mark.integration
+async def test_no_patient_b_ids_in_answer_text(db_session: AsyncSession) -> None:
+    """No patient B record IDs may appear in the answer text itself.
+
+    The docstring for test_ask_citations_scoped_to_patient_a already claims
+    isolation at the citation level.  This test extends that guarantee to the
+    raw answer string: even if an ID somehow leaked into the LLM response text,
+    it must not be a B-patient record ID.
+    """
+    a_ids, b_ids = await _seed(db_session)
+
+    llm = FakeLLMProvider()
+    svc = RAGService(db_session, llm)
+    response = await svc.ask(patient_id="RAGPT_A", question="What is my cholesterol status?")
+
+    answer_text = response.answer
+    for bid in b_ids:
+        # The answer text must not reference any B-patient record by its numeric ID
+        assert str(bid) not in answer_text, (
+            f"ISOLATION BREACH: patient B record ID {bid} appeared in answer text: "
+            f"{answer_text!r}"
+        )
