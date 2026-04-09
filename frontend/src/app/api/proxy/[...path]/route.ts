@@ -24,9 +24,13 @@ import { cookies } from "next/headers";
 const BACKEND_URL =
   process.env.BACKEND_URL ?? "http://localhost:8000";
 
-/** Headers that must not be forwarded to the upstream backend. */
-const HOP_BY_HOP = new Set([
-  "host",
+/**
+ * Headers that must not be forwarded to the upstream backend.
+ * Includes hop-by-hop headers, auth/session headers, and routing headers
+ * that could leak caller identity or be used for header injection.
+ */
+const DENIED_HEADERS = new Set([
+  // Standard hop-by-hop headers
   "connection",
   "keep-alive",
   "transfer-encoding",
@@ -35,17 +39,46 @@ const HOP_BY_HOP = new Set([
   "upgrade",
   "proxy-authorization",
   "proxy-authenticate",
+  // Auth/session — must never reach upstream (backend uses its own auth)
+  "cookie",
+  "authorization",
+  // Internal routing headers that must not be spoofed
+  "host",
+  "x-patient-id",
+  "x-forwarded-for",
+  "x-forwarded-host",
+  "x-forwarded-proto",
 ]);
 
 /** Build a filtered copy of the incoming headers for forwarding. */
 function forwardHeaders(incoming: Headers): Headers {
   const out = new Headers();
   incoming.forEach((value, key) => {
-    if (!HOP_BY_HOP.has(key.toLowerCase())) {
+    if (!DENIED_HEADERS.has(key.toLowerCase())) {
       out.set(key, value);
     }
   });
   return out;
+}
+
+/**
+ * Validate a single URL path segment.
+ *
+ * Rejects empty segments, dot-traversal (. and ..), and any segment that
+ * contains a path separator or NUL byte after decoding. This prevents
+ * path traversal attacks via the catch-all [...path] parameter.
+ */
+function validateSegment(raw: string): boolean {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    return false;
+  }
+  if (decoded.length === 0) return false;
+  if (decoded === "." || decoded === "..") return false;
+  if (decoded.includes("/") || decoded.includes("\\") || decoded.includes("\0")) return false;
+  return true;
 }
 
 async function handleRequest(
@@ -59,8 +92,16 @@ async function handleRequest(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Resolve the path segments
+  // 2. Resolve and validate the path segments
   const { path } = await context.params;
+
+  // Reject any segment that is empty, dot-traversal, or contains separators
+  for (const seg of path) {
+    if (!validateSegment(seg)) {
+      return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    }
+  }
+
   const segments = path.join("/");
 
   // 3. Build the upstream URL, preserving any query string
@@ -70,7 +111,15 @@ async function handleRequest(
     BACKEND_URL,
   );
 
-  // 4. Forward headers, stripping hop-by-hop headers
+  // Guard: ensure the resolved pathname is strictly scoped to this patient.
+  // URL normalization could theoretically collapse the path — this is the
+  // last line of defence before the request leaves the proxy.
+  const expectedPrefix = `/v1/patients/${patientId}/`;
+  if (!upstreamUrl.pathname.startsWith(expectedPrefix)) {
+    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+  }
+
+  // 4. Forward headers, stripping denied headers
   const headers = forwardHeaders(request.headers);
 
   // 5. Build fetch init — include body for non-GET/HEAD methods
@@ -102,7 +151,7 @@ async function handleRequest(
   // 7. Build response headers, preserving content-type from upstream
   const responseHeaders = new Headers();
   upstream.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP.has(key.toLowerCase())) {
+    if (!DENIED_HEADERS.has(key.toLowerCase())) {
       responseHeaders.set(key, value);
     }
   });

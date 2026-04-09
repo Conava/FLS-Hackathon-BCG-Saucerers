@@ -170,7 +170,7 @@ export function RecordsQA() {
                     label={index + 1}
                     onClick={() => {
                       // Future: open record detail sheet
-                      console.info(`Open record ${citation.record_id}: ${citation.snippet}`);
+                      console.info(`Open record ${citation.record_id}`);
                     }}
                   />
                 ))}
