@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From Legacy to Longevity — Team Saucerers</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <style>
+        /* === RESET & VARIABLES === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            /* Longevity+ palette — LIGHT THEME */
+            --bg: #F7F6F3;
+            --bg-surface: #FFFFFF;
+            --bg-card: #FFFFFF;
+            --text: #0E1726;
+            --text-2: #3D4A5C;
+            --muted: #7A8799;
+            --accent: #1A6B74;
+            --accent-light: #155e66;
+            --accent-lt: #EAF4F5;
+            --good: #2D7D4E;
+            --good-lt: #E8F5EE;
+            --warn: #9C6B15;
+            --warn-lt: #FDF3DC;
+            --danger: #B8312F;
+            --danger-lt: #FCEAEA;
+            --ai-purple: #5B4FCF;
+            --ai-purple-lt: #F2F0FE;
+            --border: #E8E6E1;
+
+            /* Typography — clamp() for viewport fitting — BIGGER */
+            --font-display: 'Instrument Serif', serif;
+            --font-body: 'DM Sans', sans-serif;
+            --title-size: clamp(3rem, 8vw, 6.5rem);
+            --h2-size: clamp(2rem, 5vw, 4rem);
+            --h3-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            --body-size: clamp(0.9rem, 1.6vw, 1.3rem);
+            --small-size: clamp(0.75rem, 1.2vw, 1.05rem);
+            --label-size: clamp(0.65rem, 0.9vw, 0.85rem);
+
+            /* Spacing */
+            --slide-padding: clamp(1.5rem, 5vw, 5rem);
+            --content-gap: clamp(0.5rem, 2vw, 2rem);
+
+            /* Animation */
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* === VIEWPORT BASE (MANDATORY) === */
+        html, body { height: 100%; overflow-x: hidden; }
+        html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 100%;
+            overflow: hidden;
+            padding: var(--slide-padding);
+        }
+
+        img { max-width: 100%; max-height: min(50vh, 400px); object-fit: contain; }
+
+        /* === RESPONSIVE BREAKPOINTS === */
+        @media (max-height: 700px) {
+            :root {
+                --slide-padding: clamp(0.75rem, 3vw, 2rem);
+                --content-gap: clamp(0.4rem, 1.5vw, 1rem);
+                --title-size: clamp(1.8rem, 5.5vw, 3.5rem);
+                --h2-size: clamp(1.4rem, 3.5vw, 2.5rem);
+            }
+        }
+        @media (max-height: 600px) {
+            :root {
+                --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem);
+                --title-size: clamp(1.4rem, 4.5vw, 2.5rem);
+                --body-size: clamp(0.7rem, 1.1vw, 0.95rem);
+            }
+            .nav-dots, .decorative { display: none; }
+        }
+        @media (max-height: 500px) {
+            :root {
+                --slide-padding: clamp(0.4rem, 2vw, 1rem);
+                --title-size: clamp(1rem, 3.5vw, 1.8rem);
+                --h2-size: clamp(0.9rem, 2.5vw, 1.4rem);
+                --body-size: clamp(0.6rem, 0.9vw, 0.8rem);
+            }
+        }
+        @media (max-width: 600px) {
+            :root { --title-size: clamp(1.6rem, 9vw, 3rem); }
+            .two-col { grid-template-columns: 1fr !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+            html { scroll-behavior: auto; }
+        }
+
+        /* === REVEAL ANIMATIONS === */
+        .reveal {
+            opacity: 0;
+            transform: translateY(25px);
+            transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+        }
+        .slide.visible .reveal { opacity: 1; transform: translateY(0); }
+        .slide.visible .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .slide.visible .reveal:nth-child(2) { transition-delay: 0.15s; }
+        .slide.visible .reveal:nth-child(3) { transition-delay: 0.25s; }
+        .slide.visible .reveal:nth-child(4) { transition-delay: 0.35s; }
+        .slide.visible .reveal:nth-child(5) { transition-delay: 0.45s; }
+        .slide.visible .reveal:nth-child(6) { transition-delay: 0.55s; }
+
+        /* === COMMON ELEMENTS === */
+        .tag {
+            font-size: var(--label-size);
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        h1 {
+            font-family: var(--font-display);
+            font-size: var(--title-size);
+            color: var(--text);
+            line-height: 1.05;
+            font-weight: 400;
+            /* Instrument Serif only has 400, use text-shadow for perceived weight */
+            text-shadow: 0 0 0.5px var(--text);
+        }
+        h1 em { font-style: italic; color: var(--accent); }
+        h2 {
+            font-family: var(--font-display);
+            font-size: var(--h2-size);
+            color: var(--text);
+            line-height: 1.1;
+            font-weight: 400;
+            text-shadow: 0 0 0.5px var(--text);
+        }
+        h2 em { font-style: italic; color: var(--accent); }
+        h3 {
+            font-family: var(--font-body);
+            font-size: var(--h3-size);
+            color: var(--text);
+            font-weight: 700;
+        }
+        p, li { font-size: var(--body-size); line-height: 1.55; color: var(--text-2); font-weight: 500; }
+
+        .subtitle {
+            font-size: clamp(1rem, 1.8vw, 1.4rem);
+            color: var(--text-2);
+            line-height: 1.55;
+            max-width: 650px;
+            font-weight: 500;
+        }
+
+        /* Pulse rings (decorative) */
+        .pulse-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1.5px solid rgba(26,107,116,.18);
+            pointer-events: none;
+            animation: pulse 5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%,-50%) scale(1.04); opacity: .5; }
+        }
+
+        /* Vitality line */
+        .vitality-line {
+            position: absolute;
+            bottom: clamp(40px, 8vh, 90px);
+            left: 0; width: 100%; height: 50px;
+            pointer-events: none;
+        }
+        .vitality-line svg { width: 100%; height: 100%; }
+        .vitality-path { stroke: var(--accent); stroke-width: 2; fill: none; stroke-dasharray: 1200; stroke-dashoffset: 1200; }
+        .vitality-glow { stroke: var(--accent); stroke-width: 8; fill: none; opacity: .08; stroke-dasharray: 1200; stroke-dashoffset: 1200; }
+        .slide.visible .vitality-path,
+        .slide.visible .vitality-glow { animation: draw 2.5s ease-out .5s forwards; }
+        @keyframes draw { to { stroke-dashoffset: 0; } }
+
+        /* Score badge */
+        .score-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: clamp(.3rem,.7vw,.5rem);
+            background: var(--accent-lt);
+            border: 1.5px solid rgba(26,107,116,.2);
+            border-radius: 100px;
+            padding: clamp(.3rem,.6vw,.5rem) clamp(.8rem,1.4vw,1.2rem);
+        }
+        .score-badge .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--accent);
+            animation: blink 2s ease-in-out infinite;
+        }
+        .score-badge span { font-size: var(--small-size); color: var(--accent); font-weight: 700; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: clamp(10px,1.5vw,16px);
+            padding: clamp(1.2rem, 2.2vw, 2rem);
+            box-shadow: 0 2px 12px rgba(14,23,38,.06);
+        }
+        .card h3 { margin-bottom: clamp(.3rem,.8vh,.6rem); }
+        .card p { font-size: var(--small-size); }
+
+        .card-accent {
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border: none;
+            color: #fff;
+        }
+        .card-accent h3, .card-accent p { color: #fff; }
+        .card-accent p { opacity: .85; }
+
+        /* Two-column grid */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(.8rem, 2vw, 1.5rem);
+            align-items: start;
+        }
+
+        /* Three-column grid */
+        .three-col {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(.6rem, 1.5vw, 1.2rem);
+        }
+        @media (max-width: 700px) { .three-col { grid-template-columns: 1fr; } }
+
+        /* Stat items */
+        .stat-row {
+            display: flex;
+            gap: clamp(1.5rem, 4vw, 3.5rem);
+            flex-wrap: wrap;
+        }
+        .stat-item { text-align: left; }
+        .stat-item .num {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 5.5vw, 4.5rem);
+            color: var(--accent);
+            line-height: 1;
+            font-weight: 400;
+        }
+        .stat-item .label {
+            font-size: var(--label-size);
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: clamp(3px, .5vh, 8px);
+        }
+
+        /* Chip badges */
+        .chip {
+            display: inline-block;
+            font-size: var(--label-size);
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            padding: clamp(3px,.4vw,5px) clamp(8px,1vw,12px);
+            border-radius: 100px;
+        }
+        .chip-accent { background: var(--accent-lt); color: var(--accent-light); }
+        .chip-warn { background: var(--warn-lt); color: var(--warn); }
+        .chip-danger { background: var(--danger-lt); color: var(--danger); }
+        .chip-good { background: var(--good-lt); color: var(--good); }
+        .chip-purple { background: var(--ai-purple-lt); color: var(--ai-purple); }
+
+        /* Bullet list */
+        .bullets {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(.35rem, .8vh, .7rem);
+        }
+        .bullets li {
+            padding-left: clamp(1rem, 1.5vw, 1.3rem);
+            position: relative;
+        }
+        .bullets li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: clamp(7px, .9vh, 11px);
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        /* Divider */
+        .divider {
+            width: clamp(40px, 6vw, 80px);
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            border-radius: 2px;
+        }
+
+        /* Footer */
+        .slide-footer {
+            position: absolute;
+            bottom: clamp(.8rem, 2vh, 1.5rem);
+            left: var(--slide-padding);
+            right: var(--slide-padding);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: var(--label-size);
+            color: var(--muted);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        /* Persona card */
+        .persona-card {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: clamp(10px,1.5vw,16px);
+            padding: clamp(1.5rem, 3vw, 2.5rem);
+            display: flex;
+            gap: clamp(1.2rem, 2.5vw, 2.5rem);
+            align-items: flex-start;
+            box-shadow: 0 2px 12px rgba(14,23,38,.06);
+        }
+        .persona-avatar {
+            width: clamp(50px, 8vw, 80px);
+            height: clamp(50px, 8vw, 80px);
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-size: clamp(1.2rem, 2.5vw, 2rem);
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        /* Journey step */
+        .journey-steps {
+            display: flex;
+            gap: clamp(.4rem, 1vw, .8rem);
+            flex-wrap: wrap;
+        }
+        .journey-step {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: clamp(8px,1.2vw,12px);
+            padding: clamp(.5rem,1vw,.9rem) clamp(.8rem,1.2vw,1.2rem);
+            font-size: var(--body-size);
+            color: var(--text);
+            text-align: center;
+            flex: 1;
+            min-width: clamp(70px, 12vw, 120px);
+            font-weight: 500;
+        }
+        .journey-step .step-num {
+            font-size: var(--small-size);
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+        .journey-step.active {
+            border-color: var(--accent);
+            background: var(--accent-lt);
+        }
+
+        /* Competitive table */
+        .comp-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border-radius: clamp(10px,1.2vw,14px);
+            overflow: hidden;
+            font-size: var(--body-size);
+            box-shadow: 0 2px 12px rgba(14,23,38,.06);
+        }
+        .comp-cell {
+            background: var(--bg-card);
+            padding: clamp(.5rem,.9vw,.8rem) clamp(.6rem,1.2vw,1rem);
+            color: var(--text-2);
+        }
+        .comp-cell.header {
+            font-weight: 700;
+            color: var(--text);
+            font-size: var(--small-size);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            background: #f0efec;
+        }
+        .comp-cell.ours {
+            background: var(--accent-lt);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), #2D9DA8);
+            z-index: 9999;
+            transition: width .3s ease;
+        }
+
+        /* Nav dots */
+        .nav-dots {
+            position: fixed;
+            right: clamp(.8rem, 1.5vw, 1.5rem);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: clamp(6px, 1vh, 10px);
+            z-index: 100;
+        }
+        .nav-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            opacity: .6;
+            cursor: pointer;
+            transition: all .3s ease;
+            border: none;
+            padding: 0;
+        }
+        .nav-dot.active {
+            opacity: 1;
+            background: var(--accent);
+            transform: scale(1.4);
+        }
+
+        /* === SLIDE-SPECIFIC === */
+
+        /* Slide 1: Title */
+        .title-slide .content-wrap {
+            padding: var(--slide-padding);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+        }
+        .title-slide .pulse-ring-1 {
+            width: clamp(300px,45vw,600px); height: clamp(300px,45vw,600px);
+            right: clamp(-80px,-8vw,-40px); top: 50%; left: auto;
+        }
+        .title-slide .pulse-ring-2 {
+            width: clamp(420px,60vw,800px); height: clamp(420px,60vw,800px);
+            right: clamp(-120px,-12vw,-60px); top: 50%; left: auto;
+            animation-delay: 1s;
+            border-color: rgba(26,107,116,.1);
+        }
+        .title-slide .pulse-ring-3 {
+            width: clamp(540px,75vw,1000px); height: clamp(540px,75vw,1000px);
+            right: clamp(-160px,-16vw,-80px); top: 50%; left: auto;
+            animation-delay: 2s;
+            border-color: rgba(26,107,116,.05);
+        }
+
+        /* Demo slide */
+        .demo-slide {
+            background: linear-gradient(135deg, var(--accent), #0F4A52);
+        }
+        .demo-slide h2, .demo-slide p, .demo-slide h2 em { color: #fff; }
+        .demo-slide .subtitle { color: rgba(255,255,255,.75); }
+        .demo-slide .tag { color: rgba(255,255,255,.6); }
+        .demo-number {
+            font-family: var(--font-display);
+            font-size: clamp(6rem, 15vw, 12rem);
+            color: rgba(255,255,255,.06);
+            position: absolute;
+            right: var(--slide-padding);
+            bottom: clamp(1rem, 4vh, 3rem);
+            line-height: 1;
+        }
+
+        /* Close slide */
+        .close-slide .moat-line {
+            font-family: var(--font-display);
+            font-style: italic;
+            font-size: clamp(1.2rem, 2.8vw, 2rem);
+            color: var(--accent);
+            line-height: 1.5;
+            max-width: 650px;
+        }
+
+        /* === EDIT MODE === */
+        .edit-hotzone {
+            position: fixed; top: 0; left: 0;
+            width: 80px; height: 80px;
+            z-index: 10000; cursor: pointer;
+        }
+        .edit-toggle {
+            position: fixed; top: 12px; left: 12px;
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border);
+            color: var(--accent);
+            font-size: 16px;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .3s ease;
+            z-index: 10001;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+        .edit-toggle.active { background: var(--accent); color: #fff; }
+        .editing-active [contenteditable] {
+            outline: 1.5px dashed rgba(26,107,116,.35);
+            outline-offset: 4px;
+            cursor: text;
+        }
+        .save-indicator {
+            position: fixed; top: 12px; left: 56px;
+            font-size: 11px; color: var(--good);
+            opacity: 0; transition: opacity .3s;
+            z-index: 10001;
+            font-family: var(--font-body);
+        }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- Nav dots -->
+<nav class="nav-dots" id="navDots"></nav>
+
+<!-- Edit mode -->
+<div class="edit-hotzone" id="editHotzone"></div>
+<button class="edit-toggle" id="editToggle" title="Edit mode (E)">&#9998;</button>
+<div class="save-indicator" id="saveIndicator">Saved</div>
+
+
+<!-- ============================================
+     SLIDE 1 — TITLE
+     ============================================ -->
+<section class="slide title-slide" data-title="Title">
+    <div class="pulse-ring pulse-ring-1" style="position:absolute"></div>
+    <div class="pulse-ring pulse-ring-2" style="position:absolute"></div>
+    <div class="pulse-ring pulse-ring-3" style="position:absolute"></div>
+
+    <div class="vitality-line decorative">
+        <svg viewBox="0 0 1200 50" preserveAspectRatio="none">
+            <path class="vitality-glow" d="M0,40 C200,40 280,35 400,30 C500,27 560,16 650,12 C750,8 850,20 950,16 C1050,12 1120,6 1200,4"/>
+            <path class="vitality-path" d="M0,40 C200,40 280,35 400,30 C500,27 560,16 650,12 C750,8 850,20 950,16 C1050,12 1120,6 1200,4"/>
+        </svg>
+    </div>
+
+    <div class="content-wrap">
+        <div class="tag reveal">BCG Platinion AI Hackathon &bull; Hamburg 2026</div>
+        <div style="height:clamp(.5rem,1.5vh,1rem)"></div>
+        <h1 class="reveal">From Legacy<br>to <em>Longevity</em></h1>
+        <div style="height:clamp(.4rem,1vh,.8rem)"></div>
+        <p class="subtitle reveal">The only longevity platform where your doctor actually sees the data.</p>
+        <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
+        <div class="score-badge reveal">
+            <div class="dot"></div>
+            <span>Vitality Score: 68</span>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>01 / 10</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 2 — THE PROBLEM
+     ============================================ -->
+<section class="slide" data-title="Problem">
+    <div class="slide-content">
+        <div class="tag reveal">The Problem</div>
+        <div style="height:clamp(.4rem,1vh,.6rem)"></div>
+        <h2 class="reveal">10M patients. <em>Zero unified profiles.</em></h2>
+        <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
+        <div class="divider reveal"></div>
+        <div style="height:clamp(.8rem,2vh,1.5rem)"></div>
+
+        <div class="three-col">
+            <div class="card reveal">
+                <span class="chip chip-danger">Barrier 1</span>
+                <div style="height:clamp(.3rem,.6vh,.5rem)"></div>
+                <h3>Fragmented Data</h3>
+                <p>No unified patient profile across clinical, wearable, and lifestyle data. Decades of acquisitions created silos.</p>
+            </div>
+            <div class="card reveal">
+                <span class="chip chip-warn">Barrier 2</span>
+                <div style="height:clamp(.3rem,.6vh,.5rem)"></div>
+                <h3>Capability Gap</h3>
+                <p>Organisation optimised for clinical delivery, not consumer-grade digital products.</p>
+            </div>
+            <div class="card reveal">
+                <span class="chip chip-accent">Barrier 3</span>
+                <div style="height:clamp(.3rem,.6vh,.5rem)"></div>
+                <h3>Competitive Pressure</h3>
+                <p>Digital health platforms and retail pharmacies are capturing the patient interface.</p>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>02 / 10</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 3 — OUR THESIS
+     ============================================ -->
+<section class="slide" data-title="Thesis">
+    <div class="pulse-ring" style="position:absolute;width:clamp(400px,50vw,700px);height:clamp(400px,50vw,700px);left:50%;top:50%"></div>
+
+    <div class="slide-content" style="align-items:center;text-align:center">
+        <div class="tag reveal">Our Thesis</div>
+        <div style="height:clamp(.5rem,1.5vh,1rem)"></div>
+        <h2 class="reveal" style="max-width:min(90vw,750px)">Combine the engagement of <em>Oura</em> with the clinical depth of <em>Function Health</em> &mdash; wrapped in a real doctor network.</h2>
+        <div style="height:clamp(1rem,3vh,2rem)"></div>
+        <div class="stat-row reveal" style="justify-content:center">
+            <div class="stat-item">
+                <div class="num">10M</div>
+                <div class="label">Warm Leads</div>
+            </div>
+            <div class="stat-item">
+                <div class="num">~0</div>
+                <div class="label">CAC</div>
+            </div>
+            <div class="stat-item">
+                <div class="num">9</div>
+                <div class="label">Countries</div>
+            </div>
+            <div class="stat-item">
+                <div class="num">&euro;3B+</div>
+                <div class="label">Revenue</div>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>03 / 10</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 4 — MEET ANNA
+     ============================================ -->
+<section class="slide" data-title="Persona">
+    <div class="slide-content">
+        <div class="tag reveal">Patient Persona</div>
+        <div style="height:clamp(.4rem,1vh,.6rem)"></div>
+        <h2 class="reveal">Meet <em>Rebecca Mueller</em></h2>
+        <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
+
+        <div class="persona-card reveal">
+            <div class="persona-avatar">R</div>
+            <div style="flex:1">
+                <h3 style="margin-bottom:clamp(.2rem,.4vh,.3rem)">40, HR Consultant, Hamburg</h3>
+                <p>Ex-smoker. BMI 27.6. Type 2 Diabetes on Metformin. On her 40th birthday, a back pain episode made her realise the second half needs a different approach.</p>
+                <div style="height:clamp(.5rem,1vh,.8rem)"></div>
+                <div style="display:flex;gap:clamp(.4rem,.8vw,.6rem);flex-wrap:wrap">
+                    <span class="chip chip-danger">HbA1c 7.2%</span>
+                    <span class="chip chip-warn">SBP 142</span>
+                    <span class="chip chip-accent">BMI 27.6</span>
+                    <span class="chip chip-purple">Type 2 Diabetes</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
+        <div class="two-col reveal">
+            <div>
+                <h3 style="font-size:var(--small-size);color:var(--accent);text-transform:uppercase;letter-spacing:.12em;margin-bottom:clamp(.3rem,.5vh,.4rem)">Motivations</h3>
+                <ul class="bullets">
+                    <li>Live the second half healthily, not just longer</li>
+                    <li>Keep up with her two young kids (3 and 5)</li>
+                    <li>Get diabetes, weight, and stress under control</li>
+                </ul>
+            </div>
+            <div>
+                <h3 style="font-size:var(--small-size);color:var(--accent);text-transform:uppercase;letter-spacing:.12em;margin-bottom:clamp(.3rem,.5vh,.4rem)">Fears</h3>
+                <ul class="bullets">
+                    <li>Diabetes spiraling into complications</li>
+                    <li>Missing an early warning sign</li>
+                    <li>Body declining faster than it should at 40</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>04 / 10</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 5 — THE PRODUCT
+     ============================================ -->
+<section class="slide" data-title="Product">
+    <div class="slide-content">
+        <div class="tag reveal">The Product</div>
+        <div style="height:clamp(.4rem,1vh,.6rem)"></div>
+        <h2 class="reveal">Longevity<em>+</em></h2>
+        <p class="subtitle reveal">Five personal-language tabs. Three time horizons. One Vitality Score.</p>
+        <div style="height:clamp(.8rem,2vh,1.2rem)"></div>
+
+        <div class="journey-steps reveal">
+            <div class="journey-step active">
+                <div class="step-num">01</div>
+                Today
+            </div>
+            <div class="journey-step">
+                <div class="step-num">02</div>
+                Coach
+            </div>
+            <div class="journey-step">
+                <div class="step-num">03</div>
+                Records
+            </div>
+            <div class="journey-step">
+                <div class="step-num">04</div>
+                Insights
+            </div>
+            <div class="journey-step">
+                <div class="step-num">05</div>
+                Care
+            </div>
+        </div>
+
+        <div style="height:clamp(.8rem,1.5vh,1.2rem)"></div>
+
+        <div class="three-col">
+            <div class="card-accent card reveal">
+                <h3>AI Health Coach</h3>
+                <p>Personalised, evidence-grounded recommendations. Writes back to your daily protocol.</p>
+            </div>
+            <div class="card reveal">
+                <h3>Risk Flagging</h3>
+                <p>Early warning signals from EHR + wearable data with one-tap path to a real doctor.</p>
+            </div>
+            <div class="card reveal">
+                <h3>Smart Commerce</h3>
+                <p>Diagnostics, supplements, nutrition programs &mdash; surfaced contextually, never as ads.</p>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>05 / 10</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 6 — LIVE DEMO
+     ============================================ -->
+<section class="slide demo-slide" data-title="Demo">
+    <div class="slide-content" style="align-items:center;text-align:center">
+        <div class="tag reveal" style="color:rgba(255,255,255,.6)">It's showtime</div>
+        <div style="height:clamp(.5rem,1.5vh,1rem)"></div>
+        <h2 class="reveal" style="font-size:var(--title-size)">Live <em style="color:#fff">Demo</em></h2>
+        <div style="height:clamp(.5rem,1.5vh,1rem)"></div>
+        <p class="subtitle reveal" style="color:rgba(255,255,255,.65);max-width:500px;text-align:center;margin:0 auto">Rebecca's morning: Vitality Score &rarr; AI Coach &rarr; Meal Photo &rarr; Records Q&amp;A &rarr; Risk Flag &rarr; Future Self</p>
+    </div>
+    <div class="demo-number">L+</div>
+    <div class="slide-footer" style="color:rgba(255,255,255,.5)">
+        <span>Team Saucerers</span>
+        <span>06 / 10</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 7 — COMPETITIVE MOAT
+     ============================================ -->
+<section class="slide" data-title="Moat">
+    <div class="slide-content">
+        <div class="tag reveal">Competitive Advantage</div>
+        <div style="height:clamp(.4rem,1vh,.6rem)"></div>
+        <h2 class="reveal">What no startup <em>can replicate</em></h2>
+        <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
+
+        <div class="comp-grid reveal">
+            <div class="comp-cell header">Capability</div>
+            <div class="comp-cell header">D2C Apps</div>
+            <div class="comp-cell header">Retail Pharma</div>
+            <div class="comp-cell header ours">Longevity+</div>
+
+            <div class="comp-cell">EHR + clinical data</div>
+            <div class="comp-cell" style="color:var(--danger)">&#10007;</div>
+            <div class="comp-cell" style="color:var(--warn)">Limited</div>
+            <div class="comp-cell ours">&#10003; Decades</div>
+
+            <div class="comp-cell">In-network doctors</div>
+            <div class="comp-cell" style="color:var(--danger)">&#10007;</div>
+            <div class="comp-cell" style="color:var(--danger)">&#10007;</div>
+            <div class="comp-cell ours">&#10003; 9 countries</div>
+
+            <div class="comp-cell">Insurance billing</div>
+            <div class="comp-cell" style="color:var(--danger)">&#10007;</div>
+            <div class="comp-cell" style="color:var(--warn)">Partial</div>
+            <div class="comp-cell ours">&#10003; Native</div>
+
+            <div class="comp-cell">Patient trust</div>
+            <div class="comp-cell" style="color:var(--warn)">Build from 0</div>
+            <div class="comp-cell" style="color:var(--warn)">Transactional</div>
+            <div class="comp-cell ours">&#10003; 15+ years</div>
+
+            <div class="comp-cell">Own diagnostics labs</div>
+            <div class="comp-cell" style="color:var(--danger)">&#10007;</div>
+            <div class="comp-cell" style="color:var(--warn)">Partners</div>
+            <div class="comp-cell ours">&#10003; In-house</div>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>07 / 10</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 8 — MONETIZATION
+     ============================================ -->
+<section class="slide" data-title="Monetization">
+    <div class="slide-content">
+        <div class="tag reveal">Business Model</div>
+        <div style="height:clamp(.4rem,1vh,.6rem)"></div>
+        <h2 class="reveal"><em>&euro;120M</em> ARR potential</h2>
+        <p class="subtitle reveal">10M patients &times; 5% conversion &times; &euro;20/mo &mdash; plus transactional layer.</p>
+        <div style="height:clamp(.8rem,2vh,1.2rem)"></div>
+
+        <div class="three-col">
+            <div class="card reveal">
+                <span class="chip chip-good">Free</span>
+                <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                <h3>Freemium</h3>
+                <p>Vitality Score, basic coach, EHR view, 1 clinic booking/year. Acquisition funnel &mdash; existing patients onboard themselves.</p>
+            </div>
+            <div class="card-accent card reveal">
+                <span class="chip" style="background:rgba(255,255,255,.2);color:#fff">Core</span>
+                <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                <h3>&euro;15&ndash;25/mo</h3>
+                <p>Quarterly blood panels, unlimited coach, tele-consults, supplement plans, future-self simulator.</p>
+            </div>
+            <div class="card reveal">
+                <span class="chip chip-accent">Upsell</span>
+                <div style="height:clamp(.3rem,.5vh,.4rem)"></div>
+                <h3>Transactional</h3>
+                <p>Diagnostic packages, supplements (40&ndash;60% margin), full-body scans, genetic testing. Surfaced by AI.</p>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>08 / 10</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 9 — ANIMATED ARCHITECTURE FLOW
+     ============================================ -->
+<section class="slide flow-slide" data-title="Architecture">
+    <style>
+        /* === FLOW DIAGRAM === */
+        .flow-slide .slide-content { justify-content: center; align-items: center; }
+        .flow-container {
+            width: min(92vw, 1100px);
+            position: relative;
+        }
+        .flow-label {
+            font-size: var(--label-size);
+            font-weight: 700;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--accent);
+            text-align: center;
+            margin-bottom: clamp(.4rem, 1vh, .8rem);
+        }
+        .flow-row {
+            display: flex;
+            justify-content: center;
+            gap: clamp(.8rem, 1.8vw, 1.5rem);
+            flex-wrap: wrap;
+        }
+
+        /* Flow nodes */
+        .flow-node {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border);
+            border-radius: clamp(7px,.9vw,10px);
+            padding: clamp(.35rem,.6vw,.5rem) clamp(.6rem,1vw,.9rem);
+            font-size: var(--small-size);
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: clamp(.25rem,.4vw,.4rem);
+            box-shadow: 0 1px 6px rgba(14,23,38,.05);
+            opacity: 0;
+            transform: translateY(10px) scale(.95);
+            transition: opacity .5s var(--ease), transform .5s var(--ease), border-color .3s, box-shadow .3s;
+        }
+        .flow-node .node-icon {
+            width: clamp(20px, 2.2vw, 26px);
+            height: clamp(20px, 2.2vw, 26px);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .flow-node .node-icon svg {
+            width: clamp(11px, 1.3vw, 14px);
+            height: clamp(11px, 1.3vw, 14px);
+        }
+        .flow-node.source .node-icon { background: var(--accent-lt); color: var(--accent); }
+        .flow-node.process .node-icon { background: var(--ai-purple-lt); color: var(--ai-purple); }
+        .flow-node.output .node-icon { background: var(--good-lt); color: var(--good); }
+
+        .flow-node.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(26,107,116,.1), 0 4px 16px rgba(26,107,116,.1);
+        }
+        .flow-node.process.active {
+            border-color: var(--ai-purple);
+            box-shadow: 0 0 0 3px rgba(91,79,207,.1), 0 4px 16px rgba(91,79,207,.1);
+        }
+        .flow-node.output.active {
+            border-color: var(--good);
+            box-shadow: 0 0 0 3px rgba(45,125,78,.1), 0 4px 16px rgba(45,125,78,.1);
+        }
+
+        .flow-slide.visible .flow-node.show,
+        .flow-slide .flow-node {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Engine container (hub + services) */
+        .flow-engine {
+            background: linear-gradient(135deg, rgba(26,107,116,.05), rgba(45,157,168,.03));
+            border: 1.5px solid rgba(26,107,116,.15);
+            border-radius: clamp(12px, 1.5vw, 18px);
+            padding: clamp(1rem,2vw,1.8rem) clamp(.8rem,1.5vw,1.4rem) clamp(1.2rem,2.5vh,2rem);
+            position: relative;
+            z-index: 2;
+            opacity: 0;
+            transform: scale(.95);
+            transition: opacity .6s var(--ease), transform .6s var(--ease);
+        }
+        .flow-slide.visible .flow-engine.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .engine-header {
+            text-align: center;
+            margin-bottom: clamp(.8rem, 1.8vh, 1.4rem);
+            padding-top: clamp(.4rem, 1vh, .8rem);
+            position: relative;
+        }
+        .engine-title {
+            font-family: var(--font-body);
+            font-size: var(--body-size);
+            font-weight: 700;
+            color: var(--accent);
+            display: inline-flex;
+            align-items: center;
+            gap: clamp(.25rem,.4vw,.4rem);
+        }
+        .engine-title svg {
+            width: clamp(14px, 1.6vw, 18px);
+            height: clamp(14px, 1.6vw, 18px);
+        }
+
+        /* Engine spinner — removed, only lines carry the energy */
+        .engine-spinner { display: none; }
+
+        .engine-services {
+            gap: clamp(.4rem, .8vw, .7rem);
+            position: relative;
+            align-items: center;
+        }
+        .engine-services .flow-node.process {
+            border-color: rgba(91,79,207,.15);
+            background: var(--bg-surface);
+        }
+        /* Stagger heights inside engine — arc shape */
+        .engine-services .flow-node:nth-child(2) { margin-top: clamp(-8px, -1vh, -4px); }
+        .engine-services .flow-node:nth-child(3) { margin-top: clamp(6px, 1.2vh, 12px); }
+        .engine-services .flow-node:nth-child(4) { margin-top: clamp(10px, 1.8vh, 18px); }
+        .engine-services .flow-node:nth-child(5) { margin-top: clamp(4px, .8vh, 8px); }
+        .engine-services .flow-node:nth-child(6) { margin-top: clamp(-6px, -1vh, -3px); }
+
+        /* Internal engine SVG for inter-service communication */
+        .engine-internal-svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: visible;
+        }
+        .engine-internal-svg line {
+            stroke: rgba(91,79,207,.1);
+            stroke-width: 1;
+        }
+
+        /* SVG connector lines overlay */
+        .flow-svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: visible;
+        }
+        .flow-path {
+            fill: none;
+            stroke: var(--border);
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            opacity: 0;
+            transition: opacity .4s;
+        }
+        .flow-path.drawn {
+            opacity: 1;
+            stroke-dasharray: var(--path-len);
+            stroke-dashoffset: var(--path-len);
+            animation: drawLine .8s var(--ease) forwards;
+        }
+        .flow-path.source-path { stroke: rgba(26,107,116,.3); }
+        .flow-path.process-path { stroke: rgba(91,79,207,.25); }
+        .flow-path.output-path { stroke: rgba(45,125,78,.25); }
+        @keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+        /* Spacer between tiers */
+        .flow-spacer {
+            height: clamp(2rem, 5vh, 4rem);
+        }
+        .flow-spacer.lg {
+            height: clamp(2.5rem, 6vh, 5rem);
+        }
+
+        /* Process nodes inside engine — no V-shape needed */
+
+        /* Slight output offsets */
+        #flowRow4 .flow-node:nth-child(1) { transform: translateY(8px) scale(.95); }
+        #flowRow4 .flow-node:nth-child(2) { transform: translateY(0) scale(.95); }
+        #flowRow4 .flow-node:nth-child(3) { transform: translateY(12px) scale(.95); }
+        #flowRow4 .flow-node:nth-child(4) { transform: translateY(2px) scale(.95); }
+        #flowRow4 .flow-node:nth-child(5) { transform: translateY(6px) scale(.95); }
+        .flow-slide.visible #flowRow4 .flow-node.show:nth-child(1) { transform: translateY(8px) scale(1); }
+        .flow-slide.visible #flowRow4 .flow-node.show:nth-child(2) { transform: translateY(0) scale(1); }
+        .flow-slide.visible #flowRow4 .flow-node.show:nth-child(3) { transform: translateY(12px) scale(1); }
+        .flow-slide.visible #flowRow4 .flow-node.show:nth-child(4) { transform: translateY(2px) scale(1); }
+        .flow-slide.visible #flowRow4 .flow-node.show:nth-child(5) { transform: translateY(6px) scale(1); }
+
+        /* Phone device at bottom */
+        .flow-phone {
+            width: clamp(36px, 4vw, 48px);
+            height: clamp(58px, 6.5vw, 78px);
+            border: 2.5px solid var(--accent);
+            border-radius: clamp(10px, 1.2vw, 14px);
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 20px rgba(26,107,116,.15);
+            opacity: 0;
+            transform: translateY(10px) scale(.9);
+            transition: opacity .6s var(--ease), transform .6s var(--ease);
+        }
+        .flow-phone.show { opacity: 1; transform: translateY(0) scale(1); }
+        .flow-phone { transition: box-shadow .3s, border-color .3s; }
+        .flow-phone .phone-notch {
+            position: absolute;
+            top: 4px;
+            width: 20px; height: 3px;
+            border-radius: 3px;
+            background: var(--border);
+        }
+        .flow-phone .phone-screen {
+            width: 70%; height: 55%;
+            border-radius: 4px;
+            background: linear-gradient(135deg, var(--accent-lt), #d4eeef);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .flow-phone .phone-screen svg {
+            width: clamp(14px, 1.8vw, 20px);
+            height: clamp(14px, 1.8vw, 20px);
+            color: var(--accent);
+        }
+        .flow-phone-label {
+            text-align: center;
+            font-size: var(--label-size);
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            margin-top: clamp(4px, .5vh, 8px);
+            opacity: 0;
+            transition: opacity .5s .2s;
+        }
+        .flow-phone-label.show { opacity: 1; }
+
+        /* Legal badge */
+        .flow-legal {
+            position: absolute;
+            bottom: clamp(50px, 10vh, 90px);
+            right: var(--slide-padding);
+            display: flex;
+            gap: clamp(.3rem,.5vw,.5rem);
+            opacity: 0;
+            transition: opacity .5s .2s;
+        }
+        .flow-slide.visible .flow-legal.show { opacity: 1; }
+        .flow-legal .chip { font-size: clamp(.5rem,.7vw,.65rem); }
+    </style>
+
+    <div class="slide-content">
+        <div class="tag reveal">How It Works</div>
+        <div style="height:clamp(.3rem,.6vh,.4rem)"></div>
+        <h2 class="reveal" style="text-align:center">Data <em>in</em>, insights <em>out</em></h2>
+        <div style="height:clamp(.6rem,1.5vh,1rem)"></div>
+
+        <div class="flow-container" id="flowContainer">
+            <svg class="flow-svg" id="flowSvg" style="overflow:visible"></svg>
+
+            <!-- Tier 1: Data Sources -->
+            <div class="flow-label">Data Sources</div>
+            <div class="flow-row" id="flowRow1">
+                <div class="flow-node source" data-id="s1"><div class="node-icon"><i data-lucide="watch"></i></div><span>Apple Watch</span></div>
+                <div class="flow-node source" data-id="s2"><div class="node-icon"><i data-lucide="hospital"></i></div><span>Clinics &amp; EHR</span></div>
+                <div class="flow-node source" data-id="s3"><div class="node-icon"><i data-lucide="test-tubes"></i></div><span>Lab Results</span></div>
+                <div class="flow-node source" data-id="s4"><div class="node-icon"><i data-lucide="clipboard-list"></i></div><span>Lifestyle Survey</span></div>
+                <div class="flow-node source" data-id="s5"><div class="node-icon"><i data-lucide="camera"></i></div><span>Meal Photos</span></div>
+            </div>
+
+            <div class="flow-spacer lg"></div>
+
+            <!-- Tier 2: Engine -->
+            <div class="flow-engine" data-id="engine" id="flowEngine" style="opacity:1;transform:none">
+                <!-- Invisible anchor points for line convergence -->
+                <div data-id="engine-in" style="position:absolute;top:0;left:50%;width:2px;height:2px"></div>
+                <div data-id="engine-out" style="position:absolute;bottom:0;left:50%;width:2px;height:2px"></div>
+                <div class="engine-header">
+                    <div class="engine-title"><i data-lucide="brain-cog"></i> Longevity+ Engine</div>
+                </div>
+                <div class="flow-row engine-services" id="flowRow3">
+                    <div class="flow-node process" data-id="p1"><div class="node-icon"><i data-lucide="heart-pulse"></i></div><span>Vitality Score</span></div>
+                    <div class="flow-node process" data-id="p2"><div class="node-icon"><i data-lucide="trending-up"></i></div><span>Outlook Engine</span></div>
+                    <div class="flow-node process" data-id="p3"><div class="node-icon"><i data-lucide="sparkles"></i></div><span>AI Coach</span></div>
+                    <div class="flow-node process" data-id="p4"><div class="node-icon"><i data-lucide="shield-alert"></i></div><span>Risk Flagging</span></div>
+                    <div class="flow-node process" data-id="p5"><div class="node-icon"><i data-lucide="search"></i></div><span>Records Q&amp;A</span></div>
+                </div>
+            </div>
+
+            <div class="flow-spacer lg"></div>
+
+            <!-- Tier 3: Outputs -->
+            <div class="flow-label">Patient Experience</div>
+            <div class="flow-row" id="flowRow4">
+                <div class="flow-node output" data-id="o1"><div class="node-icon"><i data-lucide="sun"></i></div><span>Today</span></div>
+                <div class="flow-node output" data-id="o2"><div class="node-icon"><i data-lucide="message-circle"></i></div><span>Coach</span></div>
+                <div class="flow-node output" data-id="o3"><div class="node-icon"><i data-lucide="file-text"></i></div><span>Records</span></div>
+                <div class="flow-node output" data-id="o4"><div class="node-icon"><i data-lucide="lightbulb"></i></div><span>Insights</span></div>
+                <div class="flow-node output" data-id="o5"><div class="node-icon"><i data-lucide="stethoscope"></i></div><span>Care</span></div>
+            </div>
+
+            <div class="flow-spacer"></div>
+
+            <!-- Tier 4: Phone -->
+            <div style="text-align:center">
+                <div class="flow-phone" data-id="phone" id="flowPhone" style="opacity:1;transform:none"><div class="phone-notch"></div><div class="phone-screen"><i data-lucide="heart-pulse"></i></div></div>
+                <div class="flow-phone-label" style="opacity:1">Rebecca's App</div>
+            </div>
+        </div>
+
+        <div style="position:absolute;bottom:clamp(8px,1.5vh,16px);right:var(--slide-padding);display:flex;gap:.4rem">
+            <span class="chip chip-good">GDPR</span>
+            <span class="chip chip-good">AI Act</span>
+            <span class="chip chip-accent">DiGA path</span>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>09 / 10</span>
+    </div>
+</section>
+
+
+<!-- ============================================
+     SLIDE 10 — CLOSE
+     ============================================ -->
+<section class="slide close-slide" data-title="Close">
+    <div class="pulse-ring" style="position:absolute;width:clamp(350px,50vw,650px);height:clamp(350px,50vw,650px);left:50%;top:50%"></div>
+
+    <div class="slide-content" style="align-items:center;text-align:center">
+        <div class="tag reveal">North Star Metric</div>
+        <div style="height:clamp(.5rem,1vh,.8rem)"></div>
+        <div class="stat-row reveal" style="justify-content:center">
+            <div class="stat-item" style="text-align:center">
+                <div class="num" style="font-size:clamp(3rem,8vw,6rem)">&ge;3</div>
+                <div class="label">Actioned recommendations / week / patient</div>
+            </div>
+        </div>
+        <div style="height:clamp(1rem,3vh,2rem)"></div>
+        <div class="divider reveal" style="margin:0 auto"></div>
+        <div style="height:clamp(1rem,3vh,2rem)"></div>
+        <p class="moat-line reveal">&ldquo;One platform. 10 million warm leads. Clinics, diagnostics, and home care in one app. The only longevity app where your doctor actually sees the data.&rdquo;</p>
+        <div style="height:clamp(1rem,3vh,2rem)"></div>
+        <div class="score-badge reveal">
+            <div class="dot"></div>
+            <span>Longevity+ by Team Saucerers</span>
+        </div>
+    </div>
+    <div class="slide-footer">
+        <span>Team Saucerers</span>
+        <span>10 / 10</span>
+    </div>
+</section>
+
+
+<script>
+/* === SLIDE PRESENTATION CONTROLLER === */
+class SlidePresentation {
+    constructor() {
+        this.slides = document.querySelectorAll('.slide');
+        this.currentSlide = 0;
+        this.isScrolling = false;
+        this.setupIntersectionObserver();
+        this.setupKeyboardNav();
+        this.setupTouchNav();
+        this.setupWheelNav();
+        this.setupProgressBar();
+        this.setupNavDots();
+    }
+
+    setupIntersectionObserver() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    const idx = [...this.slides].indexOf(entry.target);
+                    if (idx !== -1) {
+                        this.currentSlide = idx;
+                        this.updateNavDots();
+                        this.updateProgressBar();
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+        this.slides.forEach(s => observer.observe(s));
+    }
+
+    goTo(index) {
+        if (index < 0 || index >= this.slides.length) return;
+        this.currentSlide = index;
+        this.slides[index].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.getAttribute('contenteditable')) return;
+            switch(e.key) {
+                case 'ArrowDown': case 'ArrowRight': case ' ': case 'PageDown':
+                    e.preventDefault(); this.goTo(this.currentSlide + 1); break;
+                case 'ArrowUp': case 'ArrowLeft': case 'PageUp':
+                    e.preventDefault(); this.goTo(this.currentSlide - 1); break;
+                case 'Home': e.preventDefault(); this.goTo(0); break;
+                case 'End': e.preventDefault(); this.goTo(this.slides.length - 1); break;
+            }
+        });
+    }
+
+    setupTouchNav() {
+        let startY = 0;
+        document.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchend', e => {
+            const diff = startY - e.changedTouches[0].clientY;
+            if (Math.abs(diff) > 50) {
+                diff > 0 ? this.goTo(this.currentSlide + 1) : this.goTo(this.currentSlide - 1);
+            }
+        }, { passive: true });
+    }
+
+    setupWheelNav() {
+        document.addEventListener('wheel', (e) => {
+            if (this.isScrolling) return;
+            this.isScrolling = true;
+            if (e.deltaY > 30) this.goTo(this.currentSlide + 1);
+            else if (e.deltaY < -30) this.goTo(this.currentSlide - 1);
+            setTimeout(() => { this.isScrolling = false; }, 800);
+        }, { passive: true });
+    }
+
+    setupProgressBar() {
+        this.progressBar = document.getElementById('progressBar');
+        this.updateProgressBar();
+    }
+
+    updateProgressBar() {
+        if (!this.progressBar) return;
+        const pct = ((this.currentSlide + 1) / this.slides.length) * 100;
+        this.progressBar.style.width = pct + '%';
+    }
+
+    setupNavDots() {
+        const nav = document.getElementById('navDots');
+        if (!nav) return;
+        this.slides.forEach((s, i) => {
+            const dot = document.createElement('button');
+            dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+            dot.title = s.dataset.title || `Slide ${i+1}`;
+            dot.addEventListener('click', () => this.goTo(i));
+            nav.appendChild(dot);
+        });
+        this.dots = nav.querySelectorAll('.nav-dot');
+    }
+
+    updateNavDots() {
+        if (!this.dots) return;
+        this.dots.forEach((d, i) => d.classList.toggle('active', i === this.currentSlide));
+    }
+}
+
+/* === INLINE EDITOR === */
+class InlineEditor {
+    constructor() {
+        this.isActive = false;
+        this.storageKey = 'longevity-pitch-edits';
+        this.setupHotzone();
+        this.setupKeyboard();
+        this.loadEdits();
+    }
+
+    setupHotzone() {
+        const hotzone = document.getElementById('editHotzone');
+        const toggle = document.getElementById('editToggle');
+        let hideTimeout = null;
+
+        hotzone.addEventListener('mouseenter', () => {
+            clearTimeout(hideTimeout);
+            toggle.classList.add('show');
+        });
+        hotzone.addEventListener('mouseleave', () => {
+            hideTimeout = setTimeout(() => {
+                if (!this.isActive) toggle.classList.remove('show');
+            }, 400);
+        });
+        toggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+        toggle.addEventListener('mouseleave', () => {
+            hideTimeout = setTimeout(() => {
+                if (!this.isActive) toggle.classList.remove('show');
+            }, 400);
+        });
+
+        toggle.addEventListener('click', () => this.toggleEditMode());
+        hotzone.addEventListener('click', () => this.toggleEditMode());
+    }
+
+    setupKeyboard() {
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable')) {
+                this.toggleEditMode();
+            }
+            if (e.key === 's' && (e.metaKey || e.ctrlKey) && this.isActive) {
+                e.preventDefault();
+                this.saveEdits();
+            }
+        });
+    }
+
+    toggleEditMode() {
+        this.isActive = !this.isActive;
+        const toggle = document.getElementById('editToggle');
+        toggle.classList.toggle('active', this.isActive);
+        document.body.classList.toggle('editing-active', this.isActive);
+
+        const editables = document.querySelectorAll('h1, h2, h3, p, li, span');
+        editables.forEach(el => {
+            if (el.closest('.nav-dots') || el.closest('.slide-footer') || el.closest('.edit-toggle')) return;
+            el.contentEditable = this.isActive;
+        });
+
+        if (this.isActive) {
+            document.addEventListener('input', this._inputHandler = () => this.saveEdits());
+        } else {
+            document.removeEventListener('input', this._inputHandler);
+        }
+    }
+
+    saveEdits() {
+        const data = {};
+        document.querySelectorAll('.slide').forEach((slide, i) => {
+            data[`slide-${i}`] = slide.innerHTML;
+        });
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(data));
+            const ind = document.getElementById('saveIndicator');
+            ind.classList.add('show');
+            setTimeout(() => ind.classList.remove('show'), 1500);
+        } catch(e) {}
+    }
+
+    loadEdits() {
+        try {
+            const data = JSON.parse(localStorage.getItem(this.storageKey));
+            if (!data) return;
+            document.querySelectorAll('.slide').forEach((slide, i) => {
+                if (data[`slide-${i}`]) slide.innerHTML = data[`slide-${i}`];
+            });
+        } catch(e) {}
+    }
+}
+
+new SlidePresentation();
+new InlineEditor();
+
+// Initialize Lucide icons
+if (window.lucide) lucide.createIcons();
+
+/* === FLOW LINE + ANIMATION CONTROLLER === */
+(function() {
+    const container = document.getElementById('flowContainer');
+    const svg = document.getElementById('flowSvg');
+    if (!container || !svg) return;
+
+    const conns = [
+        // sources → engine top center
+        {from:'s1',to:'engine-in'},{from:'s2',to:'engine-in'},{from:'s3',to:'engine-in'},{from:'s4',to:'engine-in'},{from:'s5',to:'engine-in'},
+        // engine top center → process nodes
+        {from:'engine-in',to:'p1'},{from:'engine-in',to:'p2'},{from:'engine-in',to:'p3'},{from:'engine-in',to:'p4'},{from:'engine-in',to:'p5'},
+        // process nodes → engine bottom center
+        {from:'p1',to:'engine-out'},{from:'p2',to:'engine-out'},{from:'p3',to:'engine-out'},{from:'p4',to:'engine-out'},{from:'p5',to:'engine-out'},
+        // engine bottom center → outputs
+        {from:'engine-out',to:'o1'},{from:'engine-out',to:'o2'},{from:'engine-out',to:'o3'},{from:'engine-out',to:'o4'},{from:'engine-out',to:'o5'},
+        // outputs → phone
+        {from:'o1',to:'phone'},{from:'o2',to:'phone'},{from:'o3',to:'phone'},{from:'o4',to:'phone'},{from:'o5',to:'phone'}
+    ];
+
+    function getEl(id) { return container.querySelector(`[data-id="${id}"]`); }
+    function pos(el) {
+        const cr = el.getBoundingClientRect(), pr = container.getBoundingClientRect();
+        return { cx: cr.left + cr.width/2 - pr.left, top: cr.top - pr.top, bottom: cr.bottom - pr.top };
+    }
+
+    function drawLines() {
+        svg.innerHTML = '';
+        conns.forEach(c => {
+            const from = getEl(c.from), to = getEl(c.to);
+            if (!from || !to) return;
+            const a = pos(from), b = pos(to), midY = (a.bottom + b.top) / 2;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', `M${a.cx},${a.bottom} C${a.cx},${midY} ${b.cx},${midY} ${b.cx},${b.top}`);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke-width', '1.5');
+            path.setAttribute('stroke-linecap', 'round');
+            // Hide lines purely inside engine (engine-in↔process, process↔engine-out)
+            const isInside = (c.from === 'engine-in' && c.to.startsWith('p')) || (c.from.startsWith('p') && c.to === 'engine-out');
+            if (isInside) {
+                path.setAttribute('stroke', 'transparent');
+            } else {
+                path.setAttribute('stroke', c.from.startsWith('s') ? 'rgba(26,107,116,.22)' : 'rgba(45,125,78,.18)');
+            }
+            svg.appendChild(path);
+        });
+        // No internal mesh lines
+    }
+
+    setTimeout(drawLines, 300);
+    setTimeout(drawLines, 800);
+    window.addEventListener('resize', drawLines);
+
+    // Dot animation along SVG path
+    function shootDot(path, color, dur, onDone) {
+        const len = path.getTotalLength();
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('r', '3.5'); dot.setAttribute('fill', color);
+        dot.style.filter = `drop-shadow(0 0 4px ${color})`;
+        svg.appendChild(dot);
+        const t0 = performance.now();
+        (function tick(now) {
+            const t = Math.min((now - t0) / dur, 1);
+            const e = t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
+            const pt = path.getPointAtLength(e * len);
+            dot.setAttribute('cx', pt.x); dot.setAttribute('cy', pt.y);
+            dot.setAttribute('opacity', t < .08 ? t/.08 : t > .88 ? (1-t)/.12 : 1);
+            t < 1 ? requestAnimationFrame(tick) : (dot.remove(), onDone && onDone());
+        })(performance.now());
+    }
+
+    // Full pipeline flow: source → engine-in → process → engine-out → output → phone
+    function startFlow() {
+        const paths = [...svg.querySelectorAll('path')];
+        // 5 source→engine-in, 5 engine-in→process, 5 process→engine-out, 5 engine-out→output, 5 output→phone
+        const s2ei = paths.slice(0,5);   // source → engine-in
+        const ei2p = paths.slice(5,10);  // engine-in → process
+        const p2eo = paths.slice(10,15); // process → engine-out
+        const eo2o = paths.slice(15,20); // engine-out → output
+        const o2ph = paths.slice(20,25); // output → phone
+
+        const srcNodes = [...container.querySelectorAll('[data-id^="s"]')];
+        const procNodes = [...container.querySelectorAll('[data-id^="p"]')];
+        const outNodes = [...container.querySelectorAll('[data-id^="o"]')];
+
+        function glow(el, color, dur) {
+            el.style.boxShadow = `0 0 0 3px ${color}20, 0 0 12px ${color}15`;
+            el.style.borderColor = color;
+            setTimeout(() => { el.style.boxShadow = ''; el.style.borderColor = ''; }, dur);
+        }
+
+        function pulse() {
+            const i = Math.floor(Math.random() * 5);
+            const j = Math.floor(Math.random() * 5);
+            const k = Math.floor(Math.random() * 5);
+            if (!s2ei[i]) return;
+
+            // Flash source
+            if (srcNodes[i]) glow(srcNodes[i], '#1A6B74', 800);
+
+            // 1. Source → Engine top
+            shootDot(s2ei[i], '#1A6B74', 1600, () => {
+                // 2. Engine top → Process
+                if (!ei2p[j]) return;
+                if (procNodes[j]) glow(procNodes[j], '#5B4FCF', 800);
+                shootDot(ei2p[j], '#5B4FCF', 800, () => {
+                    // 3. Process → Engine bottom
+                    if (!p2eo[j]) return;
+                    shootDot(p2eo[j], '#5B4FCF', 800, () => {
+                        // 4. Engine bottom → Output
+                        if (!eo2o[k]) return;
+                        if (outNodes[k]) glow(outNodes[k], '#2D7D4E', 1000);
+                        shootDot(eo2o[k], '#2D7D4E', 1600, () => {
+                            // 5. Output → Phone
+                            if (o2ph[k]) shootDot(o2ph[k], '#2D7D4E', 1200, () => {
+                                const ph = document.getElementById('flowPhone');
+                                if (ph) { glow(ph, '#1A6B74', 600); }
+                            });
+                        });
+                    });
+                });
+            });
+        }
+
+        // Initial burst
+        for (let d = 0; d < 5; d++) setTimeout(pulse, d * 400);
+        // Continuous
+        setInterval(() => {
+            pulse();
+            setTimeout(pulse, 200 + Math.random() * 300);
+            if (Math.random() > .3) setTimeout(pulse, 500 + Math.random() * 300);
+        }, 900);
+    }
+
+    // Start on visibility
+    const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) { obs.disconnect(); setTimeout(startFlow, 500); } });
+    }, { threshold: .3 });
+    const slide = document.querySelector('.flow-slide');
+    if (slide) obs.observe(slide);
+})();
+</script>
+</body>
+</html>
