@@ -90,3 +90,8 @@ class ProtocolAction(SQLModel, table=True):
     # Streak tracking — per action
     streak_days: int = Field(default=0)
     completed_today: bool = Field(default=False)
+
+    # Skip tracking — soft skip with optional reason; independent of completed_today
+    sort_order: int | None = Field(default=None)
+    skipped_today: bool = Field(default=False)
+    skip_reason: str | None = Field(default=None)

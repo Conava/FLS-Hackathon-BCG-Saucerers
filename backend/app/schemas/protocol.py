@@ -103,6 +103,18 @@ class ProtocolActionOut(BaseModel):
         default=0,
         description="Consecutive days this action has been completed",
     )
+    sort_order: int | None = Field(
+        default=None,
+        description="Explicit display order (1-indexed); NULL rows sort last",
+    )
+    skipped_today: bool = Field(
+        default=False,
+        description="Whether the action has been skipped today",
+    )
+    skip_reason: str | None = Field(
+        default=None,
+        description="Human-readable reason provided when skipping today",
+    )
 
 
 class ProtocolOut(BaseModel):
@@ -147,4 +159,29 @@ class CompleteActionResponse(BaseModel):
     completed_at: datetime.datetime = Field(
         ...,
         description="Timestamp the action was marked complete",
+    )
+
+
+class SkipActionRequest(BaseModel):
+    """Inbound payload for skipping a protocol action today."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    action_id: int = Field(..., description="Primary key of the ProtocolAction to skip")
+    reason: str = Field(..., description="Human-readable reason for skipping today")
+
+
+class ReorderRequest(BaseModel):
+    """Inbound payload for reordering protocol actions.
+
+    ``action_ids`` must list ALL action ids for the patient's active protocol
+    in the desired display order.  The endpoint assigns sort_order = position
+    (1-indexed) for each entry.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    action_ids: list[int] = Field(
+        ...,
+        description="Action ids in the desired display order (all actions must be included)",
     )

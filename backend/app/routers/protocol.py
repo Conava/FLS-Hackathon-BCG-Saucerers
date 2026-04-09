@@ -35,6 +35,7 @@ from app.ai.llm import FakeLLMProvider, LLMProvider
 from app.core.logging import get_logger
 from app.core.security import api_key_auth
 from app.db.session import get_session
+from app.models.protocol import ProtocolAction
 from app.models.vitality_outlook import VitalityOutlook
 from app.repositories.outlook_repo import VitalityOutlookRepository
 from app.repositories.protocol_repo import ProtocolActionRepository, ProtocolRepository
@@ -43,11 +44,35 @@ from app.schemas.protocol import (
     CompleteActionResponse,
     ProtocolActionOut,
     ProtocolOut,
+    ReorderRequest,
+    SkipActionRequest,
 )
 from app.services.outlook_engine import compute_outlook
 from app.services.protocol_generator import ProtocolGeneratorService
 
 _logger: logging.Logger = get_logger(__name__)
+
+
+def _action_to_out(a: ProtocolAction) -> ProtocolActionOut:
+    """Map a ProtocolAction model instance to ProtocolActionOut.
+
+    Centralises field mapping so every endpoint that returns an action uses the
+    same projection (including the new skip / sort_order fields added in B3).
+    """
+    return ProtocolActionOut(
+        id=a.id,
+        protocol_id=a.protocol_id,
+        category=a.category,
+        title=a.title,
+        target=a.target_value,
+        rationale=a.rationale,
+        completed_today=a.completed_today,
+        streak_days=a.streak_days,
+        sort_order=a.sort_order,
+        skipped_today=a.skipped_today,
+        skip_reason=a.skip_reason,
+    )
+
 
 router = APIRouter(
     prefix="/patients/{patient_id}/protocol",
@@ -135,19 +160,7 @@ async def generate_protocol(
     # Filter to only actions belonging to this protocol
     protocol_actions = [a for a in actions if a.protocol_id == protocol.id]
 
-    action_outs = [
-        ProtocolActionOut(
-            id=a.id,
-            protocol_id=a.protocol_id,
-            category=a.category,
-            title=a.title,
-            target=a.target_value,
-            rationale=a.rationale,
-            completed_today=a.completed_today,
-            streak_days=a.streak_days,
-        )
-        for a in protocol_actions
-    ]
+    action_outs = [_action_to_out(a) for a in protocol_actions]
 
     return ProtocolOut(
         id=protocol.id,
@@ -202,19 +215,7 @@ async def get_protocol(
     all_actions = await action_repo.list_for_patient(patient_id=patient_id)
     protocol_actions = [a for a in all_actions if a.protocol_id == protocol.id]
 
-    action_outs = [
-        ProtocolActionOut(
-            id=a.id,
-            protocol_id=a.protocol_id,
-            category=a.category,
-            title=a.title,
-            target=a.target_value,
-            rationale=a.rationale,
-            completed_today=a.completed_today,
-            streak_days=a.streak_days,
-        )
-        for a in protocol_actions
-    ]
+    action_outs = [_action_to_out(a) for a in protocol_actions]
 
     return ProtocolOut(
         id=protocol.id,
@@ -349,6 +350,120 @@ async def complete_action(
         streak_days=new_streak,
         completed_at=completed_at,
     )
+
+
+# ---------------------------------------------------------------------------
+# POST /skip-action
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/skip-action",
+    response_model=ProtocolActionOut,
+    summary="Skip a protocol action for today with a reason",
+)
+async def skip_action(
+    patient_id: str,
+    body: SkipActionRequest,
+    session: _Session,
+    _auth: _Auth,
+) -> ProtocolActionOut:
+    """Mark a ProtocolAction as skipped today and record the reason.
+
+    Skip and complete are independent flags — skipping does NOT mark an action
+    as complete, and completing clears the skip flag (handled in complete_action).
+
+    Args:
+        patient_id: Path parameter.
+        body:       ``SkipActionRequest`` with action_id and reason.
+        session:    Injected ``AsyncSession``.
+        _auth:      ``api_key_auth`` result.
+
+    Returns:
+        ``ProtocolActionOut`` with the updated skipped_today/skip_reason fields.
+
+    Raises:
+        HTTPException 404: If the action does not exist or belongs to a
+            different patient.
+    """
+    action_repo = ProtocolActionRepository(session)
+
+    updated = await action_repo.update_skip(
+        patient_id=patient_id,
+        action_id=body.action_id,
+        reason=body.reason,
+    )
+    if updated is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                f"ProtocolAction {body.action_id!r} not found for patient "
+                f"{patient_id!r}."
+            ),
+        )
+
+    _logger.info(
+        "protocol_action_skipped",
+        extra={"action_id": body.action_id},
+    )
+
+    return _action_to_out(updated)
+
+
+# ---------------------------------------------------------------------------
+# POST /reorder
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/reorder",
+    status_code=status.HTTP_200_OK,
+    response_model=list[ProtocolActionOut],
+    summary="Reorder protocol actions by assigning sort_order from position in list",
+)
+async def reorder_actions(
+    patient_id: str,
+    body: ReorderRequest,
+    session: _Session,
+    _auth: _Auth,
+) -> list[ProtocolActionOut]:
+    """Assign sort_order to actions based on their position in ``action_ids``.
+
+    Each id in ``action_ids`` is assigned sort_order = 1, 2, 3, … in the order
+    given.  Any action not listed retains its current sort_order (callers
+    should include ALL action ids to produce a fully deterministic order).
+
+    Args:
+        patient_id: Path parameter.
+        body:       ``ReorderRequest`` with the desired action id order.
+        session:    Injected ``AsyncSession``.
+        _auth:      ``api_key_auth`` result.
+
+    Returns:
+        List of updated ``ProtocolActionOut`` in the new order.
+
+    Raises:
+        HTTPException 404: If any action id does not belong to this patient.
+    """
+    action_repo = ProtocolActionRepository(session)
+
+    try:
+        updated_actions = await action_repo.update_sort_orders(
+            patient_id=patient_id,
+            ordered_ids=body.action_ids,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    _logger.info(
+        "protocol_actions_reordered",
+        extra={"patient_id": patient_id, "count": len(updated_actions)},
+    )
+
+    return [_action_to_out(a) for a in updated_actions]
 
 
 # ---------------------------------------------------------------------------

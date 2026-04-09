@@ -16,7 +16,7 @@ Stack: SQLAlchemy 2.0 async (select() + session.execute()), SQLModel table model
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import nullslast, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.protocol import Protocol, ProtocolAction
@@ -33,6 +33,9 @@ _ID = "id"
 _PROTOCOL_ID = "protocol_id"
 _STREAK_DAYS = "streak_days"
 _COMPLETED_TODAY = "completed_today"
+_SORT_ORDER = "sort_order"
+_SKIPPED_TODAY = "skipped_today"
+_SKIP_REASON = "skip_reason"
 
 
 class ProtocolRepository(PatientScopedRepository[Protocol]):
@@ -213,10 +216,15 @@ class ProtocolActionRepository:
             .scalar_subquery()
         )
 
-        # Step 2: scope ProtocolAction to those protocol IDs.
+        # Step 2: scope ProtocolAction to those protocol IDs, ordered deterministically.
+        # sort_order NULLS LAST keeps unordered rows at the end; id ASC breaks ties.
         action_protocol_id_attr = getattr(ProtocolAction, _PROTOCOL_ID)
-        stmt = select(ProtocolAction).where(
-            action_protocol_id_attr.in_(protocol_ids_subq)
+        sort_order_attr = getattr(ProtocolAction, _SORT_ORDER)
+        action_id_attr = getattr(ProtocolAction, _ID)
+        stmt = (
+            select(ProtocolAction)
+            .where(action_protocol_id_attr.in_(protocol_ids_subq))
+            .order_by(nullslast(sort_order_attr.asc()), action_id_attr.asc())
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
@@ -287,5 +295,75 @@ class ProtocolActionRepository:
 
         object.__setattr__(action, "streak_days", streak_days)
         object.__setattr__(action, "completed_today", completed_today)
+        # Completing an action clears any existing skip flag (independent flags).
+        object.__setattr__(action, "skipped_today", False)
+        object.__setattr__(action, "skip_reason", None)
         await self._session.flush()
         return action
+
+    async def update_skip(
+        self,
+        *,
+        patient_id: str,
+        action_id: int,
+        reason: str,
+    ) -> ProtocolAction | None:
+        """Set skipped_today=True and record the skip reason for a ProtocolAction.
+
+        Confirms ownership via the two-step isolation pattern.  Does NOT touch
+        streak_days or completed_today — skip and complete are independent flags.
+
+        Args:
+            patient_id: The patient whose action is being skipped.
+            action_id:  The surrogate id of the ProtocolAction.
+            reason:     Human-readable reason for skipping today.
+
+        Returns:
+            The updated ProtocolAction, or ``None`` if not found / not owned.
+        """
+        action = await self.get_for_patient(
+            patient_id=patient_id, action_id=action_id
+        )
+        if action is None:
+            return None
+
+        object.__setattr__(action, "skipped_today", True)
+        object.__setattr__(action, "skip_reason", reason)
+        await self._session.flush()
+        return action
+
+    async def update_sort_orders(
+        self,
+        *,
+        patient_id: str,
+        ordered_ids: list[int],
+    ) -> list[ProtocolAction]:
+        """Assign sort_order to each action based on its position in ordered_ids.
+
+        Verifies every action in ordered_ids belongs to the patient (two-step
+        isolation).  Raises ValueError if any action is not owned by patient_id.
+        Returns the reordered list in the new order.
+
+        Args:
+            patient_id:  The patient whose actions are being reordered.
+            ordered_ids: Action ids in the desired display order (1-indexed positions).
+
+        Returns:
+            List of updated ProtocolAction instances in the new order.
+
+        Raises:
+            ValueError: If any action_id is not found for this patient.
+        """
+        updated: list[ProtocolAction] = []
+        for position, action_id in enumerate(ordered_ids, start=1):
+            action = await self.get_for_patient(
+                patient_id=patient_id, action_id=action_id
+            )
+            if action is None:
+                raise ValueError(
+                    f"ProtocolAction {action_id!r} not found for patient {patient_id!r}."
+                )
+            object.__setattr__(action, "sort_order", position)
+            updated.append(action)
+        await self._session.flush()
+        return updated

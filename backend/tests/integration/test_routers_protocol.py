@@ -392,3 +392,258 @@ async def test_get_protocol_cross_patient_isolation(
         headers=HEADERS,
     )
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# GET /protocol — sort_order field in response (B3)
+# ---------------------------------------------------------------------------
+
+
+async def test_get_protocol_actions_include_skip_fields(
+    protocol_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """GET protocol must return skipped_today, skip_reason, sort_order on every action."""
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_FIELDS", "B3 Fields")
+    generated = await _generate_protocol_for(protocol_client, "PT_B3_FIELDS")
+
+    action = generated["actions"][0]
+    # New fields must be present with default values
+    assert "skipped_today" in action
+    assert action["skipped_today"] is False
+    assert "skip_reason" in action
+    assert action["skip_reason"] is None
+    assert "sort_order" in action
+    assert action["sort_order"] is None
+
+
+# ---------------------------------------------------------------------------
+# POST /skip-action — happy path (B3)
+# ---------------------------------------------------------------------------
+
+
+async def test_skip_action_sets_skipped_flag_and_reason(
+    protocol_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """POST skip-action must set skipped_today=True and persist the reason."""
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_SKIP", "B3 Skip")
+    generated = await _generate_protocol_for(protocol_client, "PT_B3_SKIP")
+    action_id = generated["actions"][0]["id"]
+
+    resp = await protocol_client.post(
+        "/v1/patients/PT_B3_SKIP/protocol/skip-action",
+        headers=HEADERS,
+        json={"action_id": action_id, "reason": "Feeling unwell today"},
+    )
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+
+    # skip-action returns ProtocolActionOut (not CompleteActionResponse) — field is "id"
+    assert data["id"] == action_id
+    assert data["skipped_today"] is True
+    assert data["skip_reason"] == "Feeling unwell today"
+    # Complete flag must remain False — independent flags
+    assert data["completed_today"] is False
+
+
+async def test_skip_action_persists_to_get_protocol(
+    protocol_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Skipping an action must be visible in subsequent GET /protocol."""
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_SKIP_GET", "B3 Skip Get")
+    generated = await _generate_protocol_for(protocol_client, "PT_B3_SKIP_GET")
+    action_id = generated["actions"][1]["id"]
+
+    await protocol_client.post(
+        "/v1/patients/PT_B3_SKIP_GET/protocol/skip-action",
+        headers=HEADERS,
+        json={"action_id": action_id, "reason": "No time"},
+    )
+
+    # Retrieve the protocol and verify the skip was persisted
+    get_resp = await protocol_client.get(
+        "/v1/patients/PT_B3_SKIP_GET/protocol",
+        headers=HEADERS,
+    )
+    assert get_resp.status_code == 200, get_resp.text
+    actions = get_resp.json()["actions"]
+    skipped = next(a for a in actions if a["id"] == action_id)
+    assert skipped["skipped_today"] is True
+    assert skipped["skip_reason"] == "No time"
+
+
+async def test_skip_action_requires_api_key(
+    protocol_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """POST skip-action must reject requests without X-API-Key with 401."""
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_SKIP_AUTH")
+    generated = await _generate_protocol_for(protocol_client, "PT_B3_SKIP_AUTH")
+    action_id = generated["actions"][0]["id"]
+
+    resp = await protocol_client.post(
+        "/v1/patients/PT_B3_SKIP_AUTH/protocol/skip-action",
+        json={"action_id": action_id, "reason": "No key"},
+    )
+    assert resp.status_code == 401
+
+
+async def test_skip_action_cross_patient_isolation_returns_404(
+    protocol_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Skipping patient A's action via patient B's path must return 404."""
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_SKP_ISO_A", "Skip Iso A")
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_SKP_ISO_B", "Skip Iso B")
+
+    generated_a = await _generate_protocol_for(protocol_client, "PT_B3_SKP_ISO_A")
+    action_id_a = generated_a["actions"][0]["id"]
+
+    resp = await protocol_client.post(
+        "/v1/patients/PT_B3_SKP_ISO_B/protocol/skip-action",
+        headers=HEADERS,
+        json={"action_id": action_id_a, "reason": "Cross-patient attempt"},
+    )
+    assert resp.status_code == 404, (
+        f"Expected 404 for cross-patient skip, got {resp.status_code}: {resp.text}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /reorder — happy path (B3)
+# ---------------------------------------------------------------------------
+
+
+async def test_reorder_actions_assigns_sort_order(
+    protocol_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """POST reorder must assign sort_order based on position and return the reordered list."""
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_REORDER", "B3 Reorder")
+    generated = await _generate_protocol_for(protocol_client, "PT_B3_REORDER")
+
+    # Reverse the original order
+    original_ids = [a["id"] for a in generated["actions"]]
+    reversed_ids = list(reversed(original_ids))
+
+    resp = await protocol_client.post(
+        "/v1/patients/PT_B3_REORDER/protocol/reorder",
+        headers=HEADERS,
+        json={"action_ids": reversed_ids},
+    )
+    assert resp.status_code == 200, resp.text
+    result = resp.json()
+
+    # Response must list actions in the requested order
+    assert [a["id"] for a in result] == reversed_ids
+    # sort_order must be 1-indexed positions
+    for i, action in enumerate(result, start=1):
+        assert action["sort_order"] == i
+
+
+async def test_reorder_persists_to_get_protocol(
+    protocol_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Subsequent GET /protocol must return actions in the reordered sort_order."""
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_REORDER_GET", "B3 Reorder Get")
+    generated = await _generate_protocol_for(protocol_client, "PT_B3_REORDER_GET")
+
+    original_ids = [a["id"] for a in generated["actions"]]
+    reversed_ids = list(reversed(original_ids))
+
+    await protocol_client.post(
+        "/v1/patients/PT_B3_REORDER_GET/protocol/reorder",
+        headers=HEADERS,
+        json={"action_ids": reversed_ids},
+    )
+
+    get_resp = await protocol_client.get(
+        "/v1/patients/PT_B3_REORDER_GET/protocol",
+        headers=HEADERS,
+    )
+    assert get_resp.status_code == 200, get_resp.text
+    returned_ids = [a["id"] for a in get_resp.json()["actions"]]
+    assert returned_ids == reversed_ids
+
+
+async def test_reorder_actions_requires_api_key(
+    protocol_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """POST reorder must reject requests without X-API-Key with 401."""
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_REORDER_AUTH")
+    generated = await _generate_protocol_for(protocol_client, "PT_B3_REORDER_AUTH")
+    action_ids = [a["id"] for a in generated["actions"]]
+
+    resp = await protocol_client.post(
+        "/v1/patients/PT_B3_REORDER_AUTH/protocol/reorder",
+        json={"action_ids": action_ids},
+    )
+    assert resp.status_code == 401
+
+
+async def test_reorder_cross_patient_isolation_returns_404(
+    protocol_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Reordering patient A's actions via patient B's path must return 404."""
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_RO_ISO_A", "Reorder Iso A")
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_RO_ISO_B", "Reorder Iso B")
+
+    generated_a = await _generate_protocol_for(protocol_client, "PT_B3_RO_ISO_A")
+    action_ids_a = [a["id"] for a in generated_a["actions"]]
+
+    resp = await protocol_client.post(
+        "/v1/patients/PT_B3_RO_ISO_B/protocol/reorder",
+        headers=HEADERS,
+        json={"action_ids": action_ids_a},
+    )
+    assert resp.status_code == 404, (
+        f"Expected 404 for cross-patient reorder, got {resp.status_code}: {resp.text}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Skip + Complete independence (B3 spec: completing clears skip flag)
+# ---------------------------------------------------------------------------
+
+
+async def test_complete_action_clears_skip_flag(
+    protocol_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Completing a skipped action must clear skipped_today and skip_reason."""
+    await _seed_patient_with_lifestyle(db_session, "PT_B3_COMP_CLR", "B3 Complete Clear")
+    generated = await _generate_protocol_for(protocol_client, "PT_B3_COMP_CLR")
+    action_id = generated["actions"][0]["id"]
+
+    # First skip the action
+    skip_resp = await protocol_client.post(
+        "/v1/patients/PT_B3_COMP_CLR/protocol/skip-action",
+        headers=HEADERS,
+        json={"action_id": action_id, "reason": "Too tired"},
+    )
+    assert skip_resp.status_code == 200, skip_resp.text
+    assert skip_resp.json()["skipped_today"] is True
+
+    # Now complete the same action — skip flag must be cleared
+    await protocol_client.post(
+        "/v1/patients/PT_B3_COMP_CLR/protocol/complete-action",
+        headers=HEADERS,
+        json={"action_id": action_id},
+    )
+
+    # GET protocol and verify the skip is cleared
+    get_resp = await protocol_client.get(
+        "/v1/patients/PT_B3_COMP_CLR/protocol",
+        headers=HEADERS,
+    )
+    assert get_resp.status_code == 200
+    actions = get_resp.json()["actions"]
+    action = next(a for a in actions if a["id"] == action_id)
+    assert action["completed_today"] is True
+    assert action["skipped_today"] is False
+    assert action["skip_reason"] is None
