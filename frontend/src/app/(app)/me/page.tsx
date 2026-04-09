@@ -382,6 +382,39 @@ export default async function MePage() {
                 />
               </div>
             ))}
+
+            {/* Manual tracker rows — read-only, no Switch */}
+            {[
+              { emoji: "🛌", label: "Sleep log" },
+              { emoji: "💧", label: "Water log" },
+              { emoji: "🏃", label: "Workout log" },
+              { emoji: "📝", label: "Weekly check-in" },
+            ].map(({ emoji, label }) => (
+              <div
+                key={label}
+                className="flex items-center justify-between px-4 py-3"
+                style={{ borderTop: "1px solid var(--color-border)" }}
+              >
+                <span
+                  className="flex items-center gap-2 text-sm font-medium"
+                  style={{ color: "var(--color-ink)" }}
+                >
+                  <span aria-hidden="true">{emoji}</span>
+                  {label}
+                </span>
+                {/* Manual chip badge */}
+                <span
+                  className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: "var(--color-surface-2, var(--color-bg))",
+                    border: "1px solid var(--color-border)",
+                    color: "var(--color-ink-3)",
+                  }}
+                >
+                  Manual
+                </span>
+              </div>
+            ))}
           </RowList>
         </section>
 
