@@ -1,4 +1,4 @@
-.PHONY: up down seed test fmt lint help
+.PHONY: up down seed test fmt lint openapi help
 
 ## up: start db and backend containers in detached mode
 up:
@@ -24,6 +24,10 @@ fmt:
 lint:
 	cd backend && uv run ruff check app
 	cd backend && uv run mypy app
+
+## openapi: regenerate backend/openapi.json from the live FastAPI schema
+openapi:
+	cd backend && uv run python -m app.cli.export_openapi
 
 ## help: show this help message
 help:
