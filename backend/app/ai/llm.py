@@ -20,6 +20,7 @@ Stack contract (see docs/09-ai-assist-playbook.md):
 """
 from __future__ import annotations
 
+import hashlib
 import random
 from typing import TYPE_CHECKING, AsyncIterator, runtime_checkable
 
@@ -156,10 +157,14 @@ _FAKE_VISION: dict = {
 
 
 def _hash_inputs(system: str, user: str) -> int:
-    """Return a stable integer hash derived from system and user strings."""
-    # Combine with a separator that is unlikely to appear in prompts
+    """Return a stable integer hash derived from system and user strings.
+
+    Uses MD5 (via hashlib) for cross-platform determinism — Python's built-in
+    ``hash()`` is randomised per-process (PYTHONHASHSEED) and must NOT be used
+    for reproducible outputs.
+    """
     combined = f"{system}\x00{user}"
-    return hash(combined)
+    return int(hashlib.md5(combined.encode()).hexdigest(), 16)
 
 
 class FakeLLMProvider:
@@ -219,10 +224,13 @@ class FakeLLMProvider:
         return _token_stream()
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
-        """Return deterministic 768-d vectors in [-1, 1] keyed by text hash."""
+        """Return deterministic 768-d vectors in [-1, 1] keyed by text hash.
+
+        Uses MD5 for cross-platform determinism (same as ``_hash_inputs``).
+        """
         result: list[list[float]] = []
         for text in texts:
-            h = hash(text)
+            h = int(hashlib.md5(text.encode()).hexdigest(), 16)
             rng = random.Random(h)
             vector = [rng.uniform(-1.0, 1.0) for _ in range(768)]
             result.append(vector)

@@ -86,9 +86,15 @@ class ProtocolActionOut(BaseModel):
     protocol_id: int = Field(..., description="Parent protocol primary key")
     category: str = Field(..., description="Action category")
     title: str = Field(..., description="Action title")
-    target: str = Field(..., description="Measurable target")
-    rationale: str = Field(..., description="One-line rationale")
-    dimension: str = Field(..., description="Longevity dimension")
+    target: str | None = Field(
+        default=None,
+        description="Measurable target (optional — model stores this as target_value)",
+    )
+    rationale: str | None = Field(default=None, description="One-line rationale")
+    dimension: str | None = Field(
+        default=None,
+        description="Longevity dimension (optional — not stored on ProtocolAction model)",
+    )
     completed_today: bool = Field(
         default=False,
         description="Whether the action has been completed today",
@@ -106,11 +112,14 @@ class ProtocolOut(BaseModel):
 
     id: int = Field(..., description="Protocol primary key")
     patient_id: str = Field(..., description="Patient this protocol belongs to")
-    generated_at: datetime.datetime = Field(
+    created_at: datetime.datetime = Field(
         ...,
-        description="Timestamp when the protocol was generated",
+        description="Timestamp when the protocol was generated (maps to Protocol.created_at)",
     )
-    rationale: str = Field(..., description="Protocol-level rationale paragraph")
+    rationale: str | None = Field(
+        default=None,
+        description="Protocol-level rationale paragraph (optional — not stored on Protocol model)",
+    )
     actions: list[ProtocolActionOut] = Field(
         default_factory=list,
         description="Ordered list of protocol actions",

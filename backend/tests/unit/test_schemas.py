@@ -736,11 +736,11 @@ def test_generated_protocol_round_trip() -> None:
 
 
 def test_protocol_out_round_trip() -> None:
-    """ProtocolOut round-trips with id, patient_id, generated_at, rationale, actions."""
+    """ProtocolOut round-trips with id, patient_id, created_at, rationale, actions."""
     data = {
         "id": 1,
         "patient_id": "PT0001",
-        "generated_at": "2024-01-15T08:00:00",
+        "created_at": "2024-01-15T08:00:00",
         "rationale": "Your protocol this week.",
         "actions": [],
     }
@@ -784,6 +784,48 @@ def test_complete_action_response_round_trip() -> None:
     }
     obj = CompleteActionResponse.model_validate(data)
     assert obj.streak_days == 5
+
+
+def test_protocol_out_from_model_instances() -> None:
+    """ProtocolOut.model_validate(Protocol, from_attributes=True) succeeds without rationale/dimension.
+
+    Regression test: Protocol has no 'rationale' column and ProtocolAction has no
+    'dimension' column — both fields must be optional so the ORM-to-schema mapping
+    never raises a ValidationError.
+    """
+    import datetime
+    from app.models.protocol import Protocol, ProtocolAction
+
+    protocol = Protocol(
+        id=5,
+        patient_id="PT0007",
+        week_start=datetime.date(2026, 4, 7),
+        status="active",
+        generated_by="gemini-2.5-flash",
+        created_at=datetime.datetime(2026, 4, 7, 8, 0, 0),
+    )
+    # model_validate with from_attributes=True must not raise
+    out = ProtocolOut.model_validate(protocol, from_attributes=True)
+    assert out.id == 5
+    assert out.patient_id == "PT0007"
+    assert out.rationale is None  # not stored on Protocol model
+
+    action = ProtocolAction(
+        id=99,
+        protocol_id=5,
+        category="movement",
+        title="Walk 25 minutes",
+        rationale="Improves cardiovascular fitness.",
+        target_value="25 min",
+        streak_days=3,
+        completed_today=True,
+    )
+    action_out = ProtocolActionOut.model_validate(action, from_attributes=True)
+    assert action_out.id == 99
+    assert action_out.protocol_id == 5
+    assert action_out.dimension is None  # not stored on ProtocolAction model
+    assert action_out.streak_days == 3
+    assert action_out.completed_today is True
 
 
 # ===========================================================================
