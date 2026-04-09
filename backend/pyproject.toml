@@ -50,6 +50,10 @@ plugins = ["pydantic.mypy"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "compose: requires a live docker-compose stack (deselect with -m 'not compose')",
+]
+addopts = "-m 'not compose'"
 
 [dependency-groups]
 dev = [
