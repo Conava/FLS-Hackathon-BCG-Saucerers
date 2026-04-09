@@ -1,8 +1,9 @@
+import { redirect } from "next/navigation";
+
+/**
+ * Root route — server-side redirect to the Today screen.
+ * Middleware handles the unauthenticated case and redirects to /login first.
+ */
 export default function Home() {
-  return (
-    <main>
-      <h1>Longevity</h1>
-      <p>AI-driven longevity companion — scaffold placeholder.</p>
-    </main>
-  );
+  redirect("/today");
 }
