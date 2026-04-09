@@ -22,12 +22,18 @@ For locked versions see [04-tech-stack.md](04-tech-stack.md). For the adapter pa
 │   FastAPI + SQLModel + SQLAlchemy 2.0 async                          │
 │                                                                      │
 │   ┌─────────────────┐  ┌──────────────────┐  ┌───────────────────┐   │
-│   │ Patient / EHR   │  │ AI Layer         │  │ Appointments       │  │
-│   │ endpoints       │  │ (coach, RAG,     │  │ (in-network +      │  │
-│   │                 │  │  analytics,      │  │  external booking) │  │
-│   │                 │  │  notifications)  │  │                    │  │
+│   │ Patient / EHR   │  │ AI Layer         │  │ Care                │  │
+│   │ + Records Q&A   │  │ coach, records-  │  │ clinics /           │  │
+│   │                 │  │ qa, protocol-gen,│  │ diagnostics /       │  │
+│   │                 │  │ meal-vision,     │  │ home care           │  │
+│   │                 │  │ outlook, notif   │  │                     │  │
 │   └────────┬────────┘  └────────┬─────────┘  └────────┬──────────┘   │
 │            │                    │                     │              │
+│            │   ┌────────────────┴──────────────────┐  │              │
+│            │   │  Protocol + Streak engine         │  │              │
+│            │   │  (Today, DailyLog, MealLog,       │  │              │
+│            │   │   VitalityOutlook, Survey loop)   │  │              │
+│            │   └────────────────┬──────────────────┘  │              │
 │            ▼                    ▼                     ▼              │
 │   ┌──────────────────────────────────────────────────────────────┐   │
 │   │               Unified Patient Profile (service)              │   │
@@ -48,22 +54,38 @@ For locked versions see [04-tech-stack.md](04-tech-stack.md). For the adapter pa
 └──────────────────────┘  └───────────────────┘  └─────────────────────┘
 ```
 
-## Request flow — two example paths
+## Request flow — four example paths
 
-### Path A: "Show me my Vitality Score"
-1. Client calls `GET /patients/me/vitality` with session token
+### Path A: "Show me my Today" (Score + Outlook + Protocol)
+1. Client calls `GET /patients/me/today` with session token
 2. FastAPI handler loads the unified patient profile via the data adapter layer
-3. Score service computes composite (sleep + recovery + activity + biomarkers) from Postgres-stored unified data
-4. Response typed via SQLModel / Pydantic v2 schema
-5. Client renders score + trend chart
+3. Score service computes the composite `VitalitySnapshot` across the four longevity dimensions (Biological Age, Sleep & Recovery, Cardiovascular Fitness, Lifestyle & Behavioral Risk)
+4. Outlook service computes `VitalityOutlook` for 3/6/12 months from current streak state + active `ProtocolAction`s
+5. Protocol service returns the active `Protocol` with today's `ProtocolAction`s + completion state from `DailyLog`
+6. Response typed via SQLModel / Pydantic v2 schemas
+7. Client renders score hero, outlook curve, streak counter, protocol list, and the nudge-of-the-day
 
-### Path B: "What did my last blood test say about cholesterol?" (the killer demo moment)
-1. Client sends user question to `POST /coach/records-qa`
+### Path B: "What did my last blood test say about cholesterol?" (the killer Records moment)
+1. Client sends user question to `POST /records/qa`
 2. FastAPI embeds the query via `text-embedding-004` (Vertex AI)
 3. pgvector HNSW index returns top-k relevant records (EHR notes, lab results) for **this patient only** (filtered by `patient_id` in SQL — hard isolation)
-4. Gemini 2.5 Pro call with system prompt + retrieved context + safety framing
+4. Gemini 2.5 Pro call with `records-qa.system.md` (strict scope, citation-required) + retrieved records + user question
 5. Response streams back with citations to the source record IDs
 6. Client renders answer with clickable source links into the records view
+
+### Path C: "Here's a photo of my lunch" (Nutrition woven-in)
+1. Client uploads image to `POST /today/meal-log` with the patient session
+2. FastAPI calls Gemini 2.5 Flash (vision) with `meal-vision.system.md`, passing the image and the patient's `LifestyleProfile.dietary_restrictions` + `known_allergies`
+3. Model returns structured JSON (classification, macros, longevity swap, rationale) validated against `MealAnalysis`
+4. Backend writes a `MealLog` row, updates today's protein/fiber rings, and flags protocol completion if a nutrition action matches
+5. Client renders the classified meal, macro rings, and the one-line swap suggestion
+
+### Path D: "Generate my weekly protocol" (Protocol Generator)
+1. Client calls `POST /protocol/generate` — triggered weekly, on survey retake, or on explicit user "re-plan"
+2. FastAPI gathers the inputs: `LifestyleProfile` (with hard constraints: time budget, out-of-pocket budget, allergies, restrictions), latest `VitalitySnapshot`, recent 7-day wearable summary, last-week adherence from `DailyLog`
+3. Gemini 2.5 Pro call with `protocol-generator.system.md`, structured-output mode enforcing `GeneratedProtocol`
+4. Backend validates the JSON, retires the prior `Protocol` (sets `is_active=false`), inserts new `Protocol` + `ProtocolAction` rows
+5. Client refreshes Today with the new protocol and Coach's one-paragraph rationale
 
 ## Deployment topology (demo day)
 

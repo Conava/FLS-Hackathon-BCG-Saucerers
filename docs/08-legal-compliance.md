@@ -20,8 +20,10 @@ This doc is both an engineering checklist (what to bake into the MVP) and a pitc
 | **DPO** | Clinic group already has one. Product team reports into them. |
 | **Lawful basis** | Art. 9(2)(h) — provision of healthcare — for clinical features; explicit consent for optional/wellness features. |
 | **Data residency** | EU-only. Cloud SQL + Cloud Run in `europe-west3` (Frankfurt). No US sub-processors for PHI without SCCs + Transfer Impact Assessment. |
-| **Right to access / erasure** | API endpoints `GET /patients/me/export` and `DELETE /patients/me` — MVP stub + pitch slide. |
+| **Right to access / erasure** | API endpoints `GET /patients/me/export` and `DELETE /patients/me` — MVP stub + pitch slide. Erasure must cascade through `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `SurveyResponse`, `VitalitySnapshot`, `VitalityOutlook` — not just `Patient` + `EHRRecord`. |
 | **Patient isolation** | SQL-level `WHERE patient_id = :pid` on every query. See [03-architecture.md](03-architecture.md). |
+| **New PHI categories in v1 scope** | Beyond EHR: **meal photos** (uploaded images — Cloud Storage, EU bucket, patient-scoped ACLs, deletable), **detailed survey answers** (`SurveyResponse` — dietary restrictions, alcohol intake, budget, injuries — all Art. 9 territory), **self-tracked logs** (`DailyLog` — mood, sleep, workouts), **protocol adherence** (streaks + completion). All patient-scoped, EU-hosted, consent-gated. |
+| **Meal photo retention** | Stored only as long as the `MealLog` row references them. Erasure request deletes the Cloud Storage object. Consider an opt-out: "analyze but don't store the photo" — v2. |
 
 ## EU AI Act — risk classification is everything
 
@@ -59,6 +61,10 @@ We frame the product as **wellness / lifestyle**, not medical. That's a legal di
 | Wellness framing (OK) | Medical framing (triggers MDR) |
 |---|---|
 | "Vitality Score" | "Disease risk score" |
+| "Vitality Outlook" / "your projected score if you keep this streak" | "Disease progression forecast" |
+| "Future-self simulator — what your habits project at 70" | "Mortality prediction" / "life expectancy calculator" |
+| "Daily protocol" / "today's actions" | "Treatment plan" / "prescription" |
+| "Longevity swap" / "a better choice for your goals" | "Dietary therapy for condition X" |
 | "Your habits suggest your sleep could improve" | "You have insomnia" |
 | "Cardiovascular fitness" | "Risk of cardiovascular disease" |
 | "A pattern worth discussing with your doctor" | "Evidence of arrhythmia" |
@@ -93,14 +99,15 @@ Nine countries means nine slightly different consent + cookie + telemedicine reg
 
 ## Engineering checklist — bake into MVP now
 
-- [ ] Every SQL query filters by `patient_id` (hard isolation)
-- [ ] Every AI prompt contains "not medical advice" framing + wellness-language rules
-- [ ] Every AI screen has a visible "You're talking to an AI" disclosure
-- [ ] Log only request IDs + model name + tokens, never PHI content
-- [ ] EU-region only — verify Cloud Run, Cloud SQL, Vertex AI all in `europe-west3`
-- [ ] `GET /patients/me/export` and `DELETE /patients/me` endpoints (stubs OK)
-- [ ] No ICD-10 codes, no disease names, no diagnostic verbs in user-facing copy
+- [ ] Every SQL query filters by `patient_id` (hard isolation) — including new tables: `Protocol`, `ProtocolAction`, `DailyLog`, `MealLog`, `SurveyResponse`, `VitalityOutlook`
+- [ ] Every AI prompt contains "not medical advice" framing + wellness-language rules — including `protocol-generator.system.md`, `meal-vision.system.md`, `outlook-narrator.system.md`
+- [ ] Every AI screen has a visible "You're talking to an AI" disclosure — Coach, Records Q&A, Meal Vision result, Protocol rationale, Outlook narration, Future-self simulator
+- [ ] Log only request IDs + model name + tokens, never PHI content (never log meal photo bytes, survey free-text, or protocol contents)
+- [ ] EU-region only — verify Cloud Run, Cloud SQL, Vertex AI, **and Cloud Storage (meal photo bucket)** all in `europe-west3`
+- [ ] `GET /patients/me/export` and `DELETE /patients/me` endpoints — cascade through all new tables and delete Cloud Storage meal photo objects
+- [ ] No ICD-10 codes, no disease names, no diagnostic verbs in user-facing copy **or in protocol action titles/rationales**
 - [ ] Consent checkbox on onboarding (single checkbox OK for MVP, note real granularity is v2)
+- [ ] Survey retake flow re-confirms consent for new categories (photo, detailed lifestyle)
 
 ## Pitch slide content
 

@@ -36,20 +36,25 @@ Last year her dad had a mild heart attack at 68. It wasn't fatal, but it shook h
 
 ## Longevity journey map
 
-From first awareness to daily engagement. Each stage is a hook we design for.
+From first awareness to daily engagement. Each stage is a hook we design for. See [07-features.md](07-features.md) for the tab-level IA (Today / Coach / Records / Insights / Care / Me) that surfaces each stage.
 
 | Stage | Trigger | What Anna does | What the app does | Touchpoint |
 |---|---|---|---|---|
 | **Awareness** | Dad's heart attack | Googles "heart attack risk women 40s" | — | Organic, clinic newsletter |
-| **Activation** | Clinic emails her: "See your Vitality Score" | Signs in with existing patient account | Pulls EHR + asks 3 lifestyle questions | Web / PWA install |
-| **First insight** | Dashboard loads | Sees Vitality Score + 2 personalized recommendations | Synthesizes EHR + wearable + survey into one score | Dashboard |
-| **First action** | Coach nudges: "You slept 5h 40m — skip HIIT today" | Changes plan | Tracks adherence | Coach, notifications |
-| **First aha moment** | Asks "What did my last blood test say about cholesterol?" | Gets plain-language answer citing the actual record | NL Q&A over her EHR via RAG | Records view |
-| **First commercial** | AI flags ApoB trending up | Taps "book cardio-prevention panel" | Surfaces diagnostic package + books into clinic calendar | Insights + appointments |
-| **Habit formation** | Daily score + streak | Opens app most mornings | Personalized nudges at learned optimal times | Push / in-app |
-| **Deep engagement** | Asks the coach hard questions | Treats coach as prevention advisor | Cites evidence, escalates to human clinician when needed | Coach |
-| **Commercial deep** | Subscribes to Longevity+ | Quarterly panels, supplement plan | Auto-ships, books follow-ups | Subscription |
-| **Advocate** | Refers sister | — | Referral program | Shareable Vitality Score snapshot |
+| **Activation** | Clinic emails her: "See your Vitality Score" | Signs in with existing patient account | Pulls EHR + runs the onboarding survey (~12 questions, 3 min) | Web / PWA install, **Me → Survey** |
+| **First insight** | Today loads | Sees Vitality Score + Outlook curve + her four-dimension Signals | Synthesizes EHR + wearable + survey into one score + projection | **Today** |
+| **First protocol** | Coach auto-generates a weekly protocol from survey + biomarkers | Reads 3–5 daily actions with rationale | Writes protocol to Today, links each action to Coach | **Today → protocol**, **Coach** |
+| **First action** | Coach nudges: "You slept 5h 40m — skip HIIT today" | Taps to log a 25-min walk instead | Updates protocol, starts the streak | **Today → quick-log**, notifications |
+| **First nutrition moment** | Anna photographs lunch | Gets macros + one longevity swap ("lentils instead of white rice") | Meal vision → classification → swap rationale → feeds into protein/fiber rings | **Today → meal log** |
+| **First aha moment** | Asks "What did my last blood test say about cholesterol?" | Gets plain-language answer citing the actual record | NL Q&A over her EHR via RAG (strictly provider-scoped) | **Records** |
+| **First commercial** | AI flags ApoB trending up | Taps "book cardio-prevention panel" | Surfaces diagnostic package + routes to Care → Diagnostics | **Insights → Care → Diagnostics** |
+| **Habit formation** | Daily score + streak + Outlook rising | Opens app most mornings, completes protocol actions | Personalized nudges at learned optimal times; streaks move the Outlook curve | **Today**, push / in-app |
+| **First micro-survey** | End of week 1 | 30-sec contextual card: "How did this week feel? Protocol too easy / right / too hard?" | Feeds delta into next protocol generation | **Today** |
+| **Deep engagement** | Asks the coach hard questions | Treats coach as prevention advisor | Cites evidence, escalates to human clinician when needed | **Coach** |
+| **Clinician review** | Dr. Lehmann reviews her ApoB flag | Sees "Dr. Lehmann reviewed your result · follow-up booked" | Human-in-the-loop confirmation on any clinical action | **Care → clinician review** |
+| **Quarterly retake** | 90 days in | 5-min deep survey retake | Side-by-side Score + Outlook delta; prompts Advanced Lipid panel if outlook stalled | **Me → Survey**, **Insights** |
+| **Commercial deep** | Subscribes to Longevity+ | Quarterly panels, supplement stack, nutrition program | Auto-ships (supplements), books follow-ups (diagnostics, home phlebotomy) | **Insights + Care**, subscription |
+| **Advocate** | Refers sister | Shares a Vitality Score snapshot | Referral program | **Care → referrals**, shareable snapshot |
 
 ## User stories
 
@@ -69,13 +74,28 @@ Written in "As a / I want / So that" format. These ground prototype decisions.
 **US-4 — Risk-to-action path**
 > As Anna, I want early warning signals surfaced with a one-tap path to a real doctor in my network, so that I'm not left to Google "is ApoB 120 bad" at 11pm.
 
+**US-5 — Daily protocol with streaks**
+> As Anna, I want a short daily list of specific actions generated from my goals and data, with a streak I can keep, so that longevity advice becomes a habit instead of a PDF I never open.
+
+**US-6 — Self-tracking without a wearable**
+> As Anna, I want to quick-log meals (by photo), sleep, mood, and workouts, so that the AI still has something to work with on days my Fitbit is dead or on vacation.
+
+**US-7 — Nutrition woven in**
+> As Anna, I want the app to help me eat for longevity in the moment I'm actually eating — photographing a plate and getting one concrete swap — so that nutrition stops being a separate app.
+
+**US-8 — Forward-looking motivation**
+> As Anna, I want to see how my current habits project my Vitality Score forward 3, 6, and 12 months, so that I have a near-term reason to hold the streak, not just a 70-year-old abstraction.
+
 ### Nice-to-have stories
 
-**US-5 — Future-self simulator**
+**US-9 — Future-self simulator**
 > As Anna, I want to see a projection of my health at 70 based on current habits vs. improved habits, so that I'm motivated by a concrete picture instead of abstract advice.
 
-**US-6 — Flexible appointments**
-> As Anna, I want to book appointments with my clinic *or* external specialists (via Doctolib etc.), so that the app stays useful even when I need someone outside the network.
+**US-10 — Flexible appointments across the three service pillars**
+> As Anna, I want to book clinic visits, at-home phlebotomy, or external specialists from one Care tab, so that the app mirrors how the clinic group actually delivers services.
+
+**US-11 — Quarterly re-survey**
+> As Anna, I want to retake the lifestyle survey every quarter and see my deltas, so that I can tell whether the protocol is actually working.
 
 ## Secondary cameo — PT0421
 
