@@ -3,13 +3,12 @@
  *
  * Fetches insights from the backend and renders:
  *   1. Header: h1 "Insights" + subtitle "Your four longevity dimensions"
- *   2. AI disclosure banner (crosshair icon + "GDPR" pill)
- *   3. 2x2 signal card grid (four longevity dimensions)
- *   4. Risk flag hero card (always shown with demo data)
- *   5. Commercial offer card (demo mock data)
- *   6. Sleep trend bar chart (demo mock data)
- *   7. Future-self simulator (client component)
- *   8. Fine-print disclaimer
+ *   2. 2x2 signal card grid (four longevity dimensions)
+ *   3. Risk flag hero card (always shown with demo data)
+ *   4. Commercial offer card (demo mock data)
+ *   5. Sleep trend bar chart (demo mock data)
+ *   6. Future-self simulator (client component, banner scoped inside)
+ *   7. Fine-print disclaimer
  *
  * Stack: Next.js 15 App Router, server component, Tailwind v4.
  */
@@ -176,57 +175,6 @@ export default async function InsightsPage() {
           Your four longevity dimensions
         </p>
       </header>
-
-      {/* -- 2. AI disclosure banner ----------------------------------------- */}
-      <div
-        role="note"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "9px 12px",
-          borderRadius: 10,
-          background: "var(--color-accent-lt)",
-          border: "1px solid var(--color-accent-md)",
-          fontSize: 11.5,
-          fontWeight: 600,
-          color: "var(--color-accent-2)",
-          marginBottom: 14,
-        }}
-      >
-        {/* Crosshair icon */}
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-          style={{ flexShrink: 0 }}
-        >
-          <path d="M12 2v20M2 12h20" />
-        </svg>
-        <span style={{ flex: 1 }}>
-          Patterns surfaced by AI &middot; general wellness lens
-        </span>
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            background: "var(--color-accent-md)",
-            color: "var(--color-accent-2)",
-            padding: "2px 6px",
-            borderRadius: 4,
-          }}
-        >
-          GDPR
-        </span>
-      </div>
 
       {/* -- 3. Signal grid -------------------------------------------------- */}
       <div

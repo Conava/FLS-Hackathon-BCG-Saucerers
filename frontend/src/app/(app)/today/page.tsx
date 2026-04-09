@@ -15,7 +15,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  AiDisclosureBanner,
   OutlookCurve,
   StreakBadge,
   SectionHeader,
@@ -283,12 +282,6 @@ export default async function TodayPage() {
           {initials}
         </Link>
       </div>
-
-      {/* AI Disclosure Banner — required on AI-powered screens */}
-      <AiDisclosureBanner
-        model="general wellness guidance"
-        region="GDPR · EU"
-      />
 
       {/* ── Hero card: Vitality ring + streak + outlook ─────────────────── */}
       <div

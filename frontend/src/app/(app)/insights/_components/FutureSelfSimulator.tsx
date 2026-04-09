@@ -14,7 +14,7 @@
  */
 
 import * as React from "react";
-import { FutureSelfSlider } from "@/components/design";
+import { FutureSelfSlider, AiDisclosureBanner } from "@/components/design";
 import { postFutureSelf } from "@/lib/api/client";
 
 /** Debounce delay before firing the API call */
@@ -132,6 +132,11 @@ export function FutureSelfSimulator() {
 
       {/* Card */}
       <div className="card">
+        {/* AI disclosure — scoped to this card since it uses live Gemini projection */}
+        <div style={{ marginBottom: 12 }}>
+          <AiDisclosureBanner model="Gemini 2.5 Flash" region="EU · GDPR" />
+        </div>
+
         {/* Projected age display */}
         <div style={{ textAlign: "center", padding: "6px 0 12px" }}>
           {/* Label: 11px/ink-3/uppercase/0.06em */}
