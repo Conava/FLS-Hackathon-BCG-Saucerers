@@ -40,7 +40,6 @@ from collections.abc import AsyncIterator  # noqa: E402
 import pytest  # noqa: E402
 import pytest_asyncio  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine  # noqa: E402
-from sqlmodel import SQLModel  # noqa: E402
 from testcontainers.postgres import PostgresContainer  # noqa: E402
 
 
@@ -89,18 +88,18 @@ async def engine(postgres_container: PostgresContainer) -> AsyncIterator[AsyncEn
 
     Steps:
     1. Build the connection URL using the asyncpg driver.
-    2. Enable the pgvector extension.
-    3. Create all SQLModel-registered tables once per session.
+    2. Delegate to ``app.db.base.create_all`` which installs the vector extension,
+       creates all SQLModel-registered tables, and creates the HNSW index on
+       ``ehr_record.embedding`` — all idempotently via IF NOT EXISTS guards.
     """
     # Import models to register their metadata with SQLModel before create_all.
     import app.models  # noqa: F401 — side-effect import registers tables
+    from app.db.base import create_all as db_create_all
 
     url = postgres_container.get_connection_url(driver="asyncpg")
 
     eng = create_async_engine(url, pool_pre_ping=True)
-    async with eng.begin() as conn:
-        await conn.exec_driver_sql("CREATE EXTENSION IF NOT EXISTS vector")
-        await conn.run_sync(SQLModel.metadata.create_all)
+    await db_create_all(eng)
 
     yield eng
 

@@ -36,6 +36,12 @@ async def create_all(engine: AsyncEngine) -> None:
     that the ``pgvector`` ``Vector`` column type is always available — even
     on a freshly provisioned Cloud SQL instance.
 
+    After creating tables, this also creates an HNSW index on
+    ``ehr_record.embedding`` using the ``vector_cosine_ops`` operator class.
+    This index DDL is non-standard and cannot be expressed via SQLModel/SQLAlchemy
+    ORM, so it is issued as raw SQL.  The ``IF NOT EXISTS`` guard makes repeated
+    calls idempotent.
+
     Args:
         engine: The ``AsyncEngine`` to run DDL against.  Typically obtained via
             ``app.db.session.get_engine()``.
@@ -51,3 +57,10 @@ async def create_all(engine: AsyncEngine) -> None:
     async with engine.begin() as conn:
         await conn.exec_driver_sql("CREATE EXTENSION IF NOT EXISTS vector")
         await conn.run_sync(SQLModel.metadata.create_all)
+        # HNSW index on ehr_record.embedding — non-standard DDL, cannot be
+        # expressed via SQLModel/SQLAlchemy ORM, so we use raw SQL.
+        # IF NOT EXISTS makes repeated calls idempotent.
+        await conn.exec_driver_sql(
+            "CREATE INDEX IF NOT EXISTS ehr_record_embedding_hnsw "
+            "ON ehr_record USING hnsw (embedding vector_cosine_ops)"
+        )

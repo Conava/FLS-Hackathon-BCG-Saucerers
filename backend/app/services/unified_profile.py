@@ -29,11 +29,12 @@ and duration are emitted to the structured logger.
 from __future__ import annotations
 
 import dataclasses
+import json
 import logging
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters import get_source
@@ -41,12 +42,18 @@ from app.adapters.base import PatientData
 from app.core.logging import get_logger
 from app.models import EHRRecord, WearableDay
 
+if TYPE_CHECKING:
+    from app.ai.llm import LLMProvider
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
 #: Number of patients between commits — bounds memory and lock duration.
 _BATCH_SIZE: int = 50
+
+#: Number of EHR records to embed in a single LLM batch call.
+_EMBED_BATCH_SIZE: int = 100
 
 _logger: logging.Logger = get_logger(__name__)
 
@@ -103,6 +110,11 @@ class UnifiedProfileService:
     session:
         An open ``AsyncSession``. The caller owns the session lifecycle;
         this service only adds objects and commits in batches.
+    llm_provider:
+        Optional LLM provider used to embed ``EHRRecord.content`` after
+        each batch is written.  When ``None`` (default) embeddings are
+        left as ``NULL`` — preserving backward-compatibility for callers
+        that do not need RAG.
 
     Usage::
 
@@ -111,8 +123,13 @@ class UnifiedProfileService:
         print(report)
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        llm_provider: "LLMProvider | None" = None,
+    ) -> None:
         self._session = session
+        self._llm_provider = llm_provider
 
     async def ingest(self, source_name: str, **source_kwargs: Any) -> IngestReport:
         """Drain a registered DataSource into the database.
@@ -174,6 +191,13 @@ class UnifiedProfileService:
 
         # Final commit for the last partial batch
         await session.commit()
+
+        # After all patients are written, populate embeddings if an LLM provider
+        # was supplied.  We do this in one pass over all records so the LLM
+        # batching is maximally efficient (100 at a time).
+        if self._llm_provider is not None:
+            await self._embed_all_records()
+            await session.commit()
 
         duration = time.monotonic() - start
         report = IngestReport(
@@ -237,3 +261,72 @@ class UnifiedProfileService:
         # Flush after each patient so FK constraints are satisfied before
         # child rows are inserted in the same unit of work
         await session.flush()
+
+    # -----------------------------------------------------------------------
+    # Embedding helpers
+    # -----------------------------------------------------------------------
+
+    async def _embed_all_records(self) -> None:
+        """Fetch all EHRRecord rows with null embeddings and embed them in batches.
+
+        Calls ``LLMProvider.embed`` with up to ``_EMBED_BATCH_SIZE`` texts at a
+        time.  Updates each row's ``embedding`` column in-place via the session.
+
+        Rows that already have a non-null embedding are skipped — this makes
+        repeated calls idempotent.
+        """
+        assert self._llm_provider is not None  # guarded by caller
+
+        session = self._session
+
+        # Load all records that still need embeddings.
+        stmt = select(EHRRecord).where(
+            getattr(EHRRecord, "embedding") == None  # noqa: E711 — SQLAlchemy IS NULL
+        )
+        result = await session.execute(stmt)
+        records = list(result.scalars().all())
+
+        if not records:
+            return
+
+        _logger.info(
+            "embedding ehr_records",
+            extra={"record_count": len(records)},
+        )
+
+        # Batch the embedding calls to avoid oversized requests.
+        for batch_start in range(0, len(records), _EMBED_BATCH_SIZE):
+            batch = records[batch_start : batch_start + _EMBED_BATCH_SIZE]
+            texts = [_record_to_text(r) for r in batch]
+            vectors = await self._llm_provider.embed(texts)
+
+            for record, vector in zip(batch, vectors):
+                record.embedding = vector
+
+            # Flush after each batch so memory is bounded.
+            await session.flush()
+
+        _logger.info(
+            "embedding complete",
+            extra={"record_count": len(records)},
+        )
+
+
+def _record_to_text(record: EHRRecord) -> str:
+    """Build a plain-text representation of an EHRRecord for embedding.
+
+    Produces a short, information-dense string from ``record_type`` and
+    ``payload`` that captures the clinical semantics of the record.
+
+    Args:
+        record: An ``EHRRecord`` instance.
+
+    Returns:
+        A text string suitable for passing to an embedding model.
+    """
+    try:
+        payload_str = json.dumps(record.payload, ensure_ascii=False)
+    except (TypeError, ValueError):
+        payload_str = str(record.payload)
+
+    return f"{record.record_type}: {payload_str}"
