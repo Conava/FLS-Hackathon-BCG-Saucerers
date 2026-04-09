@@ -143,10 +143,10 @@ async def test_app_title_and_version(client: AsyncClient) -> None:
     spec = response.json()
     info = spec.get("info", {})
 
-    assert info.get("title") == "Longevity+ Backend", (
+    assert info.get("title") == "Longevity+ API", (
         f"Unexpected title: {info.get('title')!r}"
     )
-    assert info.get("version") == "0.1.0", (
+    assert info.get("version") == "1.0.0", (
         f"Unexpected version: {info.get('version')!r}"
     )
 
