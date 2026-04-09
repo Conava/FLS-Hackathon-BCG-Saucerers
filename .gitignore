@@ -1,0 +1,36 @@
+# Devline / Claude Code workspace
+.devline/
+.claude/
+CLAUDE.local.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Office lockfiles
+.~lock.*#
+~$*
+
+# Build / logs
+dist/
+build/
+*.log
