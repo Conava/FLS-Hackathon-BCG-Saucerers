@@ -15,15 +15,17 @@ Three structural barriers:
 
 > **The only longevity platform where your doctor actually sees the data.**
 
-Combine the engagement loop of Oura/Whoop (daily score, AI coach, streaks) with the diagnostic depth of Function Health (longitudinal biomarker trendlines) — wrapped in the clinical group's existing EHR, physician network, and EU reimbursement rails.
+Combine the engagement loop of Oura/Whoop (daily score, AI coach, streaks, daily protocol) with the diagnostic depth of Function Health (longitudinal biomarker trendlines) and the lifestyle completeness of Zoe (nutrition woven into every surface) — wrapped in the clinical group's existing EHR, physician network, and EU reimbursement rails.
 
 D2C players sell optimization to the worried well. We sell **optimization + safety net**: when something goes wrong, a real in-network doctor in your country calls you. No US startup can offer that in Hamburg, Madrid, or Warsaw.
+
+**Product shape in one line:** five personal-language tabs (Today / Coach / Records / Insights / Care) + a Me profile icon, structured around the brief's four longevity dimensions, with nutrition woven across every surface and a Protocol + Streak engine that turns Coach advice into daily actions. See [07-features.md](07-features.md) for the full IA.
 
 ## North-star metric
 
 **Weekly Actioned Longevity Recommendations per patient (WALR)**
 
-A patient who acts on ≥3 coach recommendations per week demonstrates behavior change, not just app logins. Year-1 target: **median 3/week across active users**.
+A patient who acts on ≥3 coach recommendations per week demonstrates behavior change, not just app logins. Year-1 target: **median 3/week across active users**. Operationally, WALR is the count of completed `ProtocolAction`s logged in `DailyLog` — the Protocol + Streak engine (see [05-data-model.md](05-data-model.md)) is the on-ramp, and the streak counter on Today is the visible instrument.
 
 Why not DAU or MAU? Those reward app-opening, not outcomes. WALR ties engagement to actual longevity intervention, which is what the clinic gets paid for (directly or indirectly).
 
@@ -47,6 +49,9 @@ Three layers, designed to leverage the 10M-patient warm lead base with ~zero CAC
 | Pattern | Source | Why it works |
 |---|---|---|
 | Single composite score | Oura Readiness, Whoop Recovery | #1 daily-return hook |
+| Forward-looking outlook curve | Whoop Strain Coach, Fitbit Readiness | Near-term motivation beyond "today's number" |
+| Daily protocol + streaks | Noom, Fabulous, Zero | Turns advice into habit, gives WALR a home |
+| Photo-driven meal logging + swap | Zoe, MacroFactor | Makes nutrition first-class without a separate app |
 | Biomarker trendlines | Function Health, Thriva | Stickiest UI artifact |
 | AI coach + journaling loop | Whoop Coach, Superpower | Passive data → prescriptive action |
 | Bundled hardware + labs + app | Ultrahuman, Lifeforce | End-to-end beats point solutions |

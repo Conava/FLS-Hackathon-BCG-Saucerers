@@ -58,3 +58,17 @@ This is the **BCG Platinion AI Hackathon** project (Future Leader Summit Hamburg
 
 <!-- Lessons are added here automatically via the Learning & Recovery process above. -->
 <!-- Format: **Pattern**: ... | **Reason**: ... | **Solution**: ... -->
+
+**Pattern**: `datetime` fields in SQLModel map to `TIMESTAMP WITHOUT TIME ZONE`; asyncpg rejects timezone-aware values at insert time. **Reason**: SQLModel's default column type carries no timezone. asyncpg raises `"can't subtract offset-naive and offset-aware datetimes"` when a `tzinfo`-bearing value is bound. **Solution**: always construct datetimes as naive UTC — `datetime.now(UTC).replace(tzinfo=None)`. Never use `datetime.utcnow()` (deprecated in Python 3.12+).
+
+**Pattern**: Combining `Field(index=True)` on a column with a named `Index` on the same column in `__table_args__` causes a duplicate-index DDL crash at `create_all`. **Reason**: SQLModel/SQLAlchemy emits two `CREATE INDEX` statements for the same column. **Solution**: pick one — prefer `__table_args__` when you need a named index for the pitch; drop `Field(index=True)` on the same column.
+
+**Pattern**: `uv run` does not inherit shell environment variables such as `DOCKER_HOST`. **Reason**: `uv` launches a subprocess that may not carry the calling shell's exports. **Solution**: set rootless Docker socket paths at conftest module-load time (e.g. `os.environ.setdefault("DOCKER_HOST", "unix:///run/user/...")`) before Testcontainers initialises.
+
+**Pattern**: asyncpg + session-scoped pytest-asyncio fixtures deadlock or raise loop-scope errors without explicit scope configuration. **Reason**: pytest-asyncio defaults to function scope for the event loop, conflicting with session-scoped async fixtures that share a DB connection. **Solution**: set both `asyncio_default_fixture_loop_scope = "session"` and `asyncio_default_test_loop_scope = "session"` in `[tool.pytest.ini_options]` in `pyproject.toml`.
+
+**Pattern**: pytest `@pytest.mark.X` marker declarations do not skip tests by default — they only categorise them. **Reason**: markers are metadata; exclusion requires explicit `addopts`. **Solution**: add `addopts = "-m 'not X'"` to `[tool.pytest.ini_options]` for any marker (e.g. `compose`) that should be deselected in the standard `uv run pytest` run.
+
+**Pattern**: `python-json-logger` v3+ moved the formatter class to the `pythonjsonlogger.json` submodule; importing from `pythonjsonlogger.jsonlogger` raises an `ImportError`. **Reason**: the submodule was renamed in the v3 release. **Solution**: import `from pythonjsonlogger.json import JsonFormatter` (not `.jsonlogger`). Pin to `>=3.0` and update any legacy import paths.
+
+**Pattern**: `SQLModel.column == value` comparisons in `.where()` clauses type-check as `bool` under mypy strict mode, not as a SQLAlchemy `ColumnElement`. **Reason**: SQLModel's `Field` descriptors return `bool` from `__eq__` in mypy's view. **Solution**: use `getattr(Model, "column_name")` (typed `Any`) to build the comparison — e.g. `getattr(Patient, "patient_id") == patient_id`. This is the consistent pattern used across all repositories in this codebase.
