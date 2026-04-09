@@ -72,6 +72,26 @@ class Settings(BaseSettings):
     Must **not** include the ``gs://`` prefix — just the bare bucket name.
     """
 
+    # ------------------------------------------------------------------
+    # LLM / GCP settings (T3)
+    # ------------------------------------------------------------------
+
+    llm_provider: Literal["fake", "gemini"] = "fake"
+    """LLM backend to use.
+
+    * ``"fake"`` — ``FakeLLMProvider``: deterministic, no network, for dev/tests.
+    * ``"gemini"`` — ``GeminiProvider``: Gemini 2.5 via Vertex AI (needs GCP creds).
+    """
+
+    gcp_project: str | None = None
+    """GCP project ID.  Required when ``llm_provider="gemini"``."""
+
+    gcp_location: str = "europe-west3"
+    """GCP region for Vertex AI and Cloud Storage.
+
+    Defaults to ``"europe-west3"`` to satisfy EU data-residency requirements.
+    """
+
 
 def get_settings() -> Settings:
     """Return a fresh Settings instance.
