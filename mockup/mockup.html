@@ -1,0 +1,1473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Helf · Longevity+ · Anna Weber</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* ──────────────────────────────────────────────────────────
+   Helf mockup v2 — self-contained, inline CSS + JS
+   Design tokens match mockup/index.html, elevated spacing,
+   micro-interactions, empty & loading states, a11y.
+   ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #F7F6F3;
+  --bg-2:       #ECEAE4;
+  --surface:    #FFFFFF;
+  --surface-2:  #FBFAF7;
+  --border:     #E8E6E1;
+  --border-2:   #D9D6CF;
+  --ink:        #0E1726;
+  --ink-2:      #3D4A5C;
+  --ink-3:      #7A8799;
+  --ink-4:      #AAB4C2;
+  --accent:     #1A6B74;
+  --accent-2:   #0F4A50;
+  --accent-lt:  #EAF4F5;
+  --accent-md:  #C2E0E3;
+  --sand:       #E9DFC8;
+  --good:       #2D7D4E;
+  --good-lt:    #E8F5EE;
+  --warn:       #9C6B15;
+  --warn-lt:    #FDF3DC;
+  --danger:     #B8312F;
+  --danger-lt:  #FCEAEA;
+  --violet:     #6B4AA8;
+  --violet-lt:  #EFEAF7;
+  --shadow-sm:  0 1px 3px rgba(14,23,38,.06), 0 1px 2px rgba(14,23,38,.04);
+  --shadow-md:  0 4px 16px rgba(14,23,38,.08), 0 1px 4px rgba(14,23,38,.05);
+  --shadow-lg:  0 12px 40px rgba(14,23,38,.12), 0 4px 12px rgba(14,23,38,.06);
+  --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --tab-h: 74px;
+  --focus: 0 0 0 3px rgba(26,107,116,.35);
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 16px;
+  line-height: 1.5;
+}
+button { font-family: inherit; }
+a { color: var(--accent); text-decoration: none; }
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 6px; }
+
+/* ─── Shell ─── */
+.app-shell {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #ECEAE4 0%, #E4E1D8 100%);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 32px 24px 64px;
+}
+.desktop-wrapper {
+  display: grid;
+  grid-template-columns: auto 340px;
+  gap: 40px;
+  align-items: start;
+  max-width: 1240px;
+  width: 100%;
+}
+@media (max-width: 900px) {
+  .desktop-wrapper { grid-template-columns: 1fr; }
+  .context-panel { display: none !important; }
+  .app-shell { padding: 0; background: var(--bg); }
+  .phone-frame { width: 100% !important; height: 100vh !important; border-radius: 0 !important; padding: 0 !important; box-shadow: none !important; }
+  .phone-notch { display: none; }
+  .phone-screen { border-radius: 0 !important; }
+}
+
+/* ─── Phone frame ─── */
+.phone-frame {
+  width: 412px;
+  height: 880px;
+  background: #141418;
+  border-radius: 54px;
+  padding: 14px;
+  box-shadow: 0 40px 90px rgba(0,0,0,.38), 0 12px 28px rgba(0,0,0,.22), inset 0 0 0 1px rgba(255,255,255,.08);
+  position: relative;
+}
+.phone-notch {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  width: 128px; height: 32px; background: #141418;
+  border-radius: 0 0 20px 20px; z-index: 30;
+}
+.phone-screen {
+  width: 100%; height: 100%;
+  border-radius: 42px; overflow: hidden;
+  background: var(--bg);
+  display: flex; flex-direction: column; position: relative;
+}
+.screen-viewport {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+  padding-top: 52px;
+}
+.screen-viewport::-webkit-scrollbar { display: none; }
+
+/* ─── Status bar ─── */
+.status-bar {
+  position: absolute; top: 0; left: 0; right: 0; height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; font-size: 13px; font-weight: 600; color: var(--ink);
+  z-index: 25; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(247,246,243,1) 60%, rgba(247,246,243,0));
+}
+.status-bar .icons { display: flex; gap: 6px; align-items: center; }
+
+/* ─── Tab bar ─── */
+.tab-bar {
+  height: var(--tab-h);
+  background: rgba(255,255,255,.96);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+  display: flex; align-items: stretch; flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  cursor: pointer; padding: 10px 4px;
+  border: none; background: none;
+  color: var(--ink-3); font-size: 10.5px; font-weight: 600;
+  letter-spacing: .02em;
+  transition: color .18s, transform .18s;
+}
+.tab-item.active { color: var(--accent); }
+.tab-item:active { transform: scale(.94); }
+.tab-item svg { transition: transform .2s; }
+.tab-item.active svg { transform: translateY(-2px); }
+
+/* ─── Screens ─── */
+.screen { display: none; padding: 8px 20px 28px; animation: fadeUp .3s ease both; }
+.screen.active { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Common UI ─── */
+.h-hello { font-size: 13px; color: var(--ink-3); font-weight: 500; }
+.h-title { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.h-row { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 10px; }
+.h-row h2 { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: .01em; text-transform: uppercase; }
+.h-row a { font-size: 12px; font-weight: 600; color: var(--accent); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 18px;
+  transition: transform .15s, box-shadow .15s;
+}
+.card:hover { box-shadow: var(--shadow-md); }
+.card.flat { box-shadow: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 600;
+  background: var(--accent-lt); color: var(--accent);
+}
+.chip.good   { background: var(--good-lt); color: var(--good); }
+.chip.warn   { background: var(--warn-lt); color: var(--warn); }
+.chip.danger { background: var(--danger-lt); color: var(--danger); }
+.chip.violet { background: var(--violet-lt); color: var(--violet); }
+.chip.muted  { background: var(--bg-2); color: var(--ink-3); }
+.chip .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 16px; border-radius: var(--r-md);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: 1px solid transparent; transition: transform .1s, background .15s, box-shadow .15s;
+  min-height: 44px;
+}
+.btn:active { transform: scale(.98); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-2); }
+.btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--border); }
+.btn-ghost:hover { background: var(--bg); }
+.btn-block { width: 100%; }
+.btn-sm { padding: 8px 12px; font-size: 12.5px; min-height: 36px; }
+
+.ai-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: var(--r-md);
+  background: var(--violet-lt); color: var(--violet);
+  font-size: 11.5px; font-weight: 600; margin-bottom: 12px;
+  border: 1px solid rgba(107,74,168,.18);
+}
+.ai-banner svg { flex-shrink: 0; }
+.ai-banner .eu { margin-left: auto; font-size: 10px; opacity: .85; }
+
+.disclaimer {
+  font-size: 10.5px; color: var(--ink-3); text-align: center;
+  padding: 10px 12px; line-height: 1.5;
+}
+
+/* Rings & bars */
+.ring { position: relative; width: 168px; height: 168px; margin: 4px auto 8px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .ring-track { fill: none; stroke: var(--bg-2); stroke-width: 12; }
+.ring .ring-fill  { fill: none; stroke: var(--accent); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1); }
+.ring .center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+}
+.ring .num { font-size: 46px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
+.ring .lbl { font-size: 11px; color: var(--ink-3); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-top: 4px; }
+.ring .delta { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; color: var(--danger); margin-top: 6px; }
+.ring .delta.up { color: var(--good); }
+
+.bar { height: 6px; border-radius: 999px; background: var(--bg-2); overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+/* Sparkline */
+.spark { width: 100%; height: 48px; }
+
+/* Protocol action */
+.proto {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px; border: 1px solid var(--border);
+  border-radius: var(--r-md); background: var(--surface);
+  transition: background .15s;
+}
+.proto + .proto { margin-top: 8px; }
+.proto .check {
+  width: 26px; height: 26px; flex-shrink: 0;
+  border: 2px solid var(--border-2); border-radius: 999px;
+  background: var(--surface); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .18s;
+}
+.proto.done .check { background: var(--good); border-color: var(--good); }
+.proto.done .check svg { opacity: 1; }
+.proto .check svg { opacity: 0; transition: opacity .15s; }
+.proto.done .title { text-decoration: line-through; color: var(--ink-3); }
+.proto .body { flex: 1; min-width: 0; }
+.proto .title { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.proto .rat { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+.proto .cat { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; margin-top: 4px; }
+
+/* Chat */
+.chat-log { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.msg { max-width: 82%; padding: 10px 14px; border-radius: 18px; font-size: 13.5px; line-height: 1.5; }
+.msg.ai { background: var(--surface); border: 1px solid var(--border); color: var(--ink); align-self: flex-start; border-bottom-left-radius: 6px; }
+.msg.me { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 6px; }
+.msg.typing span { display: inline-block; width: 6px; height: 6px; margin: 0 2px; background: var(--ink-3); border-radius: 999px; animation: bounce 1.2s infinite; }
+.msg.typing span:nth-child(2) { animation-delay: .15s; }
+.msg.typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity:.4 } 30% { transform: translateY(-4px); opacity:1 } }
+
+.chat-input {
+  display: flex; gap: 8px; align-items: center;
+  padding: 10px 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; margin-top: 12px;
+}
+.chat-input input {
+  flex: 1; border: none; background: transparent; outline: none;
+  font-size: 14px; font-family: var(--font); color: var(--ink);
+  min-width: 0;
+}
+.chat-input button {
+  width: 36px; height: 36px; border-radius: 999px; border: none;
+  background: var(--accent); color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.suggest { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px; }
+.suggest::-webkit-scrollbar { display: none; }
+.suggest button {
+  white-space: nowrap; flex-shrink: 0;
+  padding: 8px 12px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface);
+  font-size: 12px; color: var(--ink-2); cursor: pointer;
+}
+.suggest button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Signals (4 dims) */
+.signals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sig {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 12px; cursor: pointer;
+  transition: transform .15s;
+}
+.sig:hover { transform: translateY(-2px); }
+.sig .ico { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--accent-lt); color: var(--accent); margin-bottom: 8px; }
+.sig .name { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+.sig .val { font-size: 20px; font-weight: 800; margin: 2px 0; }
+.sig .sub { font-size: 11px; font-weight: 600; }
+.sig.warn .ico { background: var(--warn-lt); color: var(--warn); }
+.sig.warn .sub { color: var(--warn); }
+.sig.good .sub { color: var(--good); }
+
+/* Biomarker row */
+.bio { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.bio:last-child { border-bottom: none; }
+.bio .name { font-size: 13px; font-weight: 600; }
+.bio .meta { font-size: 11px; color: var(--ink-3); }
+.bio .val { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+
+/* Appointment */
+.appt {
+  display: flex; gap: 12px; align-items: center;
+  padding: 14px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+}
+.appt + .appt { margin-top: 8px; }
+.appt .date {
+  flex-shrink: 0; width: 52px; height: 56px;
+  background: var(--accent-lt); color: var(--accent);
+  border-radius: var(--r-sm);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.appt .date .d { font-size: 20px; font-weight: 800; line-height: 1; }
+.appt .date .m { font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.appt .info { flex: 1; min-width: 0; }
+.appt .info .t { font-size: 13.5px; font-weight: 600; }
+.appt .info .s { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+
+/* Segmented control */
+.seg { display: flex; background: var(--bg-2); border-radius: var(--r-md); padding: 4px; }
+.seg button {
+  flex: 1; padding: 8px 12px; border: none; background: transparent;
+  font-size: 12px; font-weight: 600; color: var(--ink-3);
+  border-radius: 10px; cursor: pointer;
+}
+.seg button.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+
+/* Toggle */
+.tog { position: relative; width: 42px; height: 24px; background: var(--border-2); border-radius: 999px; cursor: pointer; transition: background .2s; flex-shrink: 0; }
+.tog::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s; }
+.tog.on { background: var(--accent); }
+.tog.on::after { transform: translateX(18px); }
+
+/* Rows list */
+.row-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.row-list { border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+.row-list .row-item:last-child { border-bottom: none; }
+.row-item .label { flex: 1; font-size: 13px; font-weight: 500; }
+.row-item .sub { font-size: 11px; color: var(--ink-3); }
+
+/* Overlay panels */
+.overlay {
+  position: absolute; inset: 0; background: rgba(14,23,38,.45);
+  backdrop-filter: blur(4px);
+  display: none; align-items: flex-end; z-index: 40;
+  animation: fadeIn .2s;
+}
+.overlay.open { display: flex; }
+.sheet {
+  width: 100%; background: var(--surface);
+  border-radius: 24px 24px 0 0; padding: 20px 20px 28px;
+  animation: slideUp .3s cubic-bezier(.4,0,.2,1);
+  max-height: 85%; overflow-y: auto;
+}
+.sheet .handle { width: 44px; height: 4px; background: var(--border-2); border-radius: 999px; margin: 0 auto 14px; }
+@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+
+/* Onboarding progress */
+.progress { height: 4px; background: var(--bg-2); border-radius: 999px; overflow: hidden; }
+.progress > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .4s; }
+
+/* Futureself sliders */
+.slider-row { margin-bottom: 14px; }
+.slider-row .label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+.slider-row .label span:last-child { color: var(--accent); }
+input[type=range] {
+  width: 100%; -webkit-appearance: none; appearance: none;
+  height: 6px; border-radius: 999px; background: var(--bg-2);
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 20px; height: 20px; border-radius: 999px;
+  background: var(--accent); cursor: pointer;
+  box-shadow: 0 2px 6px rgba(14,23,38,.2);
+  border: 3px solid #fff;
+}
+
+/* Context panel (desktop) */
+.context-panel {
+  display: flex; flex-direction: column; gap: 16px;
+  position: sticky; top: 32px;
+}
+.ctx-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 18px; box-shadow: var(--shadow-sm);
+}
+.ctx-card h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); margin-bottom: 10px; font-weight: 700; }
+.ctx-card .brand { display: flex; align-items: center; gap: 12px; }
+.logo-mark {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 18px; letter-spacing: -.03em;
+}
+.ctx-card .brand .nm { font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+.ctx-card .brand .tag { font-size: 11px; color: var(--ink-3); }
+
+.nav-list button {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 12px; border: none; border-radius: 10px;
+  background: transparent; color: var(--ink-2);
+  font-size: 13px; font-weight: 500; cursor: pointer; text-align: left;
+  transition: background .15s;
+}
+.nav-list button:hover { background: var(--bg); }
+.nav-list button.active { background: var(--accent-lt); color: var(--accent); font-weight: 600; }
+.nav-list button .k { margin-left: auto; font-size: 10px; color: var(--ink-4); }
+
+.legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.legend-grid .it { padding: 8px 10px; background: var(--bg); border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--ink-2); }
+
+/* Streak badge */
+.streak {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, #FDF3DC 0%, #F8E6B3 100%);
+  color: var(--warn); padding: 6px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 700;
+}
+
+/* Vitality outlook svg */
+.outlook { width: 100%; height: 100px; margin-top: 12px; }
+
+/* Ring-set (macros) */
+.rings-set { display: flex; gap: 14px; justify-content: space-around; }
+.rings-set .ringlet { width: 62px; text-align: center; }
+.rings-set .ringlet svg { width: 100%; height: 62px; transform: rotate(-90deg); }
+.rings-set .ringlet .lab { font-size: 10px; color: var(--ink-3); font-weight: 600; margin-top: 4px; text-transform: uppercase; letter-spacing: .04em; }
+.rings-set .ringlet .vv { font-size: 12px; font-weight: 700; }
+
+/* Meal photo preview */
+.meal-photo {
+  width: 100%; aspect-ratio: 16/10; border-radius: var(--r-md);
+  background: linear-gradient(135deg, #F4E3C8 0%, #D9B97A 50%, #8FAD5E 100%);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.meal-photo::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 30% 40%, rgba(255,255,255,.2), transparent 40%),
+              radial-gradient(circle at 70% 60%, rgba(0,0,0,.15), transparent 45%);
+}
+.meal-photo .tag-scan {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  background: rgba(14,23,38,.75); color: #fff;
+  padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 600;
+}
+
+/* Device list */
+.device {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+}
+.device + .device { margin-top: 8px; }
+.device .ic { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-2); display: flex; align-items: center; justify-content: center; }
+.device .nm { font-size: 13px; font-weight: 600; }
+.device .st { font-size: 11px; color: var(--good); }
+.device .st.off { color: var(--ink-3); }
+
+/* Consent list */
+.consent + .consent { margin-top: 10px; }
+.consent {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+}
+.consent .body { flex: 1; min-width: 0; }
+.consent .t { font-size: 13px; font-weight: 600; }
+.consent .d { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+
+/* Citation chip */
+.cite {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--accent-lt); color: var(--accent);
+  font-size: 10.5px; font-weight: 600; margin: 0 2px;
+  cursor: pointer;
+}
+
+/* Clinician card */
+.clin {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  color: #fff; padding: 18px; border-radius: var(--r-lg);
+}
+.clin .row { display: flex; gap: 12px; align-items: center; }
+.clin .av { width: 44px; height: 44px; border-radius: 999px; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.clin .t { font-size: 14px; font-weight: 700; }
+.clin .s { font-size: 11.5px; opacity: .85; }
+
+/* Alert / nudge */
+.nudge {
+  background: linear-gradient(135deg, #FFF7E8 0%, #FDF3DC 100%);
+  border: 1px solid #F3DFA6;
+  border-radius: var(--r-md);
+  padding: 14px; display: flex; gap: 12px;
+}
+.nudge .ic { width: 34px; height: 34px; border-radius: 10px; background: #F3DFA6; color: var(--warn); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.nudge .t { font-size: 13px; font-weight: 700; }
+.nudge .d { font-size: 11.5px; color: var(--ink-2); margin-top: 2px; }
+
+/* Skeleton / loading */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-2) 0%, var(--border) 50%, var(--bg-2) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 8px;
+}
+@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+
+/* Empty state */
+.empty { text-align: center; padding: 30px 16px; color: var(--ink-3); }
+.empty .ic { width: 56px; height: 56px; border-radius: 16px; background: var(--bg-2); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+.empty .t { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.empty .d { font-size: 11.5px; margin-top: 4px; }
+
+/* Footer disclaimer */
+.fine {
+  font-size: 10px; color: var(--ink-3);
+  text-align: center; padding: 14px 20px 2px;
+  line-height: 1.5;
+}
+
+/* Tabs inside screen */
+.subtabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; }
+.subtabs::-webkit-scrollbar { display: none; }
+.subtabs button {
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface);
+  font-size: 12px; font-weight: 600; color: var(--ink-2);
+  white-space: nowrap; cursor: pointer;
+}
+.subtabs button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+/* Data source card */
+.src-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--bg-2); font-size: 10.5px; font-weight: 600; color: var(--ink-2); }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="desktop-wrapper">
+
+    <!-- ═══════ PHONE FRAME ═══════ -->
+    <div class="phone-frame" role="application" aria-label="Helf longevity app mockup">
+      <div class="phone-notch" aria-hidden="true"></div>
+      <div class="phone-screen">
+
+        <!-- Status bar -->
+        <div class="status-bar" aria-hidden="true">
+          <span class="time">9:41</span>
+          <span class="icons">
+            <svg width="16" height="10" viewBox="0 0 16 10"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4" y="4" width="3" height="6" fill="currentColor"/><rect x="8" y="2" width="3" height="8" fill="currentColor"/><rect x="12" y="0" width="3" height="10" fill="currentColor"/></svg>
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 4 Q7 -1 13 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3.5 6 Q7 3 10.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="8.5" r="0.9" fill="currentColor"/></svg>
+            <svg width="22" height="10" viewBox="0 0 22 10"><rect x="0.5" y="0.5" width="18" height="9" rx="2" fill="none" stroke="currentColor"/><rect x="2" y="2" width="14" height="6" rx="1" fill="currentColor"/><rect x="19.5" y="3.5" width="1.5" height="3" fill="currentColor"/></svg>
+          </span>
+        </div>
+
+        <!-- Scroll area -->
+        <div class="screen-viewport" id="viewport">
+
+          <!-- ═════ SCREEN: ONBOARDING ═════ -->
+          <section class="screen" id="s-onboarding" aria-labelledby="ob-title">
+            <div style="text-align:center; padding: 24px 10px 16px;">
+              <div class="logo-mark" style="width:56px; height:56px; margin: 0 auto 14px; font-size:24px;">h</div>
+              <div style="font-size:12px; font-weight:600; color:var(--accent); letter-spacing:.1em; text-transform:uppercase;">Welcome to Helf</div>
+              <h1 id="ob-title" style="font-size:26px; font-weight:800; margin-top:6px; letter-spacing:-.02em;">Your longevity, in one place.</h1>
+              <p style="font-size:13.5px; color:var(--ink-3); margin-top:8px; line-height:1.55;">The only longevity platform where your doctor actually sees the data. Part of your clinic network.</p>
+            </div>
+
+            <div class="progress" aria-label="Onboarding progress" style="margin: 10px 0 14px;"><span style="width:40%"></span></div>
+            <div style="font-size:11px; color:var(--ink-3); text-align:center; margin-bottom:14px;">Step 2 of 5 · ~3 min</div>
+
+            <div class="card">
+              <div style="font-size:11px; font-weight:700; color:var(--accent); letter-spacing:.08em; text-transform:uppercase;">Your primary goal</div>
+              <div style="font-size:15px; font-weight:700; margin-top:4px;">What brings you here?</div>
+              <div style="display:flex; flex-direction:column; gap:8px; margin-top:14px;">
+                <label class="row-item" style="border-radius:var(--r-md); border:1.5px solid var(--accent); background:var(--accent-lt); cursor:pointer;">
+                  <span style="width:22px; height:22px; border-radius:999px; border:2px solid var(--accent); display:inline-flex; align-items:center; justify-content:center;"><span style="width:10px; height:10px; background:var(--accent); border-radius:999px;"></span></span>
+                  <span class="label">Understand my cardiovascular risk</span>
+                </label>
+                <label class="row-item" style="border-radius:var(--r-md); border:1px solid var(--border); cursor:pointer;">
+                  <span style="width:22px; height:22px; border-radius:999px; border:2px solid var(--border-2);"></span>
+                  <span class="label">Feel more energy day-to-day</span>
+                </label>
+                <label class="row-item" style="border-radius:var(--r-md); border:1px solid var(--border); cursor:pointer;">
+                  <span style="width:22px; height:22px; border-radius:999px; border:2px solid var(--border-2);"></span>
+                  <span class="label">Be healthy for my family long-term</span>
+                </label>
+                <label class="row-item" style="border-radius:var(--r-md); border:1px solid var(--border); cursor:pointer;">
+                  <span style="width:22px; height:22px; border-radius:999px; border:2px solid var(--border-2);"></span>
+                  <span class="label">Optimize performance & recovery</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:14px;">
+              <label style="display:flex; gap:12px; align-items:flex-start; cursor:pointer;">
+                <input type="checkbox" checked style="margin-top:3px; accent-color: var(--accent);" />
+                <div>
+                  <div style="font-size:12.5px; font-weight:600;">I consent to processing my health data for longevity insights</div>
+                  <div style="font-size:11px; color:var(--ink-3); margin-top:4px;">Art. 9(2)(h) GDPR · EU-hosted (Frankfurt) · Revocable anytime in Me → Privacy · <a href="#">Read details</a></div>
+                </div>
+              </label>
+            </div>
+
+            <button class="btn btn-primary btn-block" style="margin-top:18px;" onclick="goTo('today')">Continue</button>
+            <p class="disclaimer">General wellness guidance · Not medical advice · GDPR · EU-only</p>
+          </section>
+
+          <!-- ═════ SCREEN: TODAY ═════ -->
+          <section class="screen active" id="s-today" aria-labelledby="today-title">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div class="h-hello">Good morning, Anna</div>
+                <h1 id="today-title" class="h-title">Today · Wed 9 Apr</h1>
+              </div>
+              <button class="btn btn-ghost btn-sm" aria-label="Profile" onclick="openSheet('me')">
+                <span style="width:28px; height:28px; border-radius:999px; background:var(--accent); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;">AW</span>
+              </button>
+            </div>
+
+            <div class="ai-banner" role="note">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              You're talking to an AI · general wellness guidance
+              <span class="eu">GDPR · EU</span>
+            </div>
+
+            <!-- Vitality score + outlook -->
+            <div class="card" style="text-align:center;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="font-size:11px; font-weight:700; color:var(--ink-3); text-transform:uppercase; letter-spacing:.06em;">Vitality Score</div>
+                <span class="streak" title="6-day streak">🔥 6-day streak</span>
+              </div>
+              <div class="ring" role="img" aria-label="Vitality score 68 out of 100, down 6 from last week">
+                <svg viewBox="0 0 180 180">
+                  <circle class="ring-track" cx="90" cy="90" r="78"/>
+                  <circle class="ring-fill"  cx="90" cy="90" r="78" stroke-dasharray="490" stroke-dashoffset="157"/>
+                </svg>
+                <div class="center">
+                  <div class="num">68</div>
+                  <div class="lbl">out of 100</div>
+                  <div class="delta">▼ 6 vs last week</div>
+                </div>
+              </div>
+              <div style="font-size:12px; color:var(--ink-2); padding: 0 8px;">Hold your streak and your <b>Outlook reaches 74 by October</b> — mostly from sleep consistency.</div>
+              <svg class="outlook" viewBox="0 0 320 100" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="og" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#1A6B74" stop-opacity=".25"/><stop offset="1" stop-color="#1A6B74" stop-opacity="0"/></linearGradient>
+                </defs>
+                <path d="M0,70 L40,68 L80,72 L120,60 L160,58 L200,48 L240,40 L280,32 L320,26 L320,100 L0,100 Z" fill="url(#og)"/>
+                <path d="M0,70 L40,68 L80,72 L120,60 L160,58 L200,48 L240,40 L280,32 L320,26" fill="none" stroke="#1A6B74" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="120" cy="60" r="4" fill="#1A6B74"/>
+                <text x="128" y="56" font-size="10" font-weight="700" fill="#1A6B74">Now · 68</text>
+                <text x="260" y="26" font-size="10" font-weight="700" fill="#1A6B74">Oct · 74</text>
+              </svg>
+            </div>
+
+            <!-- Right-moment nudge -->
+            <div class="nudge" style="margin-top:14px;" role="alert">
+              <div class="ic">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/><circle cx="12" cy="12" r="4"/></svg>
+              </div>
+              <div>
+                <div class="t">You slept 5h 40m last night</div>
+                <div class="d">Skip HIIT today — a 25-min brisk walk keeps your recovery on track.</div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                  <button class="btn btn-primary btn-sm">Add walk to protocol</button>
+                  <button class="btn btn-ghost btn-sm">Dismiss</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Today's protocol -->
+            <div class="h-row"><h2>Today's protocol</h2><span class="chip muted">3 / 5 done</span></div>
+            <div id="proto-list">
+              <div class="proto done" onclick="toggleProto(this)">
+                <button class="check" aria-label="Completed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 12 10 17 19 7"/></svg></button>
+                <div class="body">
+                  <div class="title">25-min brisk walk</div>
+                  <div class="rat">Low-impact recovery after short sleep.</div>
+                  <div class="cat">Movement · Sleep & Recovery</div>
+                </div>
+              </div>
+              <div class="proto done" onclick="toggleProto(this)">
+                <button class="check" aria-label="Completed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 12 10 17 19 7"/></svg></button>
+                <div class="body">
+                  <div class="title">Swap white rice for lentils at lunch</div>
+                  <div class="rat">+12g fiber, supports healthier lipid profile.</div>
+                  <div class="cat">Nutrition · Cardio Fitness</div>
+                </div>
+              </div>
+              <div class="proto done" onclick="toggleProto(this)">
+                <button class="check" aria-label="Completed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 12 10 17 19 7"/></svg></button>
+                <div class="body">
+                  <div class="title">10-min morning sunlight</div>
+                  <div class="rat">Supports circadian rhythm &amp; sleep onset.</div>
+                  <div class="cat">Mind · Sleep & Recovery</div>
+                </div>
+              </div>
+              <div class="proto" onclick="toggleProto(this)">
+                <button class="check" aria-label="Mark complete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 12 10 17 19 7"/></svg></button>
+                <div class="body">
+                  <div class="title">Lights out by 22:30</div>
+                  <div class="rat">Target 7h 30m — aligns with your chronotype.</div>
+                  <div class="cat">Sleep · Sleep & Recovery</div>
+                </div>
+              </div>
+              <div class="proto" onclick="toggleProto(this)">
+                <button class="check" aria-label="Mark complete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 12 10 17 19 7"/></svg></button>
+                <div class="body">
+                  <div class="title">Omega-3 · 1g with dinner</div>
+                  <div class="rat">Your dietary intake is below target.</div>
+                  <div class="cat">Supplement · Cardio Fitness</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick log -->
+            <div class="h-row"><h2>Quick log</h2></div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;">
+              <button class="card flat" style="padding:12px 6px; text-align:center; cursor:pointer;" onclick="goTo('meal')">
+                <div style="font-size:20px;">🍽️</div><div style="font-size:10.5px; font-weight:600; margin-top:4px;">Meal</div>
+              </button>
+              <button class="card flat" style="padding:12px 6px; text-align:center; cursor:pointer;">
+                <div style="font-size:20px;">😴</div><div style="font-size:10.5px; font-weight:600; margin-top:4px;">Sleep</div>
+              </button>
+              <button class="card flat" style="padding:12px 6px; text-align:center; cursor:pointer;">
+                <div style="font-size:20px;">🏃</div><div style="font-size:10.5px; font-weight:600; margin-top:4px;">Workout</div>
+              </button>
+              <button class="card flat" style="padding:12px 6px; text-align:center; cursor:pointer;">
+                <div style="font-size:20px;">💧</div><div style="font-size:10.5px; font-weight:600; margin-top:4px;">Water</div>
+              </button>
+            </div>
+
+            <!-- Nutrition rings -->
+            <div class="h-row"><h2>Nutrition rings</h2><span class="chip good"><span class="dot"></span>On track</span></div>
+            <div class="card">
+              <div class="rings-set">
+                <div class="ringlet">
+                  <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="24" fill="none" stroke="#EAF4F5" stroke-width="6"/><circle cx="30" cy="30" r="24" fill="none" stroke="#1A6B74" stroke-width="6" stroke-linecap="round" stroke-dasharray="151" stroke-dashoffset="40"/></svg>
+                  <div class="vv">72g</div><div class="lab">Protein</div>
+                </div>
+                <div class="ringlet">
+                  <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="24" fill="none" stroke="#E8F5EE" stroke-width="6"/><circle cx="30" cy="30" r="24" fill="none" stroke="#2D7D4E" stroke-width="6" stroke-linecap="round" stroke-dasharray="151" stroke-dashoffset="30"/></svg>
+                  <div class="vv">28g</div><div class="lab">Fiber</div>
+                </div>
+                <div class="ringlet">
+                  <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="24" fill="none" stroke="#EFEAF7" stroke-width="6"/><circle cx="30" cy="30" r="24" fill="none" stroke="#6B4AA8" stroke-width="6" stroke-linecap="round" stroke-dasharray="151" stroke-dashoffset="75"/></svg>
+                  <div class="vv">3/5</div><div class="lab">Polyphenols</div>
+                </div>
+                <div class="ringlet">
+                  <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="24" fill="none" stroke="#FDF3DC" stroke-width="6"/><circle cx="30" cy="30" r="24" fill="none" stroke="#9C6B15" stroke-width="6" stroke-linecap="round" stroke-dasharray="151" stroke-dashoffset="130"/></svg>
+                  <div class="vv">0</div><div class="lab">Alcohol</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weekly micro-survey -->
+            <div class="card" style="margin-top:14px; background: var(--accent-lt); border-color: var(--accent-md);">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <div>
+                  <div style="font-size:12px; font-weight:700; color:var(--accent);">30-sec check-in</div>
+                  <div style="font-size:11.5px; color:var(--ink-2); margin-top:2px;">How did this week feel?</div>
+                </div>
+                <button class="btn btn-primary btn-sm">Start</button>
+              </div>
+            </div>
+            <p class="fine">Not medical advice. Wellness and lifestyle guidance only.</p>
+          </section>
+
+          <!-- ═════ SCREEN: COACH ═════ -->
+          <section class="screen" id="s-coach" aria-labelledby="coach-title">
+            <h1 id="coach-title" class="h-title">Coach</h1>
+            <div class="h-hello" style="margin-bottom:10px;">Your longevity AI · personalized to your data</div>
+
+            <div class="ai-banner">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8M16 4h4v4M4 16v4h4M16 20h4v-4"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+              You're talking to an AI · Gemini 2.5 Flash
+              <span class="eu">EU-only</span>
+            </div>
+
+            <div class="chat-log" id="chat-log">
+              <div class="msg ai">Good morning, Anna 👋 I saw your sleep came in at 5h 40m — want me to adjust today's plan?</div>
+              <div class="msg me">Why is my score down?</div>
+              <div class="msg ai">Your sleep dropped to 5h 40m the last 3 nights and your resting heart rate is up 6 bpm. Both are recovery signals.<br><br>Try tonight: 22:00 lights out, no alcohol, and 300mg magnesium glycinate. I've added these to today's protocol.<br><br><span style="font-size:11px; color:var(--ink-3);">Sources: Fitbit · your lifestyle survey · <span class="cite">protocol v3</span></span></div>
+              <div class="msg typing"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="suggest" role="tablist" aria-label="Suggested prompts">
+              <button onclick="ask('What should I eat for lower ApoB?')">What should I eat for lower ApoB?</button>
+              <button onclick="ask('Plan my week')">Plan my week</button>
+              <button onclick="ask('I feel stressed')">I feel stressed</button>
+              <button onclick="ask('Recipe idea for dinner')">Recipe for dinner</button>
+            </div>
+
+            <form class="chat-input" onsubmit="event.preventDefault(); ask(this.q.value); this.q.value='';">
+              <input name="q" aria-label="Ask your coach" placeholder="Ask anything about your longevity…" />
+              <button type="button" aria-label="Voice" style="background:transparent; color:var(--ink-3);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></button>
+              <button type="submit" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+            </form>
+            <p class="fine">Coach uses your wearable, survey & EHR context. General wellness — not medical advice.</p>
+          </section>
+
+          <!-- ═════ SCREEN: RECORDS ═════ -->
+          <section class="screen" id="s-records" aria-labelledby="rec-title">
+            <h1 id="rec-title" class="h-title">Records</h1>
+            <div class="h-hello" style="margin-bottom:10px;">Your official clinical data · provider-scoped</div>
+
+            <div class="ai-banner">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              Records Q&A is AI · answers cite real documents · Gemini 2.5 Pro
+              <span class="eu">EHR-scoped</span>
+            </div>
+
+            <div class="card" style="background: var(--accent-lt); border-color: var(--accent-md);">
+              <div style="font-size:12.5px; font-weight:700;">Ask about your records</div>
+              <div style="font-size:11.5px; color:var(--ink-2); margin:4px 0 10px;">Plain-language answers, citing the actual lab or report.</div>
+              <div class="chat-input" style="background:#fff;">
+                <input placeholder='e.g. "What did my last blood test say about cholesterol?"' aria-label="Ask about records"/>
+                <button aria-label="Ask"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:14px;">
+              <div style="font-size:11px; font-weight:700; color:var(--ink-3); text-transform:uppercase; letter-spacing:.04em;">Plain-language summary</div>
+              <div style="font-size:13px; line-height:1.55; margin-top:8px;">Your November 2025 panel showed <b>LDL 3.84 mmol/L</b> <span class="cite">ref:lab-2025-11</span> and <b>total cholesterol 7.05</b>. Both slightly elevated — in Germany the target for someone with your family history is below 3.0 mmol/L LDL <span class="cite">ref:guideline-DEGAM</span>. A pattern worth discussing with your doctor.</div>
+            </div>
+
+            <div class="subtabs" style="margin-top:14px;">
+              <button class="active">All</button>
+              <button>Labs</button>
+              <button>Imaging</button>
+              <button>Visits</button>
+              <button>Meds</button>
+              <button>Allergies</button>
+            </div>
+
+            <div class="row-list">
+              <div class="row-item">
+                <div style="width:36px; height:36px; border-radius:10px; background:var(--danger-lt); color:var(--danger); display:flex; align-items:center; justify-content:center;">🩸</div>
+                <div class="label">Lipid Panel <div class="sub">Nov 2025 · Hamburg clinic · 4 values flagged</div></div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="row-item">
+                <div style="width:36px; height:36px; border-radius:10px; background:var(--accent-lt); color:var(--accent); display:flex; align-items:center; justify-content:center;">🩺</div>
+                <div class="label">Annual check-up <div class="sub">Oct 2025 · Dr. Lehmann</div></div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="row-item">
+                <div style="width:36px; height:36px; border-radius:10px; background:var(--violet-lt); color:var(--violet); display:flex; align-items:center; justify-content:center;">🧬</div>
+                <div class="label">CBC + Metabolic <div class="sub">Jun 2025 · all in range</div></div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="row-item">
+                <div style="width:36px; height:36px; border-radius:10px; background:var(--good-lt); color:var(--good); display:flex; align-items:center; justify-content:center;">💊</div>
+                <div class="label">Medications <div class="sub">None active · ex-smoker since 2019</div></div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            </div>
+
+            <div class="h-row"><h2>Biomarker trends</h2><a href="#">12m</a></div>
+            <div class="card">
+              <div class="bio"><div><div class="name">LDL cholesterol</div><div class="meta">Nov · 3.84 mmol/L · target &lt;3.0</div></div><div class="val" style="color:var(--warn);">3.84 ▲</div></div>
+              <div class="bio"><div><div class="name">Total cholesterol</div><div class="meta">Nov · target &lt;5.0</div></div><div class="val" style="color:var(--warn);">7.05 ▲</div></div>
+              <div class="bio"><div><div class="name">Systolic BP</div><div class="meta">Borderline · target &lt;120</div></div><div class="val" style="color:var(--warn);">128</div></div>
+              <div class="bio"><div><div class="name">HbA1c</div><div class="meta">In range</div></div><div class="val" style="color:var(--good);">5.2% ✓</div></div>
+              <div class="bio"><div><div class="name">Vitamin D</div><div class="meta">In range</div></div><div class="val" style="color:var(--good);">34 ng/mL ✓</div></div>
+            </div>
+            <p class="fine">All records provided by your clinic network. No external sources. Not medical advice.</p>
+          </section>
+
+          <!-- ═════ SCREEN: INSIGHTS ═════ -->
+          <section class="screen" id="s-insights" aria-labelledby="ins-title">
+            <h1 id="ins-title" class="h-title">Insights</h1>
+            <div class="h-hello" style="margin-bottom:10px;">Your four longevity dimensions</div>
+
+            <div class="ai-banner">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+              Patterns surfaced by AI · general wellness lens
+              <span class="eu">GDPR</span>
+            </div>
+
+            <!-- 4 signals -->
+            <div class="signals">
+              <div class="sig warn">
+                <div class="ico">❤️</div>
+                <div class="name">Cardio fitness</div>
+                <div class="val">62</div>
+                <div class="sub">Attention · ApoB trending up</div>
+              </div>
+              <div class="sig">
+                <div class="ico">🧬</div>
+                <div class="name">Biological age</div>
+                <div class="val">41</div>
+                <div class="sub good">2y younger than chrono</div>
+              </div>
+              <div class="sig warn">
+                <div class="ico">😴</div>
+                <div class="name">Sleep & recovery</div>
+                <div class="val">58</div>
+                <div class="sub">3 short nights this week</div>
+              </div>
+              <div class="sig">
+                <div class="ico">🌿</div>
+                <div class="name">Lifestyle &amp; behavior</div>
+                <div class="val">74</div>
+                <div class="sub good">Steady · no alcohol this week</div>
+              </div>
+            </div>
+
+            <!-- Risk hero -->
+            <div class="card" style="margin-top:14px; border-left: 4px solid var(--warn);">
+              <div style="display:flex; gap:10px; align-items:center;">
+                <span class="chip warn"><span class="dot"></span>Attention</span>
+                <span style="font-size:11px; color:var(--ink-3);">Cardiovascular fitness</span>
+              </div>
+              <div style="font-size:15px; font-weight:700; margin-top:8px;">Your lipid profile is worth a closer look</div>
+              <div style="font-size:12.5px; color:var(--ink-2); margin-top:4px; line-height:1.55;">LDL 3.84 and total cholesterol 7.05 are elevated for your age group, especially given your family history. This is a pattern worth discussing with your doctor.</div>
+              <div style="display:flex; gap:8px; margin-top:12px;">
+                <button class="btn btn-primary btn-sm" onclick="goTo('care')">Book cardio panel</button>
+                <button class="btn btn-ghost btn-sm" onclick="goTo('coach')">Ask coach</button>
+              </div>
+            </div>
+
+            <!-- Commercial offer -->
+            <div class="card" style="margin-top:12px; background: linear-gradient(135deg, #EAF4F5 0%, #C2E0E3 100%); border-color: var(--accent-md);">
+              <div style="font-size:10.5px; font-weight:700; color:var(--accent-2); text-transform:uppercase; letter-spacing:.08em;">Recommended for you</div>
+              <div style="font-size:14px; font-weight:700; margin-top:4px;">Hamburg Cardio-Prevention Package</div>
+              <div style="font-size:11.5px; color:var(--ink-2); margin:4px 0 10px;">Advanced lipid panel + CIMT imaging + cardiologist review. <b>80% covered by your insurance.</b></div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><span style="font-size:11px; text-decoration:line-through; color:var(--ink-3);">€280</span> <b style="font-size:16px; margin-left:6px;">€56</b> <span style="font-size:11px; color:var(--ink-3);">copay</span></div>
+                <button class="btn btn-primary btn-sm">Book now</button>
+              </div>
+            </div>
+
+            <!-- Sleep trendline -->
+            <div class="h-row"><h2>Sleep · last 7 days</h2><span class="chip warn">−1h avg</span></div>
+            <div class="card">
+              <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:6px; height:90px;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;"><div style="width:22px; background:var(--accent); border-radius:4px; height:72px;"></div><span style="font-size:10px; color:var(--ink-3);">Th</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;"><div style="width:22px; background:var(--accent); border-radius:4px; height:78px;"></div><span style="font-size:10px; color:var(--ink-3);">Fr</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;"><div style="width:22px; background:var(--accent); border-radius:4px; height:68px;"></div><span style="font-size:10px; color:var(--ink-3);">Sa</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;"><div style="width:22px; background:var(--accent); border-radius:4px; height:80px;"></div><span style="font-size:10px; color:var(--ink-3);">Su</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;"><div style="width:22px; background:var(--warn); border-radius:4px; height:58px;"></div><span style="font-size:10px; color:var(--ink-3);">Mo</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;"><div style="width:22px; background:var(--warn); border-radius:4px; height:52px;"></div><span style="font-size:10px; color:var(--ink-3);">Tu</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;"><div style="width:22px; background:var(--danger); border-radius:4px; height:42px;"></div><span style="font-size:10px; color:var(--ink-3);">We</span></div>
+              </div>
+              <div style="font-size:11.5px; color:var(--ink-2); margin-top:10px;">Avg <b>6h 32m</b> · target 7h 30m. Your wearable data shows a pattern worth acting on.</div>
+            </div>
+
+            <!-- Future-self simulator -->
+            <div class="h-row"><h2>Future-self simulator</h2><span class="chip violet">10y horizon</span></div>
+            <div class="card">
+              <div style="text-align:center; padding: 6px 0 12px;">
+                <div style="font-size:11px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.06em; font-weight:700;">Projected biological age at 70</div>
+                <div style="display:flex; justify-content:center; gap:18px; align-items:baseline; margin-top:8px;">
+                  <div><div style="font-size:11px; color:var(--ink-3);">Current path</div><div style="font-size:28px; font-weight:800; color:var(--warn);">71</div></div>
+                  <div style="font-size:18px; color:var(--ink-3);">→</div>
+                  <div><div style="font-size:11px; color:var(--ink-3);">Improved path</div><div style="font-size:28px; font-weight:800; color:var(--good);">64</div></div>
+                </div>
+              </div>
+              <div class="slider-row"><div class="label"><span>Sleep</span><span id="sv1">7.5h</span></div><input type="range" min="5" max="9" step="0.5" value="7.5" oninput="document.getElementById('sv1').textContent=this.value+'h'"/></div>
+              <div class="slider-row"><div class="label"><span>Activity</span><span id="sv2">4 sessions/wk</span></div><input type="range" min="0" max="7" value="4" oninput="document.getElementById('sv2').textContent=this.value+' sessions/wk'"/></div>
+              <div class="slider-row"><div class="label"><span>Alcohol</span><span id="sv3">2 units/wk</span></div><input type="range" min="0" max="14" value="2" oninput="document.getElementById('sv3').textContent=this.value+' units/wk'"/></div>
+              <button class="btn btn-primary btn-block" style="margin-top:6px;">Apply to my outlook</button>
+            </div>
+
+            <p class="fine">Projections are illustrative wellness guidance, not disease prediction.</p>
+          </section>
+
+          <!-- ═════ SCREEN: CARE ═════ -->
+          <section class="screen" id="s-care" aria-labelledby="care-title">
+            <h1 id="care-title" class="h-title">Care</h1>
+            <div class="h-hello" style="margin-bottom:10px;">Your clinic network · clinics, diagnostics, home care</div>
+
+            <!-- Clinician review -->
+            <div class="clin">
+              <div class="row">
+                <div class="av">DL</div>
+                <div style="flex:1;">
+                  <div class="t">Dr. Lehmann reviewed your ApoB flag</div>
+                  <div class="s">Cardiology · Hamburg Altstadt · 2h ago</div>
+                </div>
+                <button class="btn btn-sm" style="background:rgba(255,255,255,.15); color:#fff;">Message</button>
+              </div>
+              <div style="font-size:12px; line-height:1.55; margin-top:12px; opacity:.95;">"I've looked at the recent panel. Let's book an advanced lipid + CIMT for next week. Nothing urgent — but worth closing the loop given your family history."</div>
+              <button class="btn btn-block btn-sm" style="background:#fff; color:var(--accent-2); margin-top:12px;">Confirm follow-up · Mon 14 Apr · 10:30</button>
+            </div>
+
+            <!-- Three pillars -->
+            <div class="subtabs" style="margin-top:14px;">
+              <button class="active">Clinics</button>
+              <button>Diagnostics</button>
+              <button>Home care</button>
+              <button>Messages</button>
+              <button>Referrals</button>
+            </div>
+
+            <div class="h-row"><h2>Upcoming</h2><a href="#">Add</a></div>
+            <div class="appt">
+              <div class="date"><div class="d">14</div><div class="m">Apr</div></div>
+              <div class="info">
+                <div class="t">Cardiology · Dr. Lehmann</div>
+                <div class="s">10:30 · Hamburg Altstadt · insurance-billed</div>
+              </div>
+              <span class="chip good"><span class="dot"></span>In-network</span>
+            </div>
+            <div class="appt">
+              <div class="date"><div class="d">22</div><div class="m">Apr</div></div>
+              <div class="info">
+                <div class="t">Dietitian · Lea Brandt</div>
+                <div class="s">16:00 · video · 45 min</div>
+              </div>
+              <span class="chip">€0 covered</span>
+            </div>
+
+            <div class="h-row"><h2>Book a service</h2></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div class="card" style="padding:14px;">
+                <div style="font-size:22px;">🏥</div>
+                <div style="font-size:12.5px; font-weight:700; margin-top:6px;">GP visit</div>
+                <div style="font-size:11px; color:var(--ink-3);">Same-day slots</div>
+              </div>
+              <div class="card" style="padding:14px;">
+                <div style="font-size:22px;">🔬</div>
+                <div style="font-size:12.5px; font-weight:700; margin-top:6px;">Lab panel</div>
+                <div style="font-size:11px; color:var(--ink-3);">Clinic or home draw</div>
+              </div>
+              <div class="card" style="padding:14px;">
+                <div style="font-size:22px;">🩻</div>
+                <div style="font-size:12.5px; font-weight:700; margin-top:6px;">Imaging</div>
+                <div style="font-size:11px; color:var(--ink-3);">DEXA · CIMT · MRI</div>
+              </div>
+              <div class="card" style="padding:14px;">
+                <div style="font-size:22px;">🏠</div>
+                <div style="font-size:12.5px; font-weight:700; margin-top:6px;">Home care</div>
+                <div style="font-size:11px; color:var(--ink-3);">Phlebotomy · nurse</div>
+              </div>
+            </div>
+
+            <!-- Diagnostics checkout -->
+            <div class="h-row"><h2>Recommended diagnostics</h2></div>
+            <div class="card">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-size:13.5px; font-weight:700;">Advanced Lipid + ApoB panel</div>
+                  <div style="font-size:11px; color:var(--ink-3);">At-home phlebotomy · EU-only lab</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:16px; font-weight:800;">€56</div>
+                  <div style="font-size:10px; color:var(--ink-3);">after insurance</div>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-block" style="margin-top:12px;" onclick="openSheet('checkout')">Checkout</button>
+            </div>
+
+            <p class="fine">Real clinicians. In-network. Insurance-billed where applicable.</p>
+          </section>
+
+          <!-- ═════ SCREEN: MEAL VISION ═════ -->
+          <section class="screen" id="s-meal" aria-labelledby="meal-title">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <button class="btn btn-ghost btn-sm" onclick="goTo('today')" aria-label="Back"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg></button>
+              <h1 id="meal-title" class="h-title" style="font-size:18px;">Meal vision</h1>
+            </div>
+            <div class="ai-banner">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M9 3h6l1 3"/></svg>
+              AI meal analysis · Gemini 2.5 Flash Vision
+            </div>
+            <div class="meal-photo" role="img" aria-label="Plate with grilled salmon, white rice and broccoli">
+              <span class="tag-scan">✓ Analyzed</span>
+            </div>
+            <div class="card" style="margin-top:12px;">
+              <div style="font-size:11px; color:var(--ink-3); text-transform:uppercase; font-weight:700; letter-spacing:.06em;">Detected</div>
+              <div style="font-size:14px; font-weight:700; margin-top:4px;">Grilled salmon, white rice, broccoli</div>
+              <div style="display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;">
+                <span class="chip">480 kcal</span>
+                <span class="chip">34g protein</span>
+                <span class="chip">42g carbs</span>
+                <span class="chip">18g fat</span>
+                <span class="chip">4g fiber</span>
+              </div>
+            </div>
+            <div class="card" style="margin-top:12px; background: var(--good-lt); border-color: #BEE5CC;">
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <div style="font-size:22px;">🌱</div>
+                <div>
+                  <div style="font-size:11px; font-weight:700; color:var(--good); text-transform:uppercase; letter-spacing:.06em;">Longevity swap</div>
+                  <div style="font-size:13.5px; font-weight:700; margin-top:4px;">Swap white rice for lentils</div>
+                  <div style="font-size:11.5px; color:var(--ink-2); margin-top:2px;">+12g fiber · same calories · supports a steadier post-meal glucose curve.</div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" style="margin-top:14px;" onclick="goTo('today')">Log to today</button>
+            <button class="btn btn-ghost btn-block" style="margin-top:8px;">Analyze but don't store photo</button>
+            <p class="fine">Photos stored in EU bucket, patient-scoped, deletable in Me → Privacy.</p>
+          </section>
+
+          <!-- ═════ SCREEN: DEVICES ═════ -->
+          <section class="screen" id="s-devices" aria-labelledby="dev-title">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <button class="btn btn-ghost btn-sm" onclick="goTo('today')" aria-label="Back"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg></button>
+              <h1 id="dev-title" class="h-title" style="font-size:18px;">Data sources</h1>
+            </div>
+            <div class="h-hello" style="margin-bottom:10px;">Connect what you already use. All EU-processed.</div>
+
+            <div class="device">
+              <div class="ic">⌚</div>
+              <div style="flex:1;"><div class="nm">Fitbit</div><div class="st">Connected · last sync 2 min ago</div></div>
+              <div class="tog on" role="switch" aria-checked="true" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="device">
+              <div class="ic">🍎</div>
+              <div style="flex:1;"><div class="nm">Apple Health</div><div class="st">Connected · last sync 1h ago</div></div>
+              <div class="tog on" role="switch" aria-checked="true" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="device">
+              <div class="ic">⚕️</div>
+              <div style="flex:1;"><div class="nm">Clinic EHR (Hamburg)</div><div class="st">Connected · provider-scoped</div></div>
+              <div class="tog on" role="switch" aria-checked="true" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="device">
+              <div class="ic">💍</div>
+              <div style="flex:1;"><div class="nm">Oura Ring</div><div class="st off">Not connected</div></div>
+              <button class="btn btn-ghost btn-sm">Connect</button>
+            </div>
+            <div class="device">
+              <div class="ic">🥗</div>
+              <div style="flex:1;"><div class="nm">MyFitnessPal</div><div class="st off">Not connected</div></div>
+              <button class="btn btn-ghost btn-sm">Connect</button>
+            </div>
+
+            <div class="h-row"><h2>Recent syncs</h2></div>
+            <div class="row-list">
+              <div class="row-item"><span class="label">Heart rate</span><span class="src-pill">Fitbit · 2m</span></div>
+              <div class="row-item"><span class="label">Sleep stages</span><span class="src-pill">Fitbit · 8h</span></div>
+              <div class="row-item"><span class="label">Lipid panel</span><span class="src-pill">EHR · Nov 2025</span></div>
+              <div class="row-item"><span class="label">Workouts</span><span class="src-pill">Apple Health · 1h</span></div>
+            </div>
+          </section>
+
+          <!-- ═════ SCREEN: PRIVACY / ME ═════ -->
+          <section class="screen" id="s-privacy" aria-labelledby="priv-title">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <button class="btn btn-ghost btn-sm" onclick="goTo('today')" aria-label="Back"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg></button>
+              <h1 id="priv-title" class="h-title" style="font-size:18px;">Privacy &amp; data</h1>
+            </div>
+
+            <div class="card" style="background: var(--accent-lt); border-color: var(--accent-md);">
+              <div style="display:flex; gap:10px; align-items:center;">
+                <div style="font-size:22px;">🇪🇺</div>
+                <div>
+                  <div style="font-size:13px; font-weight:700; color:var(--accent-2);">EU-hosted · Frankfurt</div>
+                  <div style="font-size:11.5px; color:var(--ink-2);">GDPR Art. 9(2)(h) · patient-scoped at SQL level</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="h-row"><h2>Consents</h2></div>
+            <div class="consent">
+              <div class="body"><div class="t">Care & clinical features</div><div class="d">Required — enables your EHR, records Q&amp;A, clinician review.</div></div>
+              <div class="tog on" aria-checked="true"></div>
+            </div>
+            <div class="consent">
+              <div class="body"><div class="t">Wellness AI coach &amp; protocol</div><div class="d">Optional — powers daily protocol, outlook, nudges.</div></div>
+              <div class="tog on" aria-checked="true"></div>
+            </div>
+            <div class="consent">
+              <div class="body"><div class="t">Meal photo analysis &amp; storage</div><div class="d">Optional — photos stored in EU bucket. Opt-out: analyze without storing.</div></div>
+              <div class="tog on" aria-checked="true"></div>
+            </div>
+            <div class="consent">
+              <div class="body"><div class="t">Anonymized research</div><div class="d">Optional — help improve longevity models. Fully revocable.</div></div>
+              <div class="tog" aria-checked="false"></div>
+            </div>
+            <div class="consent">
+              <div class="body"><div class="t">Marketing communications</div><div class="d">Off by default.</div></div>
+              <div class="tog" aria-checked="false"></div>
+            </div>
+
+            <div class="h-row"><h2>Your rights</h2></div>
+            <div class="row-list">
+              <button class="row-item" style="text-align:left; border:none; background:var(--surface); width:100%; cursor:pointer;">
+                <div style="width:32px; height:32px; border-radius:10px; background:var(--accent-lt); color:var(--accent); display:flex; align-items:center; justify-content:center;">⬇</div>
+                <span class="label">Export all my data<br><span class="sub">GDPR Art. 15 · JSON + PDF</span></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+              <button class="row-item" style="text-align:left; border:none; background:var(--surface); width:100%; cursor:pointer;">
+                <div style="width:32px; height:32px; border-radius:10px; background:var(--bg-2); color:var(--ink-2); display:flex; align-items:center; justify-content:center;">📋</div>
+                <span class="label">View audit log<br><span class="sub">Who accessed your data &amp; when</span></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+              <button class="row-item" style="text-align:left; border:none; background:var(--surface); width:100%; cursor:pointer;">
+                <div style="width:32px; height:32px; border-radius:10px; background:var(--danger-lt); color:var(--danger); display:flex; align-items:center; justify-content:center;">✕</div>
+                <span class="label" style="color:var(--danger);">Delete my account<br><span class="sub" style="color:var(--ink-3);">GDPR Art. 17 · cascades all data</span></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+
+            <div class="h-row"><h2>Legal</h2></div>
+            <div class="card" style="font-size:11.5px; line-height:1.55; color:var(--ink-2);">
+              <p><b>Wellness framing.</b> Helf provides general wellness guidance. It is not a medical device, does not diagnose, treat, cure or prevent disease. For clinical decisions, consult your doctor.</p>
+              <p style="margin-top:8px;"><b>EU AI Act — limited risk.</b> Every AI surface is clearly disclosed. Clinical actions require a clinician in the loop.</p>
+              <p style="margin-top:8px;"><b>Data residency.</b> All data processed in <code>europe-west3</code>. No US sub-processors for PHI.</p>
+            </div>
+          </section>
+
+        </div><!-- /screen-viewport -->
+
+        <!-- Tab bar -->
+        <nav class="tab-bar" role="tablist" aria-label="Main navigation">
+          <button class="tab-item active" data-screen="today" onclick="goTo('today')" role="tab" aria-selected="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v2M5.6 5.6l1.4 1.4M3 12h2M18.4 5.6l-1.4 1.4M19 12h2"/><circle cx="12" cy="14" r="6"/></svg>
+            Today
+          </button>
+          <button class="tab-item" data-screen="coach" onclick="goTo('coach')" role="tab">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Coach
+          </button>
+          <button class="tab-item" data-screen="records" onclick="goTo('records')" role="tab">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            Records
+          </button>
+          <button class="tab-item" data-screen="insights" onclick="goTo('insights')" role="tab">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 4 4 5-6"/></svg>
+            Insights
+          </button>
+          <button class="tab-item" data-screen="care" onclick="goTo('care')" role="tab">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+            Care
+          </button>
+        </nav>
+
+        <!-- ═════ SHEET: ME ═════ -->
+        <div class="overlay" id="sheet-me" onclick="if(event.target===this) closeSheet('me')">
+          <div class="sheet" role="dialog" aria-label="Profile">
+            <div class="handle" aria-hidden="true"></div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:48px; height:48px; border-radius:999px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800;">AW</div>
+              <div>
+                <div style="font-size:16px; font-weight:800;">Anna Weber</div>
+                <div style="font-size:12px; color:var(--ink-3);">43 · Hamburg · Longevity+ member</div>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-top:14px;">
+              <div class="card flat" style="padding:10px; text-align:center;"><div style="font-size:18px; font-weight:800;">6</div><div style="font-size:10px; color:var(--ink-3);">Day streak</div></div>
+              <div class="card flat" style="padding:10px; text-align:center;"><div style="font-size:18px; font-weight:800;">18</div><div style="font-size:10px; color:var(--ink-3);">WALR (weekly)</div></div>
+              <div class="card flat" style="padding:10px; text-align:center;"><div style="font-size:18px; font-weight:800;">68</div><div style="font-size:10px; color:var(--ink-3);">Vitality</div></div>
+            </div>
+            <div class="row-list" style="margin-top:14px;">
+              <button class="row-item" style="width:100%; border:none; background:var(--surface); text-align:left; cursor:pointer;" onclick="closeSheet('me'); goTo('onboarding')"><span style="width:24px;">📝</span><span class="label">Retake lifestyle survey</span><span class="sub">Quarterly</span></button>
+              <button class="row-item" style="width:100%; border:none; background:var(--surface); text-align:left; cursor:pointer;" onclick="closeSheet('me'); goTo('devices')"><span style="width:24px;">🔗</span><span class="label">Data sources &amp; devices</span></button>
+              <button class="row-item" style="width:100%; border:none; background:var(--surface); text-align:left; cursor:pointer;" onclick="closeSheet('me'); goTo('privacy')"><span style="width:24px;">🔒</span><span class="label">Privacy &amp; consents</span></button>
+              <button class="row-item" style="width:100%; border:none; background:var(--surface); text-align:left; cursor:pointer;"><span style="width:24px;">🔔</span><span class="label">Notifications</span></button>
+              <button class="row-item" style="width:100%; border:none; background:var(--surface); text-align:left; cursor:pointer;"><span style="width:24px;">🎁</span><span class="label">Refer a friend</span></button>
+              <button class="row-item" style="width:100%; border:none; background:var(--surface); text-align:left; cursor:pointer;"><span style="width:24px;">↪</span><span class="label">Sign out</span></button>
+            </div>
+            <button class="btn btn-ghost btn-block" style="margin-top:14px;" onclick="closeSheet('me')">Close</button>
+          </div>
+        </div>
+
+        <!-- ═════ SHEET: CHECKOUT ═════ -->
+        <div class="overlay" id="sheet-checkout" onclick="if(event.target===this) closeSheet('checkout')">
+          <div class="sheet" role="dialog" aria-label="Checkout">
+            <div class="handle"></div>
+            <h2 style="font-size:18px; font-weight:800;">Confirm booking</h2>
+            <div style="font-size:12px; color:var(--ink-3); margin-bottom:14px;">Advanced Lipid + ApoB panel · at-home phlebotomy</div>
+
+            <div class="row-list">
+              <div class="row-item"><span class="label">Service<br><span class="sub">At-home blood draw, EU lab</span></span><span style="font-weight:700;">€280</span></div>
+              <div class="row-item"><span class="label">Insurance coverage<br><span class="sub">TK · 80%</span></span><span style="font-weight:700; color:var(--good);">−€224</span></div>
+              <div class="row-item"><span class="label">Your copay</span><span style="font-weight:800; font-size:16px;">€56</span></div>
+            </div>
+
+            <div class="card" style="margin-top:12px;">
+              <div style="font-size:11px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.05em; font-weight:700;">Payment</div>
+              <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+                <div style="width:36px; height:24px; border-radius:4px; background:linear-gradient(135deg,#1A1F71,#4752B5);"></div>
+                <div style="flex:1;"><div style="font-size:13px; font-weight:600;">•••• 4242</div><div style="font-size:11px; color:var(--ink-3);">Expires 04/27</div></div>
+                <a href="#" style="font-size:11px;">Change</a>
+              </div>
+            </div>
+
+            <label style="display:flex; gap:10px; margin-top:12px; font-size:11.5px; color:var(--ink-2);">
+              <input type="checkbox" checked style="accent-color:var(--accent);"/>
+              I confirm this is a wellness service. Not a diagnosis. GDPR consent applies.
+            </label>
+
+            <button class="btn btn-primary btn-block" style="margin-top:14px;" onclick="closeSheet('checkout'); toast('Booking confirmed — Dr. Lehmann will contact you')">Confirm · €56</button>
+            <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="closeSheet('checkout')">Cancel</button>
+          </div>
+        </div>
+
+        <!-- toast -->
+        <div id="toast" style="position:absolute; bottom:90px; left:20px; right:20px; background:var(--ink); color:#fff; padding:12px 16px; border-radius:var(--r-md); font-size:12.5px; font-weight:600; text-align:center; opacity:0; transform:translateY(20px); transition:all .25s; z-index:50; pointer-events:none;"></div>
+
+      </div><!-- /phone-screen -->
+    </div><!-- /phone-frame -->
+
+    <!-- ═══════ CONTEXT PANEL ═══════ -->
+    <aside class="context-panel" aria-label="Demo context">
+      <div class="ctx-card">
+        <div class="brand">
+          <div class="logo-mark">h</div>
+          <div>
+            <div class="nm">Helf</div>
+            <div class="tag">Longevity+ · EU</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ctx-card">
+        <h3>Demo patient</h3>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <div style="width:42px; height:42px; border-radius:999px; background:var(--accent-lt); color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:800;">AW</div>
+          <div style="flex:1;">
+            <div style="font-size:14px; font-weight:700;">Anna Weber · PT0282</div>
+            <div style="font-size:11px; color:var(--ink-3);">43 · Hamburg · ex-smoker · BMI 22.7</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+          <span class="chip warn">LDL 3.84</span>
+          <span class="chip warn">TC 7.05</span>
+          <span class="chip warn">SBP 128</span>
+          <span class="chip good">HbA1c 5.2</span>
+        </div>
+      </div>
+
+      <div class="ctx-card">
+        <h3>Jump to screen</h3>
+        <div class="nav-list">
+          <button onclick="goTo('onboarding')">🚀 Onboarding</button>
+          <button class="active" onclick="goTo('today')">🌅 Today <span class="k">hero</span></button>
+          <button onclick="goTo('coach')">💬 Coach</button>
+          <button onclick="goTo('records')">📄 Records Q&amp;A</button>
+          <button onclick="goTo('insights')">📊 Insights + Future-self</button>
+          <button onclick="goTo('care')">🏥 Care</button>
+          <button onclick="goTo('meal')">📷 Meal vision</button>
+          <button onclick="goTo('devices')">⌚ Devices</button>
+          <button onclick="goTo('privacy')">🔒 Privacy &amp; GDPR</button>
+        </div>
+      </div>
+
+      <div class="ctx-card">
+        <h3>Compliance</h3>
+        <div class="legend-grid">
+          <div class="it">🇪🇺 EU-hosted</div>
+          <div class="it">GDPR Art. 9</div>
+          <div class="it">AI Act · limited</div>
+          <div class="it">Wellness framing</div>
+          <div class="it">Human-in-loop</div>
+          <div class="it">No PHI in logs</div>
+        </div>
+      </div>
+
+      <div class="ctx-card">
+        <h3>Build</h3>
+        <div style="font-size:11px; color:var(--ink-3); line-height:1.6;">
+          Next.js 15 PWA · FastAPI · Cloud Run europe-west3 · Cloud SQL + pgvector · Gemini 2.5 via Vertex AI · google-genai SDK
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<script>
+/* ───── Navigation ───── */
+function goTo(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('s-' + name);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.tab-item').forEach(t => {
+    t.classList.toggle('active', t.dataset.screen === name);
+    t.setAttribute('aria-selected', t.dataset.screen === name);
+  });
+  document.querySelectorAll('.nav-list button').forEach(b => b.classList.remove('active'));
+  const vp = document.getElementById('viewport');
+  if (vp) vp.scrollTop = 0;
+}
+
+/* ───── Protocol toggles ───── */
+function toggleProto(el) {
+  el.classList.toggle('done');
+  // update count chip
+  const list = document.getElementById('proto-list');
+  const done = list.querySelectorAll('.proto.done').length;
+  const total = list.querySelectorAll('.proto').length;
+  const chip = document.querySelector('#s-today .h-row .chip.muted');
+  if (chip) chip.textContent = done + ' / ' + total + ' done';
+}
+
+/* ───── Chat ───── */
+function ask(q) {
+  if (!q) return;
+  const log = document.getElementById('chat-log');
+  const typing = log.querySelector('.msg.typing');
+  if (typing) typing.remove();
+  const me = document.createElement('div'); me.className = 'msg me'; me.textContent = q;
+  log.appendChild(me);
+  const t = document.createElement('div'); t.className = 'msg typing'; t.innerHTML = '<span></span><span></span><span></span>';
+  log.appendChild(t);
+  setTimeout(() => {
+    t.remove();
+    const r = document.createElement('div'); r.className = 'msg ai';
+    r.innerHTML = 'Based on your recent patterns, a balanced approach focused on sleep consistency and Mediterranean-style meals tends to support what you\'re asking about. Want me to add 2 actions to today\'s protocol?';
+    log.appendChild(r);
+    log.parentElement.scrollTop = log.parentElement.scrollHeight;
+  }, 900);
+  log.parentElement.scrollTop = log.parentElement.scrollHeight;
+}
+
+/* ───── Sheets ───── */
+function openSheet(name) { document.getElementById('sheet-' + name).classList.add('open'); }
+function closeSheet(name) { document.getElementById('sheet-' + name).classList.remove('open'); }
+
+/* ───── Toast ───── */
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+  }, 2400);
+}
+
+/* ───── Animate score ring on load ───── */
+window.addEventListener('load', () => {
+  const ring = document.querySelector('.ring-fill');
+  if (ring) {
+    const c = 2 * Math.PI * 78; // ~490
+    const pct = 68 / 100;
+    ring.style.strokeDasharray = c.toFixed(0);
+    ring.style.strokeDashoffset = (c * (1 - pct)).toFixed(0);
+  }
+});
+
+/* keyboard shortcuts */
+document.addEventListener('keydown', e => {
+  const map = { '1':'today', '2':'coach', '3':'records', '4':'insights', '5':'care', '0':'onboarding' };
+  if (map[e.key]) goTo(map[e.key]);
+});
+</script>
+</body>
+</html>
