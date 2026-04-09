@@ -15,7 +15,15 @@ from sqlmodel import Field, SQLModel
 
 
 def _utcnow() -> datetime.datetime:
-    return datetime.datetime.now(tz=datetime.UTC)
+    """Return the current UTC time as a timezone-naive datetime.
+
+    SQLModel/SQLAlchemy maps ``datetime`` fields to ``TIMESTAMP WITHOUT TIME
+    ZONE`` by default.  asyncpg raises
+    ``"can't subtract offset-naive and offset-aware datetimes"`` if the value
+    carries tzinfo.  Convention: all datetimes in this codebase are UTC; we
+    store them as *naive* values and document the UTC assumption here.
+    """
+    return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
 
 class Patient(SQLModel, table=True):
