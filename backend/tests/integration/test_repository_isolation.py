@@ -288,3 +288,342 @@ class TestListRespectsAdditionalFiltersWithIsolation:
         assert all(r.patient_id == "PT0009" for r in results), (
             "list() with filters must not leak records from other patients"
         )
+
+
+# ---------------------------------------------------------------------------
+# Slice 2 cross-patient isolation assertions (T7)
+# Seed two patients; query with one; assert the other's rows are invisible.
+# ---------------------------------------------------------------------------
+
+
+class TestSlice2ProtocolIsolation:
+    """Protocol rows seeded for patient A must not be visible when querying as B."""
+
+    async def test_protocol_cross_patient_isolation(
+        self, session: AsyncSession
+    ) -> None:
+        import datetime
+
+        from app.repositories.protocol_repo import ProtocolRepository
+
+        import app.models  # noqa: F401
+
+        patient_a = make_patient("PT_ISO_PR_A")
+        patient_b = make_patient("PT_ISO_PR_B")
+        session.add(patient_a)
+        session.add(patient_b)
+        await session.flush()
+
+        repo = ProtocolRepository(session)
+        p = app.models.Protocol(  # type: ignore[attr-defined]
+            patient_id="PT_ISO_PR_A",
+            week_start=datetime.date(2026, 4, 7),
+            status="active",
+        )
+        await repo.create(patient_id="PT_ISO_PR_A", protocol=p)
+
+        # Patient B must not see Patient A's protocol
+        results = await repo.list(patient_id="PT_ISO_PR_B")
+        assert results == [], "Protocol isolation violated: Patient B sees Patient A's data"
+
+
+class TestSlice2DailyLogIsolation:
+    """DailyLog rows seeded for patient A must not be visible when querying as B."""
+
+    async def test_daily_log_cross_patient_isolation(
+        self, session: AsyncSession
+    ) -> None:
+        import datetime
+
+        from app.repositories.daily_log_repo import DailyLogRepository
+
+        import app.models  # noqa: F401
+
+        patient_a = make_patient("PT_ISO_DL_A")
+        patient_b = make_patient("PT_ISO_DL_B")
+        session.add(patient_a)
+        session.add(patient_b)
+        await session.flush()
+
+        repo = DailyLogRepository(session)
+        log = app.models.DailyLog(  # type: ignore[attr-defined]
+            patient_id="PT_ISO_DL_A",
+            logged_at=datetime.datetime(2026, 4, 9, 10, 0, 0),
+            mood=5,
+        )
+        await repo.create(patient_id="PT_ISO_DL_A", log=log)
+
+        # Patient B must not see Patient A's logs
+        results = await repo.list_by_date_range(
+            patient_id="PT_ISO_DL_B",
+            from_dt=datetime.datetime(2026, 1, 1),
+            to_dt=datetime.datetime(2026, 12, 31),
+        )
+        assert results == [], "DailyLog isolation violated: Patient B sees Patient A's data"
+
+
+class TestSlice2MealLogIsolation:
+    """MealLog rows seeded for patient A must not be visible when querying as B."""
+
+    async def test_meal_log_cross_patient_isolation(
+        self, session: AsyncSession
+    ) -> None:
+        import datetime
+
+        from app.repositories.meal_log_repo import MealLogRepository
+
+        import app.models  # noqa: F401
+
+        patient_a = make_patient("PT_ISO_ML_A")
+        patient_b = make_patient("PT_ISO_ML_B")
+        session.add(patient_a)
+        session.add(patient_b)
+        await session.flush()
+
+        repo = MealLogRepository(session)
+        meal = app.models.MealLog(  # type: ignore[attr-defined]
+            patient_id="PT_ISO_ML_A",
+            photo_uri="local://test/iso.jpg",
+            analyzed_at=datetime.datetime(2026, 4, 9, 10, 0, 0),
+        )
+        await repo.create(patient_id="PT_ISO_ML_A", meal=meal)
+
+        # Patient B must not see Patient A's meals
+        results = await repo.list_recent(patient_id="PT_ISO_ML_B", limit=100)
+        assert results == [], "MealLog isolation violated: Patient B sees Patient A's data"
+
+
+class TestSlice2SurveyIsolation:
+    """SurveyResponse rows seeded for patient A must not be visible when querying as B."""
+
+    async def test_survey_cross_patient_isolation(
+        self, session: AsyncSession
+    ) -> None:
+        import datetime
+
+        from app.repositories.survey_repo import SurveyRepository
+
+        import app.models  # noqa: F401
+
+        patient_a = make_patient("PT_ISO_SR_A")
+        patient_b = make_patient("PT_ISO_SR_B")
+        session.add(patient_a)
+        session.add(patient_b)
+        await session.flush()
+
+        repo = SurveyRepository(session)
+        s = app.models.SurveyResponse(  # type: ignore[attr-defined]
+            patient_id="PT_ISO_SR_A",
+            kind="weekly",
+            answers={"energy": 4},
+            submitted_at=datetime.datetime(2026, 4, 9, 10, 0, 0),
+        )
+        await repo.create(patient_id="PT_ISO_SR_A", survey=s)
+
+        # Patient B must not see Patient A's surveys
+        results = await repo.history(patient_id="PT_ISO_SR_B", kind="weekly")
+        assert results == [], "Survey isolation violated: Patient B sees Patient A's data"
+
+        latest = await repo.latest_by_kind(patient_id="PT_ISO_SR_B", kind="weekly")
+        assert latest is None, "Survey latest_by_kind isolation violated"
+
+
+class TestSlice2OutlookIsolation:
+    """VitalityOutlook rows seeded for patient A must not be visible when querying as B."""
+
+    async def test_outlook_cross_patient_isolation(
+        self, session: AsyncSession
+    ) -> None:
+        import datetime
+
+        from app.repositories.outlook_repo import VitalityOutlookRepository
+
+        import app.models  # noqa: F401
+
+        patient_a = make_patient("PT_ISO_VO_A")
+        patient_b = make_patient("PT_ISO_VO_B")
+        session.add(patient_a)
+        session.add(patient_b)
+        await session.flush()
+
+        repo = VitalityOutlookRepository(session)
+        o = app.models.VitalityOutlook(  # type: ignore[attr-defined]
+            patient_id="PT_ISO_VO_A",
+            horizon_months=3,
+            projected_score=80.0,
+            narrative="Great trajectory.",
+            computed_at=datetime.datetime(2026, 4, 9, 10, 0, 0),
+        )
+        await repo.upsert_by_horizon(patient_id="PT_ISO_VO_A", outlook=o)
+
+        # Patient B must not see Patient A's outlook
+        latest = await repo.latest(patient_id="PT_ISO_VO_B", horizon_months=3)
+        assert latest is None, "Outlook isolation violated: Patient B sees Patient A's data"
+
+
+class TestSlice2MessageIsolation:
+    """Message rows seeded for patient A must not be visible when querying as B."""
+
+    async def test_message_cross_patient_isolation(
+        self, session: AsyncSession
+    ) -> None:
+        from app.repositories.message_repo import MessageRepository
+
+        import app.models  # noqa: F401
+
+        patient_a = make_patient("PT_ISO_MSG_A")
+        patient_b = make_patient("PT_ISO_MSG_B")
+        session.add(patient_a)
+        session.add(patient_b)
+        await session.flush()
+
+        repo = MessageRepository(session)
+        msg = app.models.Message(  # type: ignore[attr-defined]
+            patient_id="PT_ISO_MSG_A",
+            sender="patient",
+            content="Secret message",
+        )
+        await repo.create(patient_id="PT_ISO_MSG_A", message=msg)
+
+        # Patient B must not see Patient A's messages
+        results = await repo.list(patient_id="PT_ISO_MSG_B")
+        assert results == [], "Message isolation violated: Patient B sees Patient A's data"
+
+
+class TestSlice2NotificationIsolation:
+    """Notification rows seeded for patient A must not be visible when querying as B."""
+
+    async def test_notification_cross_patient_isolation(
+        self, session: AsyncSession
+    ) -> None:
+        from app.repositories.notification_repo import NotificationRepository
+
+        import app.models  # noqa: F401
+
+        patient_a = make_patient("PT_ISO_NTF_A")
+        patient_b = make_patient("PT_ISO_NTF_B")
+        session.add(patient_a)
+        session.add(patient_b)
+        await session.flush()
+
+        repo = NotificationRepository(session)
+        notif = app.models.Notification(  # type: ignore[attr-defined]
+            patient_id="PT_ISO_NTF_A",
+            kind="nudge",
+            title="Private nudge",
+            body="For PT_A only",
+        )
+        await repo.create(patient_id="PT_ISO_NTF_A", notification=notif)
+
+        # Patient B must not see Patient A's notifications
+        results = await repo.list(patient_id="PT_ISO_NTF_B")
+        assert results == [], "Notification isolation violated: Patient B sees Patient A's data"
+
+
+class TestSlice2ClinicalReviewIsolation:
+    """ClinicalReview rows seeded for patient A must not be visible when querying as B."""
+
+    async def test_clinical_review_cross_patient_isolation(
+        self, session: AsyncSession
+    ) -> None:
+        from app.repositories.clinical_review_repo import ClinicalReviewRepository
+
+        import app.models  # noqa: F401
+
+        patient_a = make_patient("PT_ISO_CR_A")
+        patient_b = make_patient("PT_ISO_CR_B")
+        session.add(patient_a)
+        session.add(patient_b)
+        await session.flush()
+
+        repo = ClinicalReviewRepository(session)
+        review = app.models.ClinicalReview(  # type: ignore[attr-defined]
+            patient_id="PT_ISO_CR_A",
+            reason="Sensitive review for A",
+            status="pending",
+        )
+        await repo.create(patient_id="PT_ISO_CR_A", review=review)
+
+        # Patient B must not see Patient A's reviews
+        results = await repo.list(patient_id="PT_ISO_CR_B")
+        assert results == [], "ClinicalReview isolation violated: Patient B sees Patient A's data"
+
+
+class TestSlice2ReferralIsolation:
+    """Referral rows seeded for patient A must not be visible when querying as B."""
+
+    async def test_referral_cross_patient_isolation(
+        self, session: AsyncSession
+    ) -> None:
+        from app.repositories.referral_repo import ReferralRepository
+
+        import app.models  # noqa: F401
+
+        patient_a = make_patient("PT_ISO_RF_A")
+        patient_b = make_patient("PT_ISO_RF_B")
+        session.add(patient_a)
+        session.add(patient_b)
+        await session.flush()
+
+        repo = ReferralRepository(session)
+        ref = app.models.Referral(  # type: ignore[attr-defined]
+            patient_id="PT_ISO_RF_A",
+            code="REF-ISO-AAAA",
+            status="pending",
+        )
+        await repo.create(patient_id="PT_ISO_RF_A", referral=ref)
+
+        # Patient B must not see Patient A's referrals
+        results = await repo.list(patient_id="PT_ISO_RF_B")
+        assert results == [], "Referral isolation violated: Patient B sees Patient A's data"
+
+
+class TestSlice2ProtocolActionIsolation:
+    """ProtocolAction rows for patient A must not be visible when querying as patient B.
+
+    ProtocolAction has no patient_id column — isolation is enforced via a
+    subquery: SELECT ... FROM protocol_action WHERE protocol_id IN
+    (SELECT id FROM protocol WHERE patient_id = :pid).
+    """
+
+    async def test_protocol_action_cross_patient_isolation(
+        self, session: AsyncSession
+    ) -> None:
+        import datetime
+
+        from app.repositories.protocol_repo import (
+            ProtocolActionRepository,
+            ProtocolRepository,
+        )
+
+        import app.models  # noqa: F401
+
+        patient_a = make_patient("PT_ISO_PA_A")
+        patient_b = make_patient("PT_ISO_PA_B")
+        session.add(patient_a)
+        session.add(patient_b)
+        await session.flush()
+
+        proto_repo = ProtocolRepository(session)
+        # Patient A gets a protocol with one action
+        p = app.models.Protocol(  # type: ignore[attr-defined]
+            patient_id="PT_ISO_PA_A",
+            week_start=datetime.date(2026, 4, 7),
+            status="active",
+        )
+        proto = await proto_repo.create(patient_id="PT_ISO_PA_A", protocol=p)
+        assert proto.id is not None
+
+        action_repo = ProtocolActionRepository(session)
+        action = app.models.ProtocolAction(  # type: ignore[attr-defined]
+            protocol_id=proto.id,
+            category="movement",
+            title="Patient A's secret action",
+        )
+        await action_repo.add(action=action)
+
+        # Patient B queries — must get empty list (no protocols → no actions)
+        results = await action_repo.list_for_patient(patient_id="PT_ISO_PA_B")
+        assert results == [], (
+            "ProtocolAction isolation violated: Patient B can see Patient A's actions"
+        )
