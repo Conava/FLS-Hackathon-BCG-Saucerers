@@ -41,8 +41,8 @@ from collections.abc import AsyncIterator
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sse_starlette.sse import EventSourceResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sse_starlette.sse import EventSourceResponse
 
 from app.core.security import api_key_auth
 from app.db.session import get_session
@@ -110,7 +110,7 @@ async def coach_chat(
 
         On exception, yields a final ``error`` event and stops.
         """
-        from app.ai.llm import FakeLLMProvider, get_llm_provider
+        from app.ai.llm import get_llm_provider
         from app.core.config import Settings
         from app.services.coach import CoachService
 

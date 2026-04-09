@@ -93,7 +93,7 @@ class RAGService:
         ``GeminiProvider`` in production.
     """
 
-    def __init__(self, session: AsyncSession, llm: "LLMProvider") -> None:
+    def __init__(self, session: AsyncSession, llm: LLMProvider) -> None:
         self._session = session
         self._llm = llm
 

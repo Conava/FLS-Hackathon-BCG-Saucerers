@@ -30,6 +30,7 @@ for a patient in a single atomic sweep.
 
 from __future__ import annotations
 
+import contextlib
 import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
@@ -163,10 +164,8 @@ class LocalFsPhotoStorage:
     def delete(self, uri: str) -> None:
         """Remove the file at *uri*; silently ignores missing files."""
         file_path = _local_path_from_uri(uri)
-        try:
+        with contextlib.suppress(FileNotFoundError):
             file_path.unlink()
-        except FileNotFoundError:
-            pass
 
     def delete_all_for_patient(self, patient_id: str) -> int:
         """Delete every file in ``<base_dir>/<patient_id>/`` and return the count.
@@ -185,10 +184,8 @@ class LocalFsPhotoStorage:
                 count += 1
 
         # Clean up the now-empty directory (best-effort)
-        try:
+        with contextlib.suppress(OSError):
             patient_dir.rmdir()
-        except OSError:
-            pass
 
         return count
 
@@ -267,10 +264,8 @@ class GcsPhotoStorage:
         """Delete the GCS object at *uri*; silently ignores missing objects."""
         blob_name = _gcs_blob_name_from_uri(uri, self._bucket_name)
         blob = self._bucket().blob(blob_name)
-        try:
+        with contextlib.suppress(Exception):
             blob.delete()
-        except Exception:  # noqa: BLE001
-            pass
 
     def delete_all_for_patient(self, patient_id: str) -> int:
         """Delete every GCS object under the ``<patient_id>/`` prefix.
@@ -292,7 +287,7 @@ class GcsPhotoStorage:
 # ---------------------------------------------------------------------------
 
 
-def get_photo_storage(settings: "Settings") -> PhotoStorage:
+def get_photo_storage(settings: Settings) -> PhotoStorage:
     """Return the appropriate ``PhotoStorage`` backend based on settings.
 
     Parameters

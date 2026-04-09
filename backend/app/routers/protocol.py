@@ -377,7 +377,7 @@ async def _get_current_vitality_score(
 
     from app.models.vitality_snapshot import VitalitySnapshot
 
-    pid_attr = getattr(VitalitySnapshot, "patient_id")
+    pid_attr = VitalitySnapshot.patient_id
     stmt = select(VitalitySnapshot).where(pid_attr == patient_id)
     result = await session.execute(stmt)
     snapshot = result.scalars().first()

@@ -34,7 +34,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.llm import FakeLLMProvider, LLMProvider, get_llm_provider
+from app.ai.llm import LLMProvider, get_llm_provider
 from app.core.config import Settings
 from app.core.security import api_key_auth
 from app.db.session import get_session

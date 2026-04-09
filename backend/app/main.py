@@ -32,15 +32,18 @@ from fastapi import FastAPI
 from app.core.config import Settings
 from app.core.logging import configure_logging, get_logger
 from app.core.middleware import RequestIdMiddleware
-from app.routers import appointments, gdpr, health, patients
 from app.routers import (
+    appointments,
     clinical_review,
     coach,
     daily_log,
+    gdpr,
+    health,
     insights_ai,
     meal_log,
     messages,
     notifications,
+    patients,
     protocol,
     records_qa,
     referral,

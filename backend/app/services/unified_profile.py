@@ -34,7 +34,7 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters import get_source
@@ -126,7 +126,7 @@ class UnifiedProfileService:
     def __init__(
         self,
         session: AsyncSession,
-        llm_provider: "LLMProvider | None" = None,
+        llm_provider: LLMProvider | None = None,
     ) -> None:
         self._session = session
         self._llm_provider = llm_provider
@@ -281,7 +281,7 @@ class UnifiedProfileService:
 
         # Load all records that still need embeddings.
         stmt = select(EHRRecord).where(
-            getattr(EHRRecord, "embedding") == None  # noqa: E711 — SQLAlchemy IS NULL
+            EHRRecord.embedding == None  # noqa: E711 — SQLAlchemy IS NULL
         )
         result = await session.execute(stmt)
         records = list(result.scalars().all())
@@ -300,7 +300,7 @@ class UnifiedProfileService:
             texts = [_record_to_text(r) for r in batch]
             vectors = await self._llm_provider.embed(texts)
 
-            for record, vector in zip(batch, vectors):
+            for record, vector in zip(batch, vectors, strict=True):
                 record.embedding = vector
 
             # Flush after each batch so memory is bounded.

@@ -199,16 +199,14 @@ async def list_daily_logs(
     patient_id: str,
     session: _Session,
     _auth: _Auth,
-    from_date: datetime.date = Query(
-        ...,
-        alias="from",
-        description="Start of date range (inclusive, YYYY-MM-DD)",
-    ),
-    to_date: datetime.date = Query(
-        ...,
-        alias="to",
-        description="End of date range (inclusive, YYYY-MM-DD)",
-    ),
+    from_date: Annotated[
+        datetime.date,
+        Query(alias="from", description="Start of date range (inclusive, YYYY-MM-DD)"),
+    ],
+    to_date: Annotated[
+        datetime.date,
+        Query(alias="to", description="End of date range (inclusive, YYYY-MM-DD)"),
+    ],
 ) -> DailyLogListOut:
     """Return daily log entries for *patient_id* within an inclusive date window.
 

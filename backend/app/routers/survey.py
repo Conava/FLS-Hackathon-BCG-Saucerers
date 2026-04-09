@@ -106,7 +106,7 @@ async def _upsert_lifestyle_from_onboarding(
     from app.models.lifestyle_profile import LifestyleProfile
 
     # Fetch or create the LifestyleProfile.
-    pid_attr = getattr(LifestyleProfile, "patient_id")
+    pid_attr = LifestyleProfile.patient_id
     stmt = select(LifestyleProfile).where(pid_attr == patient_id)
     result = await session.execute(stmt)
     lp = result.scalars().first()
@@ -191,7 +191,7 @@ async def get_survey_history(
     patient_id: str,
     session: _Session,
     _auth: _Auth,
-    kind: SurveyKind = Query(..., description="Survey kind: onboarding | weekly | quarterly"),
+    kind: Annotated[SurveyKind, Query(description="Survey kind: onboarding | weekly | quarterly")],
 ) -> SurveyHistoryOut:
     """Return all surveys of *kind* submitted by *patient_id*, newest first.
 
@@ -230,7 +230,7 @@ async def get_latest_survey(
     patient_id: str,
     session: _Session,
     _auth: _Auth,
-    kind: SurveyKind = Query(..., description="Survey kind: onboarding | weekly | quarterly"),
+    kind: Annotated[SurveyKind, Query(description="Survey kind: onboarding | weekly | quarterly")],
 ) -> SurveyResponseOut:
     """Return the most recently submitted survey of *kind* for *patient_id*.
 

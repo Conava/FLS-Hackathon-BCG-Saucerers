@@ -26,11 +26,11 @@ Schema mapping note:
 from __future__ import annotations
 
 import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Annotated
 
 from app.core.security import api_key_auth
 from app.db.session import get_session

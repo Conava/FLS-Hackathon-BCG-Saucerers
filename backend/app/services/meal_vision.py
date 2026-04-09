@@ -109,8 +109,8 @@ class MealVisionService:
     def __init__(
         self,
         session: AsyncSession,
-        photo_storage: "PhotoStorage",
-        llm: "LLMProvider",
+        photo_storage: PhotoStorage,
+        llm: LLMProvider,
     ) -> None:
         self._session = session
         self._storage = photo_storage
@@ -153,7 +153,7 @@ class MealVisionService:
         # ------------------------------------------------------------------
         # 1. Fetch LifestyleProfile for dietary context
         # ------------------------------------------------------------------
-        pid_attr = getattr(LifestyleProfile, "patient_id")
+        pid_attr = LifestyleProfile.patient_id
         stmt = select(LifestyleProfile).where(pid_attr == patient_id)
         result = await self._session.execute(stmt)
         profile: LifestyleProfile | None = result.scalars().first()

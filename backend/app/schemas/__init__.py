@@ -9,19 +9,14 @@ This is enforced by the ``test_no_diagnostic_verbs_in_field_names`` test.
 """
 
 # Slice 1 — existing schemas
-from app.schemas.appointments import AppointmentListOut, AppointmentOut
-from app.schemas.gdpr import GDPRDeleteAck, GDPRExportOut
-from app.schemas.insights import InsightOut, InsightsListOut
-from app.schemas.patient import PatientProfileOut
-from app.schemas.records import EHRRecordListOut, EHRRecordOut
-from app.schemas.vitality import TrendPoint, VitalityOut
-from app.schemas.wearable import WearableDayOut, WearableSeriesOut
-
 # Slice 2 — AI-layer and new domain schemas
 from app.schemas.ai_common import AIMeta, AIResponseEnvelope
+from app.schemas.appointments import AppointmentListOut, AppointmentOut
 from app.schemas.clinical_review import ClinicalReviewIn, ClinicalReviewOut
 from app.schemas.coach import CoachChatRequest, CoachEvent
 from app.schemas.daily_log import DailyLogIn, DailyLogListOut, DailyLogOut
+from app.schemas.gdpr import GDPRDeleteAck, GDPRExportOut
+from app.schemas.insights import InsightOut, InsightsListOut
 from app.schemas.meal_log import (
     MealAnalysis,
     MealLogListOut,
@@ -37,6 +32,7 @@ from app.schemas.outlook import (
     OutlookNarratorResponse,
     OutlookOut,
 )
+from app.schemas.patient import PatientProfileOut
 from app.schemas.protocol import (
     CompleteActionRequest,
     CompleteActionResponse,
@@ -45,9 +41,12 @@ from app.schemas.protocol import (
     ProtocolActionOut,
     ProtocolOut,
 )
+from app.schemas.records import EHRRecordListOut, EHRRecordOut
 from app.schemas.records_qa import Citation, RecordsQARequest, RecordsQAResponse
 from app.schemas.referral import ReferralIn, ReferralOut
 from app.schemas.survey import SurveyHistoryOut, SurveyKind, SurveyResponseOut, SurveySubmitRequest
+from app.schemas.vitality import TrendPoint, VitalityOut
+from app.schemas.wearable import WearableDayOut, WearableSeriesOut
 
 __all__ = [
     # Slice 1

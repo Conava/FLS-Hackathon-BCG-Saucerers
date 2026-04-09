@@ -106,7 +106,7 @@ class CoachService:
             send_sse(event)
     """
 
-    def __init__(self, session: AsyncSession, llm: "LLMProvider") -> None:
+    def __init__(self, session: AsyncSession, llm: LLMProvider) -> None:
         self._session = session
         self._llm = llm
 
@@ -282,7 +282,7 @@ class CoachService:
             lines.append(f"BMI: {patient.bmi:.1f}")
 
         # Lifestyle profile (optional — may be absent for new patients)
-        pid_attr = getattr(LifestyleProfile, "patient_id")
+        pid_attr = LifestyleProfile.patient_id
         stmt = select(LifestyleProfile).where(pid_attr == patient_id)
         result = await self._session.execute(stmt)
         lifestyle = result.scalars().first()
@@ -311,7 +311,6 @@ class CoachService:
         take the ``EHR_TOPK`` most-recent rows — ordered by ``recorded_at DESC``
         already provided by ``EHRRepository.list``.
         """
-        from app.repositories.ehr_repo import EHRRepository
 
         import json
 

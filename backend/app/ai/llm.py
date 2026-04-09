@@ -22,9 +22,8 @@ from __future__ import annotations
 
 import hashlib
 import random
-from typing import TYPE_CHECKING, AsyncIterator, runtime_checkable
-
-from typing import Protocol
+from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from pydantic import BaseModel
 
@@ -35,7 +34,6 @@ if TYPE_CHECKING:
 # google-genai import — safe at module level; tests monkeypatch this name
 # ---------------------------------------------------------------------------
 from google import genai  # noqa: E402  (must be google-genai, not google-generativeai)
-
 
 # ---------------------------------------------------------------------------
 # Protocol definition
@@ -81,7 +79,7 @@ class LLMProvider(Protocol):
         system: str,
         user: str,
         model: str,
-    ) -> "AsyncIterator[str]":
+    ) -> AsyncIterator[str]:
         """Return an async iterator that streams text tokens.
 
         This is a regular (non-async) method that returns an ``AsyncIterator``.

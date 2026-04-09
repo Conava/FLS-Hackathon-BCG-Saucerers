@@ -102,9 +102,9 @@ def _parse_minutes_from_target(target: str) -> int:
 
 def _build_user_context(
     patient_id: str,
-    lifestyle: "LifestyleProfile",
-    snapshot: "VitalitySnapshot | None",
-    daily_logs: "list[DailyLog]",
+    lifestyle: LifestyleProfile,
+    snapshot: VitalitySnapshot | None,
+    daily_logs: list[DailyLog],
 ) -> str:
     """Build the user-side context string for the protocol generator prompt.
 
@@ -223,17 +223,17 @@ class ProtocolGeneratorService:
     def __init__(
         self,
         *,
-        llm_provider: "LLMProvider",
-        protocol_repo: "ProtocolRepository",
-        action_repo: "ProtocolActionRepository",
-        session: "AsyncSession | None" = None,
+        llm_provider: LLMProvider,
+        protocol_repo: ProtocolRepository,
+        action_repo: ProtocolActionRepository,
+        session: AsyncSession | None = None,
     ) -> None:
         self._llm = llm_provider
         self._protocol_repo = protocol_repo
         self._action_repo = action_repo
         self._session = session
         # Injected by unit tests to avoid real DB context loading
-        self._context_provider: "_FakeContextProvider | None" = None  # type: ignore[name-defined]
+        self._context_provider: Any | None = None
 
     async def generate_for_patient(self, patient_id: str) -> Protocol:
         """Generate and persist a new weekly protocol for the given patient.
@@ -306,8 +306,8 @@ class ProtocolGeneratorService:
         action_count = len(generated.actions)
         if action_count == 0:
             raise ValueError(
-                f"LLM returned 0 actions; protocol must have at least 1 action. "
-                f"(Hard constraint: actions list must not be empty)"
+                "LLM returned 0 actions; protocol must have at least 1 action. "
+                "(Hard constraint: actions list must not be empty)"
             )
         if action_count > 7:
             raise ValueError(
@@ -380,9 +380,9 @@ class ProtocolGeneratorService:
     async def _load_context(
         self, patient_id: str
     ) -> tuple[
-        "LifestyleProfile | None",
-        "VitalitySnapshot | None",
-        "list[DailyLog]",
+        LifestyleProfile | None,
+        VitalitySnapshot | None,
+        list[DailyLog],
     ]:
         """Load context data for the given patient.
 
@@ -416,9 +416,9 @@ class ProtocolGeneratorService:
     async def _load_context_from_db(
         self, patient_id: str
     ) -> tuple[
-        "LifestyleProfile | None",
-        "VitalitySnapshot | None",
-        "list[DailyLog]",
+        LifestyleProfile | None,
+        VitalitySnapshot | None,
+        list[DailyLog],
     ]:
         """Load context directly from the database.
 
@@ -438,13 +438,13 @@ class ProtocolGeneratorService:
         assert session is not None
 
         # LifestyleProfile (one row per patient, PK is patient_id)
-        lp_pid = getattr(LifestyleProfileModel, "patient_id")
+        lp_pid = LifestyleProfileModel.patient_id
         lp_stmt = select(LifestyleProfileModel).where(lp_pid == patient_id)
         lp_result = await session.execute(lp_stmt)
         lifestyle = lp_result.scalars().first()
 
         # VitalitySnapshot (one row per patient, PK is patient_id)
-        vs_pid = getattr(VitalitySnapshotModel, "patient_id")
+        vs_pid = VitalitySnapshotModel.patient_id
         vs_stmt = select(VitalitySnapshotModel).where(vs_pid == patient_id)
         vs_result = await session.execute(vs_stmt)
         snapshot = vs_result.scalars().first()
@@ -453,8 +453,8 @@ class ProtocolGeneratorService:
         now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
         week_ago = now - datetime.timedelta(days=_LOG_LOOKBACK_DAYS)
 
-        dl_pid = getattr(DailyLogModel, "patient_id")
-        dl_logged_at = getattr(DailyLogModel, "logged_at")
+        dl_pid = DailyLogModel.patient_id
+        dl_logged_at = DailyLogModel.logged_at
         dl_stmt = (
             select(DailyLogModel)
             .where(dl_pid == patient_id)

@@ -33,7 +33,7 @@ from app.ai.llm import LLMProvider
 from app.ai.prompt_loader import load_prompt
 from app.models.notification import Notification
 from app.repositories.notification_repo import NotificationRepository
-from app.schemas.ai_common import AIMeta, AI_DISCLAIMER
+from app.schemas.ai_common import AI_DISCLAIMER, AIMeta
 from app.schemas.notifications import SmartNotificationResponse
 
 # Default model used for notification copy generation.

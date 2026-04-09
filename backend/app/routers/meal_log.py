@@ -31,7 +31,7 @@ from fastapi import APIRouter, Depends, Form, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.photo_storage import PhotoStorage, get_photo_storage
-from app.ai.llm import FakeLLMProvider, get_llm_provider
+from app.ai.llm import get_llm_provider
 from app.core.config import Settings
 from app.core.security import api_key_auth
 from app.db.session import get_session
