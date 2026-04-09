@@ -1,7 +1,272 @@
+/* ─── 1. Google Fonts ────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+/* ─── 2. Tailwind v4 (CSS-first — no tailwind.config.js ever) ─────────────── */
 @import "tailwindcss";
 
+/* ─── 3. Design Tokens (@theme) ──────────────────────────────────────────── */
 @theme {
-  /* Placeholder — full design tokens added by Task 2 */
-  --color-brand: #14b8a6;
-  --font-sans: "Inter", sans-serif;
+  /* Font */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Backgrounds ── */
+  --color-bg:        #F7F6F3;
+  --color-bg-2:      #ECEAE4;
+
+  /* ── Surfaces ── */
+  --color-surface:   #FFFFFF;
+  --color-surface-2: #FBFAF7;
+
+  /* ── Borders ── */
+  --color-border:    #E8E6E1;
+  --color-border-2:  #D9D6CF;
+
+  /* ── Ink scale ── */
+  --color-ink:       #0E1726;
+  --color-ink-2:     #3D4A5C;
+  --color-ink-3:     #7A8799;
+  --color-ink-4:     #AAB4C2;
+
+  /* ── Teal accent (brand primary) ── */
+  --color-accent:    #1A6B74;
+  --color-accent-2:  #0F4A50;
+  --color-accent-lt: #EAF4F5;
+  --color-accent-md: #C2E0E3;
+
+  /* ── Sand ── */
+  --color-sand:      #E9DFC8;
+
+  /* ── Semantic: good (green) ── */
+  --color-good:      #2D7D4E;
+  --color-good-lt:   #E8F5EE;
+
+  /* ── Semantic: warn (amber) ── */
+  --color-warn:      #9C6B15;
+  --color-warn-lt:   #FDF3DC;
+
+  /* ── Semantic: danger (red) ── */
+  --color-danger:    #B8312F;
+  --color-danger-lt: #FCEAEA;
+
+  /* ── Semantic: violet (AI / science) ── */
+  --color-violet:    #6B4AA8;
+  --color-violet-lt: #EFEAF7;
+
+  /* ── Border radius ── */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* ── Layout ── */
+  --tab-h: 74px;
+
+  /* ── Focus ring ── */
+  --focus-ring: 0 0 0 3px rgba(26, 107, 116, 0.35);
+
+  /* ── Typography scale ── */
+  --text-h1:       22px;
+  --text-h2-sheet: 18px;
+  --text-section:  14px;
+  --text-card-h:   15px;
+  --text-body:     13.5px;
+  --text-body-sm:  13px;
+  --text-support:  12px;
+  --text-caption:  11.5px;
+  --text-micro:    11px;
+  --text-fine:     10.5px;
+  --text-legal:    10px;
+  --text-ring-num: 46px;
+  --text-stat-lg:  28px;
+  --text-stat-md:  20px;
+}
+
+/* ─── 4. Shadows (cannot live inside @theme in Tailwind v4) ──────────────── */
+:root {
+  --shadow-sm: 0 1px 3px rgba(14, 23, 38, 0.06), 0 1px 2px rgba(14, 23, 38, 0.04);
+  --shadow-md: 0 4px 16px rgba(14, 23, 38, 0.08), 0 1px 4px rgba(14, 23, 38, 0.05);
+  --shadow-lg: 0 12px 40px rgba(14, 23, 38, 0.12), 0 4px 12px rgba(14, 23, 38, 0.06);
+
+  /* Safe-area insets for notch / home-indicator devices */
+  --safe-top:    env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left:   env(safe-area-inset-left);
+  --safe-right:  env(safe-area-inset-right);
+}
+
+/* ─── 5. Shadow utility classes ──────────────────────────────────────────── */
+@layer utilities {
+  .shadow-app-sm {
+    box-shadow: var(--shadow-sm);
+  }
+  .shadow-app-md {
+    box-shadow: var(--shadow-md);
+  }
+  .shadow-app-lg {
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+/* ─── 6. Typography utility classes ─────────────────────────────────────── */
+@layer components {
+  /* Screen title */
+  .t-h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  /* Sub-title / bottom-sheet heading */
+  .t-h2 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  /* Section label — always uppercase */
+  .t-section {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  /* Card heading */
+  .t-card-h {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  /* Body / list item (default weight 600, relaxed 500) */
+  .t-body {
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  .t-body-strong {
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  /* Body small */
+  .t-body-sm {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.55;
+  }
+
+  /* Supporting / chip label */
+  .t-support {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  /* Caption / meta */
+  .t-caption {
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  /* Micro / category tag */
+  .t-micro {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  /* Fine print */
+  .t-fine {
+    font-size: 10.5px;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  /* Legal / disclaimer */
+  .t-legal {
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  /* Vitality ring large number */
+  .t-ring-num {
+    font-size: 46px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Stat display — large */
+  .t-stat-lg {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Stat display — medium */
+  .t-stat-md {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ─── 7. Base / reset ────────────────────────────────────────────────────── */
+@layer base {
+  html,
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    /* OpenType features: cv11 = alternate one, ss01 = alternate a */
+    font-feature-settings: "cv11", "ss01", "tnum";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  /* Remove default margin/padding */
+  * {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Accessible focus ring — only on keyboard navigation */
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+/* ─── 8. Reduced-motion override ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
