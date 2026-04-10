@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { Citation } from "./Citation";
 
 export interface ChatBubbleProps {
   /** Message role — determines visual style */
@@ -13,6 +14,18 @@ export interface ChatBubbleProps {
    * to indicate streaming in progress.
    */
   streaming?: boolean;
+}
+
+/** Split text on `[ref:N]` markers and render Citation components inline. */
+function renderWithCitations(text: string): React.ReactNode[] {
+  const parts = text.split(/(\[ref:\d+\])/g);
+  return parts.map((part, i) => {
+    const match = part.match(/^\[ref:(\d+)\]$/);
+    if (match) {
+      return <Citation key={i} label={match[1]} />;
+    }
+    return <React.Fragment key={i}>{part}</React.Fragment>;
+  });
 }
 
 /**
@@ -36,6 +49,7 @@ export function ChatBubble({ role, content, streaming = false }: ChatBubbleProps
           borderRadius: 18,
           fontSize: 13.5,
           lineHeight: 1.5,
+          whiteSpace: "pre-wrap",
           ...(isAi
             ? {
                 background: "var(--color-surface)",
@@ -50,7 +64,7 @@ export function ChatBubble({ role, content, streaming = false }: ChatBubbleProps
               }),
         }}
       >
-        {content}
+        {isAi ? renderWithCitations(content) : content}
         {streaming && isAi && (
           <span
             className="inline-block w-0.5 h-3.5 bg-current align-middle ml-0.5"

@@ -31,6 +31,18 @@ export interface CoachChatProps {
   initialMessage?: string;
 }
 
+/** Extract the text content from an SSE token data payload.
+ *  Backend sends JSON `{"type":"token","text":"..."}` — parse and return `.text`.
+ *  Falls back to raw string if parsing fails (e.g. FakeLLMProvider). */
+function extractTokenText(data: string): string {
+  try {
+    const parsed = JSON.parse(data);
+    return parsed.text ?? data;
+  } catch {
+    return data;
+  }
+}
+
 // Default suggestions shown on an empty thread — matches mockup
 const DEFAULT_SUGGESTIONS = [
   "What should I eat for lower ApoB?",
@@ -166,7 +178,7 @@ export function CoachChat({
               if (last && last.role === "ai") {
                 next[next.length - 1] = {
                   ...last,
-                  content: last.content + chunk.data,
+                  content: last.content + extractTokenText(chunk.data),
                 };
               }
               return next;
