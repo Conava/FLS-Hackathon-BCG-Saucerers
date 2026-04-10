@@ -16,13 +16,20 @@ export interface ChatBubbleProps {
   streaming?: boolean;
 }
 
-/** Split text on `[ref:N]` markers and render Citation components inline. */
-function renderWithCitations(text: string): React.ReactNode[] {
-  const parts = text.split(/(\[ref:\d+\])/g);
+/** Render inline markdown: **bold**, [ref:N] citations. */
+function renderInline(text: string): React.ReactNode[] {
+  // Split on **bold** and [ref:N] markers
+  const parts = text.split(/(\*\*[^*]+\*\*|\[ref:\d+\])/g);
   return parts.map((part, i) => {
-    const match = part.match(/^\[ref:(\d+)\]$/);
-    if (match && match[1]) {
-      return <Citation key={i} label={match[1]} />;
+    // Citation
+    const refMatch = part.match(/^\[ref:(\d+)\]$/);
+    if (refMatch && refMatch[1]) {
+      return <Citation key={i} label={refMatch[1]} />;
+    }
+    // Bold
+    const boldMatch = part.match(/^\*\*(.+)\*\*$/);
+    if (boldMatch) {
+      return <strong key={i}>{boldMatch[1]}</strong>;
     }
     return <React.Fragment key={i}>{part}</React.Fragment>;
   });
@@ -64,7 +71,7 @@ export function ChatBubble({ role, content, streaming = false }: ChatBubbleProps
               }),
         }}
       >
-        {isAi ? renderWithCitations(content) : content}
+        {isAi ? renderInline(content) : content}
         {streaming && isAi && (
           <span
             className="inline-block w-0.5 h-3.5 bg-current align-middle ml-0.5"
