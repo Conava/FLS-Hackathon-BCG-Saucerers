@@ -49,6 +49,7 @@ from app.models import (
     VitalitySnapshot,
     WearableDay,
 )
+import app.adapters.csv_source  # noqa: F401 — side-effect: @register("csv") fires
 from app.services.unified_profile import UnifiedProfileService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
