@@ -284,8 +284,9 @@ export async function* coachChat(body: {
 
       buffer += decoder.decode(value, { stream: true });
 
-      // SSE events are separated by double newlines
-      const events = buffer.split("\n\n");
+      // SSE events are separated by double newlines (handle \r\n and \n)
+      const normalized = buffer.replace(/\r\n/g, "\n");
+      const events = normalized.split("\n\n");
       // Keep the last (potentially incomplete) chunk in the buffer
       buffer = events.pop() ?? "";
 
@@ -296,10 +297,11 @@ export async function* coachChat(body: {
         let data = "";
 
         for (const line of raw.split("\n")) {
-          if (line.startsWith("event: ")) {
-            event = line.slice(7).trim();
-          } else if (line.startsWith("data: ")) {
-            data = line.slice(6).trim();
+          const trimmedLine = line.replace(/\r$/, "");
+          if (trimmedLine.startsWith("event: ")) {
+            event = trimmedLine.slice(7).trim();
+          } else if (trimmedLine.startsWith("data: ")) {
+            data = trimmedLine.slice(6).trim();
           }
         }
 

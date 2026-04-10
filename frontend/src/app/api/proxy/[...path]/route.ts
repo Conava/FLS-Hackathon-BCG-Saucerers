@@ -119,8 +119,12 @@ async function handleRequest(
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
-  // 4. Forward headers, stripping denied headers
+  // 4. Forward headers, stripping denied headers, and inject API key
   const headers = forwardHeaders(request.headers);
+  const apiKey = process.env.BACKEND_API_KEY ?? "";
+  if (apiKey) {
+    headers.set("X-API-Key", apiKey);
+  }
 
   // 5. Build fetch init — include body for non-GET/HEAD methods
   const method = request.method;

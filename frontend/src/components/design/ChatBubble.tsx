@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { Citation } from "./Citation";
 
 export interface ChatBubbleProps {
   /** Message role — determines visual style */
@@ -13,6 +14,25 @@ export interface ChatBubbleProps {
    * to indicate streaming in progress.
    */
   streaming?: boolean;
+}
+
+/** Render inline markdown: **bold**, [ref:N] citations. */
+function renderInline(text: string): React.ReactNode[] {
+  // Split on **bold** and [ref:N] markers
+  const parts = text.split(/(\*\*[^*]+\*\*|\[ref:\d+\])/g);
+  return parts.map((part, i) => {
+    // Citation
+    const refMatch = part.match(/^\[ref:(\d+)\]$/);
+    if (refMatch && refMatch[1]) {
+      return <Citation key={i} label={refMatch[1]} />;
+    }
+    // Bold
+    const boldMatch = part.match(/^\*\*(.+)\*\*$/);
+    if (boldMatch) {
+      return <strong key={i}>{boldMatch[1]}</strong>;
+    }
+    return <React.Fragment key={i}>{part}</React.Fragment>;
+  });
 }
 
 /**
@@ -36,6 +56,7 @@ export function ChatBubble({ role, content, streaming = false }: ChatBubbleProps
           borderRadius: 18,
           fontSize: 13.5,
           lineHeight: 1.5,
+          whiteSpace: "pre-wrap",
           ...(isAi
             ? {
                 background: "var(--color-surface)",
@@ -50,7 +71,7 @@ export function ChatBubble({ role, content, streaming = false }: ChatBubbleProps
               }),
         }}
       >
-        {content}
+        {isAi ? renderInline(content) : content}
         {streaming && isAi && (
           <span
             className="inline-block w-0.5 h-3.5 bg-current align-middle ml-0.5"
