@@ -134,7 +134,9 @@ The checkboxes below track the product scope commitment, not implementation comp
 
 **Backend slice 2 — done:** Full `/v1` API — 26 endpoints, LLM abstraction (FakeLLMProvider/GeminiProvider), pgvector RAG, SSE coach streaming, protocol generator, meal vision, outlook engine + narrator, future-self simulator, survey loop (onboarding/weekly/quarterly), DailyLog, MealLog with photo storage (local + GCS), notifications (LLM-generated copy), clinical review, referral, messages. GDPR delete now removes MealLog rows and photo files. Committed `backend/openapi.json`.
 
-**Frontend — not yet started.** The mockup (`mockup/index.html`) is the UI contract.
+**Frontend PWA — shipped.** All nine screens (Login, Onboarding, Today, Coach, Records, Insights, Care, Meal Log, Me) implemented in `frontend/` and wired to the FastAPI `/v1` stubs via the Route Handler proxy. Installable PWA with manual service worker + web app manifest. See [`frontend/README.md`](../frontend/README.md) for the demo walkthrough.
+
+**Manual trackers + protocol interactivity — shipped.** Sleep/water/workout quick-log sheets, manual meal entry (no camera), weekly check-in sheet, protocol skip-with-reason, protocol reorder. Today's `QuickLogGrid` now opens BottomSheets instead of navigating. Three new backend endpoints (`/meal-log/manual`, `/protocol/skip-action`, `/protocol/reorder`) and six new nullable DB columns. Me screen data-sources section lists manual tracker rows alongside connected wearables.
 
 ## Must-have (from the brief + our extension)
 
@@ -162,7 +164,12 @@ From our product thinking:
 - [x] **Referral program** — backend stub persists `Referral` rows; `GET/POST /v1/patients/{pid}/referral`
 - [x] **Messages to care team** — `GET/POST /v1/patients/{pid}/messages`
 - [x] **Weekly micro-survey prompt** — survey router supports `kind=weekly`; `POST /v1/patients/{pid}/survey`
-- [ ] **Signals drill-down** — four-dimension cards under Vitality Score (frontend only)
+- [x] **Signals drill-down** — four-dimension signal cards in Insights + bottom sheet from Today vitality ring tap
+- [x] **Manual self-tracking sheets** — sleep (hours + quality), water (+250/+500 ml chips), workout (type/duration/intensity), manual meal entry (no camera) — all as BottomSheets from Today's quick-log grid
+- [x] **Weekly check-in sheet** — energy/sleep/mood 1–5 scales; Today card shows last submission date; reuses existing survey endpoint (`kind=weekly`)
+- [x] **Protocol skip-with-reason** — kebab menu → canned reason prompt; soft-skip flag preserves history; distinct from complete
+- [x] **Protocol reorder** — up/down arrows persist `sort_order`; optimistic local state with rollback on error
+- [x] **Me screen manual data-source rows** — Sleep, Water, Workout, Check-in rows with Manual badge in the data-sources section
 - [ ] **At-home test-kit checkout** (microbiome / food-intolerance)
 
 ## Deferred (mentioned in pitch, not built)
@@ -181,7 +188,7 @@ From our product thinking:
 Rehearsed until flawless. Every screen earns its spot by selling one pillar of the pitch.
 
 ### Setup (pre-demo, not on stage)
-Browser tabbed to the PWA. Rebecca's account pre-loaded: 40yo, Type 2 diabetes on Metformin, elevated HbA1c and fasting glucose, 5 nights of poor sleep, Apple Watch connected, onboarding survey completed, 6-day protocol streak.
+Browser tabbed to the PWA. Rebecca's account pre-loaded: 40yo, Type 2 diabetes on Metformin, 90 days into her longevity protocol. Labs showing positive arc: HbA1c 6.5% (down from 7.2%), SBP 132 mmHg (down from 142), LDL 2.9 mmol/L (down from 3.72). Apple Watch connected, onboarding survey completed, 14-day protocol streak, Vitality Score 79.3.
 
 ### 1. Onboarding story (0:00 – 0:20)
 *"Meet Rebecca. 40, part-time HR consultant in Hamburg. On her 40th birthday, a sting of back pain made her realise the second half of her life needed a different approach. She's a patient of our clinic network. Her doctor recommended the app during her next visit."*
@@ -214,7 +221,7 @@ Browser tabbed to the PWA. Rebecca's account pre-loaded: 40yo, Type 2 diabetes o
 ### 5. Records Q&A (1:25 – 1:50) — **the killer moment**
 *"Rebecca has a folder of PDFs she's never read. Let's fix that."*
 
-→ Show: *"What did my last blood test say about cholesterol?"* → Gemini 2.5 Pro pulls from indexed EHR via RAG, answers in plain language: *"Your last panel showed total cholesterol at 5.68 mmol/L and LDL at 3.72 mmol/L — both elevated, especially given your diabetes. Your HbA1c is 7.2%, above target despite Metformin. Here's the actual lab report."* → clickable citation opens the record.
+→ Show: *"What did my last blood test say about cholesterol?"* → Gemini 2.5 Pro pulls from indexed EHR via RAG, answers in plain language: *"Your latest panel shows LDL at 2.9 mmol/L — down from 3.72 mmol/L at presentation, now in the desirable range. Your HbA1c has improved to 6.5%, and your blood pressure is 132 mmHg systolic, down from 142. You're making real progress. Here's the actual lab report."* → clickable citation opens the record.
 
 **Selling:** the productivity leap. No other healthcare app does this. Records stays scoped strictly to provider data — distinct from Coach.
 

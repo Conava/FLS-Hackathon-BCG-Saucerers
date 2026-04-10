@@ -1,9 +1,11 @@
 """CSV data-source adapter — first concrete DataSource implementation.
 
-Reads three CSV files from ``data_dir``:
+Reads up to five CSV files from ``data_dir``:
 - ``ehr_records.csv``           — one row per patient (demographics + labs)
 - ``wearable_telemetry_1.csv``  — ~90 rows per patient (daily wearable data)
 - ``lifestyle_survey.csv``      — one row per patient (lifestyle survey)
+- ``daily_log.csv``             — optional; one row per log event (mood, workout, sleep…)
+- ``meal_log.csv``              — optional; one row per meal-photo analysis event
 
 Each EHR row is *exploded* into multiple typed ``EHRRecord`` rows:
 
@@ -15,6 +17,26 @@ Each EHR row is *exploded* into multiple typed ``EHRRecord`` rows:
                                     (documented proxy — the CSV has no explicit lab date)
 6. ``WearableDay``               — one per wearable CSV row for that patient
 7. ``LifestyleProfile``          — one per lifestyle CSV row for that patient
+8. ``DailyLog``                  — zero or more per patient (file optional; missing → empty list)
+9. ``MealLog``                   — zero or more per patient (file optional; missing → empty list)
+
+CSV column contracts
+--------------------
+``daily_log.csv``:
+    patient_id, logged_at, mood, workout_minutes, sleep_hours, water_ml,
+    alcohol_units, sleep_quality, workout_type, workout_intensity
+
+``meal_log.csv``:
+    patient_id, analyzed_at, photo_uri, protein_g, carbs_g, fat_g, fiber_g,
+    calories_kcal, description, longevity_swap
+
+``logged_at`` and ``analyzed_at`` are ISO 8601 timestamps (``YYYY-MM-DDTHH:MM:SS``).
+Parsed with ``datetime.fromisoformat(...)`` and stripped of tzinfo for asyncpg
+compatibility (``TIMESTAMP WITHOUT TIME ZONE``).
+
+If ``photo_uri`` in ``meal_log.csv`` is empty, a deterministic sentinel is
+generated: ``manual://<uuid5(NAMESPACE_DNS, 'patient_id:analyzed_at_str')>``
+so re-running ingest produces the same URI for the same row (idempotent).
 
 All datetimes produced by this adapter are **naive UTC** — ``TIMESTAMP WITHOUT
 TIME ZONE`` columns in Postgres/asyncpg reject tz-aware values.
@@ -24,7 +46,7 @@ the source CSVs, possible in tests), we use ``datetime(2025, 11, 1, 0, 0, 0)``
 as a documented proxy.
 
 Patient name mapping:
-- ``patient_id == "PT0282"`` → ``"Anna Weber"`` (primary demo persona)
+- Known demo personas → realistic names (see ``_PATIENT_NAMES``)
 - all others → ``f"Patient {patient_id}"``
 """
 
@@ -32,6 +54,7 @@ from __future__ import annotations
 
 import csv
 import datetime
+import uuid
 from collections import defaultdict
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -39,7 +62,7 @@ from typing import Any
 
 from app.adapters import register
 from app.adapters.base import PatientData
-from app.models import EHRRecord, LifestyleProfile, Patient, WearableDay
+from app.models import DailyLog, EHRRecord, LifestyleProfile, MealLog, Patient, WearableDay
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -48,9 +71,18 @@ from app.models import EHRRecord, LifestyleProfile, Patient, WearableDay
 #: Fallback recorded_at for lab_panel when no wearable data exists.
 _LAB_PANEL_FALLBACK_DT = datetime.datetime(2025, 11, 1, 0, 0, 0)
 
-#: Special patient with a named persona for the pitch demo.
-_ANNA_PATIENT_ID = "PT0282"
-_ANNA_NAME = "Anna Weber"
+#: Named personas for demo patients (patient_id → display name).
+#: PT0282 is the primary Anna Weber persona; PT0199 is the Rebecca persona
+#: (see docs/02-persona-and-journey.md); PT0001–PT0005 round out the demo deck.
+_PATIENT_NAMES: dict[str, str] = {
+    "PT0199": "Rebecca Mueller",
+    "PT0282": "Anna Weber",
+    "PT0001": "Marcus Becker",
+    "PT0002": "Sofia Rossi",
+    "PT0003": "Jonas Lindqvist",
+    "PT0004": "Aïsha Diallo",
+    "PT0005": "Tomás Herrera",
+}
 
 #: Lab/BP field names to include in the lab_panel payload (order preserved for docs).
 _LAB_FIELDS: tuple[str, ...] = (
@@ -100,12 +132,12 @@ def _parse_int(value: str) -> int | None:
 def _patient_name(patient_id: str) -> str:
     """Return the display name for a patient.
 
-    PT0282 is the primary demo persona (Anna Weber). All other patients receive
-    a synthetic name based on their ID for demo purposes.
+    Known demo personas (PT0199, PT0282, PT0001–PT0005) get realistic names so
+    the frontend greeting shows "Good morning, Rebecca" rather than the
+    placeholder "Patient PT0199".  All other patients receive a synthetic name
+    based on their ID.
     """
-    if patient_id == _ANNA_PATIENT_ID:
-        return _ANNA_NAME
-    return f"Patient {patient_id}"
+    return _PATIENT_NAMES.get(patient_id, f"Patient {patient_id}")
 
 
 # ---------------------------------------------------------------------------
@@ -287,6 +319,89 @@ def _build_lifestyle_profile(row: dict[str, str]) -> LifestyleProfile:
     )
 
 
+def _build_daily_log(patient_id: str, row: dict[str, str]) -> DailyLog:
+    """Construct a ``DailyLog`` from one daily_log CSV row.
+
+    All optional fields default to ``None`` when blank.  ``logged_at`` is
+    parsed from ISO 8601 and stripped of tzinfo for asyncpg compatibility.
+
+    Args:
+        patient_id: The patient this log belongs to.
+        row:        One row from ``daily_log.csv``.
+
+    Returns:
+        A ``DailyLog`` instance (not yet persisted).
+    """
+    logged_at = datetime.datetime.fromisoformat(row["logged_at"].strip()).replace(
+        tzinfo=None
+    )
+    # Optional string fields — treat empty string as None
+    workout_type = row.get("workout_type", "").strip() or None
+    workout_intensity = row.get("workout_intensity", "").strip() or None
+
+    return DailyLog(
+        patient_id=patient_id,
+        logged_at=logged_at,
+        mood=_parse_int(row.get("mood", "")),
+        workout_minutes=_parse_int(row.get("workout_minutes", "")),
+        sleep_hours=_parse_float(row.get("sleep_hours", "")),
+        water_ml=_parse_int(row.get("water_ml", "")),
+        alcohol_units=_parse_float(row.get("alcohol_units", "")),
+        sleep_quality=_parse_int(row.get("sleep_quality", "")),
+        workout_type=workout_type,
+        workout_intensity=workout_intensity,
+    )
+
+
+def _build_meal_log(patient_id: str, row: dict[str, str]) -> MealLog:
+    """Construct a ``MealLog`` from one meal_log CSV row.
+
+    The ``macros`` JSON blob is reconstructed from flat columns:
+    ``{protein_g, carbs_g, fat_g, fiber_g, calories_kcal, description}``.
+
+    If ``photo_uri`` is empty, a deterministic sentinel is generated:
+    ``manual://<uuid5(NAMESPACE_DNS, 'patient_id:analyzed_at_str')>``.
+    This makes re-ingest idempotent: the same row always maps to the same URI.
+
+    Args:
+        patient_id: The patient this meal log belongs to.
+        row:        One row from ``meal_log.csv``.
+
+    Returns:
+        A ``MealLog`` instance (not yet persisted).
+    """
+    analyzed_at_str = row["analyzed_at"].strip()
+    analyzed_at = datetime.datetime.fromisoformat(analyzed_at_str).replace(tzinfo=None)
+
+    # Build deterministic photo_uri if the CSV has no explicit URI.
+    photo_uri = row.get("photo_uri", "").strip()
+    if not photo_uri:
+        sentinel_uuid = uuid.uuid5(
+            uuid.NAMESPACE_DNS, f"{patient_id}:{analyzed_at_str}"
+        )
+        photo_uri = f"manual://{sentinel_uuid}"
+
+    # Reconstruct the macros JSON blob from flat CSV columns.
+    macros: dict[str, Any] = {}
+    for key in ("protein_g", "carbs_g", "fat_g", "fiber_g", "calories_kcal"):
+        val = _parse_float(row.get(key, ""))
+        if val is not None:
+            macros[key] = val
+    description = row.get("description", "").strip()
+    if description:
+        macros["description"] = description
+
+    longevity_swap = row.get("longevity_swap", "").strip() or None
+
+    return MealLog(
+        patient_id=patient_id,
+        photo_uri=photo_uri,
+        macros=macros if macros else None,
+        longevity_swap=longevity_swap,
+        analyzed_at=analyzed_at,
+    )
+
+
 # ---------------------------------------------------------------------------
 # CSV loading helpers
 # ---------------------------------------------------------------------------
@@ -322,6 +437,58 @@ def _load_lifestyle_index(
         for row in reader:
             profile = _build_lifestyle_profile(row)
             index[profile.patient_id] = profile
+    return index
+
+
+def _load_daily_log_index(
+    daily_log_path: Path,
+) -> dict[str, list[DailyLog]]:
+    """Load ``daily_log.csv`` and return a dict keyed by patient_id.
+
+    Returns a ``defaultdict`` so missing keys silently return ``[]``.
+    If the file does not exist, returns an empty dict — no error raised.
+    This preserves backward compatibility: the ingest CLI runs successfully
+    even when ``daily_log.csv`` is absent (e.g. before T5 generates it).
+
+    Args:
+        daily_log_path: Path to ``daily_log.csv``.
+
+    Returns:
+        A mapping from patient_id to the list of that patient's DailyLog rows.
+    """
+    index: dict[str, list[DailyLog]] = defaultdict(list)
+    if not daily_log_path.exists():
+        return index
+    with daily_log_path.open(newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            patient_id = row["patient_id"]
+            index[patient_id].append(_build_daily_log(patient_id, row))
+    return index
+
+
+def _load_meal_log_index(
+    meal_log_path: Path,
+) -> dict[str, list[MealLog]]:
+    """Load ``meal_log.csv`` and return a dict keyed by patient_id.
+
+    Returns a ``defaultdict`` so missing keys silently return ``[]``.
+    If the file does not exist, returns an empty dict — no error raised.
+
+    Args:
+        meal_log_path: Path to ``meal_log.csv``.
+
+    Returns:
+        A mapping from patient_id to the list of that patient's MealLog rows.
+    """
+    index: dict[str, list[MealLog]] = defaultdict(list)
+    if not meal_log_path.exists():
+        return index
+    with meal_log_path.open(newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            patient_id = row["patient_id"]
+            index[patient_id].append(_build_meal_log(patient_id, row))
     return index
 
 
@@ -376,10 +543,15 @@ class CSVDataSource:
         ehr_path = self._data_dir / "ehr_records.csv"
         wearable_path = self._data_dir / "wearable_telemetry_1.csv"
         lifestyle_path = self._data_dir / "lifestyle_survey.csv"
+        daily_log_path = self._data_dir / "daily_log.csv"
+        meal_log_path = self._data_dir / "meal_log.csv"
 
         # Pre-load side tables into indexes (O(1) lookup per patient).
         wearable_index = _load_wearable_index(wearable_path)
         lifestyle_index = _load_lifestyle_index(lifestyle_path)
+        # Optional: missing files return empty indexes (backward compatible).
+        daily_log_index = _load_daily_log_index(daily_log_path)
+        meal_log_index = _load_meal_log_index(meal_log_path)
 
         # Read EHR rows and sort by patient_id for deterministic ordering.
         ehr_rows: list[dict[str, str]] = []
@@ -429,6 +601,8 @@ class CSVDataSource:
                 ehr_records=ehr_records,
                 wearable_days=wearable_days,
                 lifestyle=lifestyle_index.get(patient_id),
+                daily_logs=daily_log_index.get(patient_id, []),
+                meal_logs=meal_log_index.get(patient_id, []),
             )
 
 

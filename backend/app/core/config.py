@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     Optional:
         log_level: Standard Python logging level name. Default: ``"INFO"``.
-        app_env: Deployment environment label. Default: ``"development"``.
+        app_env: Deployment environment label. Default: ``"local"``.
         photo_storage_backend: ``"local"`` (default) or ``"gcs"``.
         photo_local_dir: Root path for local photo storage. Default: ``./var/photos``.
         photo_gcs_bucket: GCS bucket name. Required when backend is ``"gcs"``.
@@ -44,8 +44,8 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     """Python logging level name: DEBUG, INFO, WARNING, ERROR, CRITICAL."""
 
-    app_env: str = "development"
-    """Deployment environment: development, staging, production."""
+    app_env: str = "local"
+    """Deployment environment: local, development, staging, production."""
 
     # ------------------------------------------------------------------
     # Photo storage
@@ -84,12 +84,21 @@ class Settings(BaseSettings):
     """
 
     gcp_project: str | None = None
-    """GCP project ID.  Required when ``llm_provider="gemini"``."""
+    """GCP project ID.  Required when ``llm_provider="gemini"`` and ``gemini_api_key`` is unset (Vertex AI mode)."""
 
     gcp_location: str = "europe-west3"
     """GCP region for Vertex AI and Cloud Storage.
 
     Defaults to ``"europe-west3"`` to satisfy EU data-residency requirements.
+    """
+
+    gemini_api_key: str | None = None
+    """Gemini API key (AI Studio).
+
+    When set with ``llm_provider="gemini"``, the provider uses
+    ``genai.Client(api_key=...)`` instead of Vertex AI. This is the path for
+    hackathon-issued API keys that don't have full Vertex AI IAM set up.
+    Leave unset to use Vertex AI with ``gcp_project``/``gcp_location``.
     """
 
 

@@ -38,7 +38,13 @@ from app.db.session import get_session
 from app.models.meal_log import MealLog
 from app.repositories.meal_log_repo import MealLogRepository
 from app.schemas.ai_common import AI_DISCLAIMER, AIMeta
-from app.schemas.meal_log import MealAnalysis, MealLogListOut, MealLogOut, MealLogUploadResponse
+from app.schemas.meal_log import (
+    ManualMealLogIn,
+    MealAnalysis,
+    MealLogListOut,
+    MealLogOut,
+    MealLogUploadResponse,
+)
 from app.services.meal_vision import MealVisionService
 
 router = APIRouter(prefix="/patients", tags=["meal-log"])
@@ -171,6 +177,100 @@ async def upload_meal_log(
     return MealLogUploadResponse(
         meal_log_id=meal_log.id,
         photo_uri=meal_log.photo_uri,
+        analysis=analysis,
+        disclaimer=AI_DISCLAIMER,
+        ai_meta=ai_meta,
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /v1/patients/{patient_id}/meal-log/manual
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/{patient_id}/meal-log/manual",
+    response_model=MealLogUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Log a meal manually (no photo, no LLM call)",
+    tags=["meal-log"],
+)
+async def create_manual_meal_log(
+    patient_id: str,
+    body: ManualMealLogIn,
+    session: _Session,
+    _auth: _Auth,
+) -> MealLogUploadResponse:
+    """Persist a manual meal entry without a photo or LLM analysis.
+
+    The caller supplies all macro values directly.  A ``MealLog`` row is
+    created with a ``manual://<uuid>`` sentinel ``photo_uri`` so the existing
+    history endpoint returns manual entries alongside photo-based ones.
+
+    No LLM call is made — ``classification`` is set to ``"manual"`` and
+    ``longevity_swap`` is left empty.
+
+    Args:
+        patient_id: Path parameter identifying the patient.
+        body:       ``ManualMealLogIn`` JSON request body.
+        session:    Injected ``AsyncSession``.
+        _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).
+
+    Returns:
+        ``MealLogUploadResponse`` with HTTP 201.
+    """
+    import datetime
+
+    sentinel_uri = f"manual://{uuid.uuid4()}"
+
+    macros_payload: dict[str, object] = {
+        "classification": "manual",
+        "kcal": body.kcal,
+        "protein_g": body.protein_g,
+        "carbs_g": body.carbs_g,
+        "fat_g": body.fat_g,
+        "fiber_g": body.fiber_g,
+        "swap_rationale": "",
+        "name": body.name,
+    }
+
+    meal = MealLog(
+        patient_id=patient_id,
+        photo_uri=sentinel_uri,
+        macros=macros_payload,
+        longevity_swap="",
+        analyzed_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+    )
+
+    repo = MealLogRepository(session)
+    persisted = await repo.create(patient_id=patient_id, meal=meal)
+    await session.commit()
+
+    analysis = MealAnalysis(
+        classification="manual",
+        macros={
+            "kcal": body.kcal,
+            "protein_g": body.protein_g,
+            "carbs_g": body.carbs_g,
+            "fat_g": body.fat_g,
+            "fiber_g": body.fiber_g,
+        },
+        longevity_swap="",
+        swap_rationale="",
+    )
+
+    ai_meta = AIMeta(
+        model="none",
+        prompt_name="manual-entry",
+        request_id=str(uuid.uuid4()),
+        token_in=0,
+        token_out=0,
+        latency_ms=0,
+    )
+
+    return MealLogUploadResponse(
+        meal_log_id=persisted.id,
+        photo_uri=persisted.photo_uri,
         analysis=analysis,
         disclaimer=AI_DISCLAIMER,
         ai_meta=ai_meta,

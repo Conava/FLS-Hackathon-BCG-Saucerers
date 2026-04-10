@@ -107,6 +107,10 @@ async def test_post_daily_log_creates_entry(
     assert data["alcohol_units"] == 1
     assert "id" in data
     assert "logged_at" in data
+    # New structured fields are null when not provided
+    assert data["sleep_quality"] is None
+    assert data["workout_type"] is None
+    assert data["workout_intensity"] is None
 
 
 async def test_post_daily_log_partial_fields(
@@ -316,3 +320,160 @@ async def test_get_daily_log_requires_api_key(
 
 
 import pytest
+
+
+# ---------------------------------------------------------------------------
+# B1 — structured sleep + workout fields
+# ---------------------------------------------------------------------------
+
+
+async def test_post_daily_log_sleep_quality_roundtrip(
+    daily_log_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """POST with sleep_hours + sleep_quality persists and is returned via GET."""
+    await _seed_patient(db_session, "PT0200", "Sleep Tester")
+
+    payload = {
+        "date": "2026-04-09",
+        "sleep_hours": 7.5,
+        "sleep_quality": 4,
+    }
+    resp = await daily_log_client.post(
+        "/v1/patients/PT0200/daily-log",
+        json=payload,
+        headers=HEADERS,
+    )
+    assert resp.status_code == 201, resp.text
+    data = resp.json()
+    assert data["sleep_hours"] == pytest.approx(7.5, abs=0.01)
+    assert data["sleep_quality"] == 4
+
+    # Verify via GET
+    get_resp = await daily_log_client.get(
+        "/v1/patients/PT0200/daily-log",
+        params={"from": "2026-04-09", "to": "2026-04-09"},
+        headers=HEADERS,
+    )
+    assert get_resp.status_code == 200, get_resp.text
+    logs = get_resp.json()["logs"]
+    assert len(logs) == 1
+    assert logs[0]["sleep_quality"] == 4
+
+
+async def test_post_daily_log_workout_fields_roundtrip(
+    daily_log_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """POST with workout_minutes + workout_type + workout_intensity persists and returns."""
+    await _seed_patient(db_session, "PT0201", "Workout Tester")
+
+    payload = {
+        "date": "2026-04-09",
+        "workout_minutes": 30,
+        "workout_type": "run",
+        "workout_intensity": "med",
+    }
+    resp = await daily_log_client.post(
+        "/v1/patients/PT0201/daily-log",
+        json=payload,
+        headers=HEADERS,
+    )
+    assert resp.status_code == 201, resp.text
+    data = resp.json()
+    assert data["workout_minutes"] == 30
+    assert data["workout_type"] == "run"
+    assert data["workout_intensity"] == "med"
+
+    # Verify via GET
+    get_resp = await daily_log_client.get(
+        "/v1/patients/PT0201/daily-log",
+        params={"from": "2026-04-09", "to": "2026-04-09"},
+        headers=HEADERS,
+    )
+    assert get_resp.status_code == 200, get_resp.text
+    logs = get_resp.json()["logs"]
+    assert len(logs) == 1
+    assert logs[0]["workout_type"] == "run"
+    assert logs[0]["workout_intensity"] == "med"
+
+
+async def test_post_daily_log_omitting_new_fields_stays_backwards_compatible(
+    daily_log_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """POST without the new fields must succeed and return nulls for them."""
+    await _seed_patient(db_session, "PT0202", "Compat Tester")
+
+    payload = {
+        "date": "2026-04-09",
+        "mood_score": 6,
+        "sleep_hours": 8.0,
+    }
+    resp = await daily_log_client.post(
+        "/v1/patients/PT0202/daily-log",
+        json=payload,
+        headers=HEADERS,
+    )
+    assert resp.status_code == 201, resp.text
+    data = resp.json()
+    assert data["sleep_quality"] is None
+    assert data["workout_type"] is None
+    assert data["workout_intensity"] is None
+
+
+async def test_post_daily_log_sleep_quality_validation(
+    daily_log_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """sleep_quality outside 1-5 range must be rejected with 422."""
+    await _seed_patient(db_session, "PT0203", "Validation Tester")
+
+    payload = {
+        "date": "2026-04-09",
+        "sleep_quality": 6,  # out of range
+    }
+    resp = await daily_log_client.post(
+        "/v1/patients/PT0203/daily-log",
+        json=payload,
+        headers=HEADERS,
+    )
+    assert resp.status_code == 422, resp.text
+
+
+async def test_post_daily_log_workout_type_validation(
+    daily_log_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """workout_type with invalid value must be rejected with 422."""
+    await _seed_patient(db_session, "PT0204", "WType Validation Tester")
+
+    payload = {
+        "date": "2026-04-09",
+        "workout_type": "swimming",  # not in allowed set
+    }
+    resp = await daily_log_client.post(
+        "/v1/patients/PT0204/daily-log",
+        json=payload,
+        headers=HEADERS,
+    )
+    assert resp.status_code == 422, resp.text
+
+
+async def test_post_daily_log_workout_intensity_validation(
+    daily_log_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """workout_intensity with invalid value must be rejected with 422."""
+    await _seed_patient(db_session, "PT0205", "WIntensity Validation Tester")
+
+    payload = {
+        "date": "2026-04-09",
+        "workout_intensity": "extreme",  # not in allowed set
+    }
+    resp = await daily_log_client.post(
+        "/v1/patients/PT0205/daily-log",
+        json=payload,
+        headers=HEADERS,
+    )
+    assert resp.status_code == 422, resp.text

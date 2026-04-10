@@ -3,24 +3,22 @@
 No database access, no LLM calls. Fully deterministic given the same inputs.
 Cacheable by the caller.
 
-Contract (docs/05-data-model.md):
-    Outlook(h months) = Score_now + Σ (streak_weight × streak_days × adherence × decay(h))
+Model (docs/10-vitality-formula.md §5 — capped-ceiling multiplicative):
 
-    ``streak_weight`` is a heuristic aggregate across protocol action categories
-    (nutrition 0.15/day capped, sleep 0.20, movement 0.15, mind 0.10,
-    supplement 0.05). We use the mean weight (0.13) as the aggregate single-
-    category estimate, then allow the caller to supply per-category detail in
-    a future extension. For now a single ``streak_days`` and
-    ``protocol_adherence`` drives the projection.
+    Outlook(h) = current + (ceiling − current) × adherence × streak_mult × horizon_factor(h)
 
-    **Product invariant:** Breaking a streak flattens the curve — the
-    projected score holds at the last projected value (= current_score when
-    streak_days == 0), never drops below current_score.
+    ``ceiling``         = 95.0  (theoretical healthy upper bound; not a clinical target)
+    ``horizon_factor``  = {3: 0.25, 6: 0.50, 12: 0.70}  (fraction of gap captured at month h)
+    ``streak_mult(s)``  = 1 − exp(−s / τ)  where τ = 30 days
+                          → 0 at s=0, 0.37 at s=14, 0.63 at s=30, 0.86 at s=60
 
-    **Diminishing returns:** When ``current_score >= 90`` the per-day boost
-    is scaled down to model the harder gains near the ceiling.
+    Semantics: "Better habits close the gap to your ceiling; the longer you stick with it,
+    the more of that gap you capture."
 
-    **Cap at 100:** No projected score may exceed 100.
+    **Product invariants:**
+    - ``streak_days ≤ 0`` OR ``adherence ≤ 0.0`` → flat at ``current_score`` (no gain).
+    - ``current_score ≥ ceiling`` → reachable gap is 0; projection stays at ``current_score``.
+    - Result is always clamped to [current_score, ceiling] — never drops, never exceeds ceiling.
 
 Usage::
 
@@ -28,11 +26,11 @@ Usage::
 
     projections = compute_outlook(
         patient_id="PT0001",
-        current_score=68.5,
-        streak_days=12,
-        protocol_adherence=0.9,
+        current_score=79.3,
+        streak_days=14,
+        protocol_adherence=0.85,
     )
-    # → {3: 71.2, 6: 70.4, 12: 69.8}
+    # → {3: 80.5, 6: 81.8, 12: 82.8}  (approximately)
 
 Returns:
     dict[int, float] with keys ``{3, 6, 12}`` (horizon in months).
@@ -40,30 +38,23 @@ Returns:
 
 from __future__ import annotations
 
+import math
+
 # ---------------------------------------------------------------------------
-# Heuristic constants
+# Model constants
 # ---------------------------------------------------------------------------
 
-# Aggregate streak weight per day — average across the five action categories
-# defined in docs/05 (nutrition=0.15, sleep=0.20, movement=0.15, mind=0.10,
-# supplement=0.05 → mean ≈ 0.13).
-_STREAK_WEIGHT_PER_DAY: float = 0.13
+# Theoretical healthy upper bound — the "ceiling" the patient is closing in on.
+# Not a clinical target; 95.0 leaves headroom to acknowledge life's complexity.
+CEILING: float = 95.0
 
-# Hard cap on the per-day boost to avoid unbounded projections with very long streaks.
-# Represents the maximum daily score gain from streak adherence.
-_MAX_DAILY_BOOST: float = 0.25
+# Fraction of the reachable gap captured at each horizon (months).
+# Later horizons have higher factors because more time allows more of the gap to close.
+HORIZON_FACTOR: dict[int, float] = {3: 0.25, 6: 0.50, 12: 0.70}
 
-# Decay factors per horizon (fraction of the streak bonus retained).
-# Near-term projection is less discounted; 12-month outlook is heavily decayed.
-_DECAY: dict[int, float] = {
-    3: 0.80,   # 3-month: 80% of the streak signal survives
-    6: 0.55,   # 6-month: 55%
-    12: 0.30,  # 12-month: 30% — long-range uncertainty
-}
-
-# Diminishing-returns threshold.  Above this score each additional day's gain
-# is scaled down by ``(100 - current_score) / (100 - _DR_THRESHOLD)``.
-_DR_THRESHOLD: float = 90.0
+# Time constant for the streak multiplier (days).  τ = 30 aligns with the ~4-week
+# habit-formation window in behavioural research.
+STREAK_TAU_DAYS: float = 30.0
 
 # Horizons returned by every compute_outlook call (months).
 _HORIZONS: list[int] = [3, 6, 12]
@@ -75,7 +66,7 @@ _HORIZONS: list[int] = [3, 6, 12]
 
 
 def compute_outlook(
-    patient_id: str,  # noqa: ARG001 — included for caller convenience/logging
+    patient_id: str,  # noqa: ARG001 — accepted for caller convenience/logging; not used in math
     current_score: float,
     streak_days: int,
     protocol_adherence: float,
@@ -86,19 +77,18 @@ def compute_outlook(
     ``patient_id`` is accepted for caller convenience (e.g. structured logging)
     but is not used in the calculation.
 
-    Streak math (docs/05-data-model.md):
-      - ``streak_days == 0`` → broken or never started → projection held at
-        ``current_score`` (flattens the curve, never drops).
-      - ``protocol_adherence == 0.0`` → no benefit even with an active streak.
-      - ``current_score >= 90`` → diminishing-returns region — boost is scaled
-        by ``(100 - current_score) / (100 - DR_THRESHOLD)``.
-      - Resulting score is clamped to ``[current_score, 100.0]``.
+    Capped-ceiling multiplicative model (docs/10-vitality-formula.md §5):
+
+      - ``streak_days ≤ 0`` OR ``adherence ≤ 0.0`` → flat at ``current_score``.
+      - ``current_score ≥ CEILING`` → reachable gap is 0; result is ``current_score``.
+      - Later horizons project higher (horizon_factor grows from 3m → 12m).
+      - Result is always in [current_score, CEILING].
 
     Args:
         patient_id:          Patient identifier (not used in math; for logging).
         current_score:       Present Vitality Score on the 0–100 scale.
         streak_days:         Number of consecutive days the protocol was followed.
-                             Zero means the streak is broken.
+                             Zero or negative means the streak is broken or never started.
         protocol_adherence:  Fractional measure of how closely the patient followed
                              the protocol (0.0 = none, 1.0 = perfect).
 
@@ -107,39 +97,35 @@ def compute_outlook(
         each mapping to the projected Vitality Score at that horizon.
     """
     # ------------------------------------------------------------------
-    # Broken / zero streak → flat projection at current_score
+    # Edge case: broken streak or zero adherence → flat at current_score
     # ------------------------------------------------------------------
     if streak_days <= 0 or protocol_adherence <= 0.0:
         return {h: float(current_score) for h in _HORIZONS}
 
     # ------------------------------------------------------------------
-    # Streak bonus: effective daily boost
+    # Streak multiplier: saturating exponential (0 at s=0, →1 as s→∞)
     # ------------------------------------------------------------------
-    # Raw bonus per day, capped at MAX_DAILY_BOOST.
-    daily_boost = min(_STREAK_WEIGHT_PER_DAY * protocol_adherence, _MAX_DAILY_BOOST)
-
-    # Total raw streak contribution (streak_days × daily_boost).
-    raw_streak_bonus = float(streak_days) * daily_boost
+    streak_mult = 1.0 - math.exp(-streak_days / STREAK_TAU_DAYS)
 
     # ------------------------------------------------------------------
-    # Diminishing returns near the score ceiling (≥ DR_THRESHOLD)
+    # Reachable gap: how much room is left below the ceiling
+    # clamped to 0 so above-ceiling scores don't create negative gains
     # ------------------------------------------------------------------
-    if current_score >= _DR_THRESHOLD:
-        # headroom_fraction: 0.0 at score=100, 1.0 at score=DR_THRESHOLD
-        headroom = 100.0 - current_score
-        headroom_fraction = headroom / (100.0 - _DR_THRESHOLD)
-        raw_streak_bonus *= headroom_fraction
+    reachable_gap = max(0.0, CEILING - current_score)
 
     # ------------------------------------------------------------------
-    # Per-horizon projection with decay
+    # Per-horizon projection
     # ------------------------------------------------------------------
     projections: dict[int, float] = {}
-    for horizon in _HORIZONS:
-        bonus = raw_streak_bonus * _DECAY[horizon]
-        projected = current_score + bonus
-        # Clamp: never below current_score, never above 100
-        projected = max(projected, current_score)
-        projected = min(projected, 100.0)
-        projections[horizon] = float(projected)
+    for h, hf in HORIZON_FACTOR.items():
+        gain = reachable_gap * protocol_adherence * streak_mult * hf
+        projected = current_score + gain
+        # Clamp: never below current_score, never above CEILING.
+        # Use max(current_score, CEILING) as the upper bound so that scores
+        # already above the ceiling are not dragged down by the CEILING cap.
+        upper = max(float(current_score), CEILING)
+        projected = max(projected, float(current_score))
+        projected = min(projected, upper)
+        projections[h] = float(projected)
 
     return projections

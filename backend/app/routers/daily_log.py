@@ -96,6 +96,9 @@ def _daily_log_in_to_model(patient_id: str, payload: DailyLogIn) -> DailyLog:
         sleep_hours=payload.sleep_hours,
         water_ml=water_ml,
         alcohol_units=alcohol_units,
+        sleep_quality=payload.sleep_quality,
+        workout_type=payload.workout_type,
+        workout_intensity=payload.workout_intensity,
     )
 
 
@@ -135,6 +138,9 @@ def _model_to_daily_log_out(log: DailyLog) -> DailyLogOut:
         water_glasses=water_glasses,
         alcohol_units=alcohol_units,
         logged_at=log.logged_at,
+        sleep_quality=log.sleep_quality,
+        workout_type=log.workout_type,
+        workout_intensity=log.workout_intensity,
     )
 
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.daily_log import DailyLog
@@ -116,3 +116,44 @@ class DailyLogRepository(PatientScopedRepository[DailyLog]):
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_for_patient(
+        self,
+        patient_id: str,
+        *,
+        limit: int | None = None,
+    ) -> list[DailyLog]:
+        """Return all DailyLog rows for a patient, ordered by logged_at ASC.
+
+        Args:
+            patient_id: The patient whose logs are in scope (required).
+            limit:      Optional maximum number of rows to return.
+
+        Returns:
+            A list of DailyLog instances, oldest first.
+        """
+        pid_attr = getattr(DailyLog, _PID)
+        logged_at_attr = getattr(DailyLog, _LOGGED_AT)
+
+        stmt = (
+            select(DailyLog)
+            .where(pid_attr == patient_id)
+            .order_by(logged_at_attr.asc())
+        )
+        if limit is not None:
+            stmt = stmt.limit(limit)
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def delete_for_patient(self, *, patient_id: str) -> None:
+        """Delete all DailyLog rows for a patient (GDPR Art. 17 right to erasure).
+
+        This is a hard delete — rows are permanently removed.
+
+        Args:
+            patient_id: The patient whose daily logs are to be deleted.
+        """
+        pid_attr = getattr(DailyLog, _PID)
+        stmt = delete(DailyLog).where(pid_attr == patient_id)
+        await self._session.execute(stmt)
+        await self._session.flush()
