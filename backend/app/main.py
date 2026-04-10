@@ -33,6 +33,7 @@ from app.core.config import Settings
 from app.core.logging import configure_logging, get_logger
 from app.core.middleware import RequestIdMiddleware
 from app.routers import (
+    admin,
     appointments,
     clinical_review,
     coach,
@@ -143,6 +144,7 @@ def create_app() -> FastAPI:
     app.include_router(clinical_review.router, prefix="/v1")
     app.include_router(referral.router, prefix="/v1")
     app.include_router(messages.router, prefix="/v1")
+    app.include_router(admin.router, prefix="/v1")
 
     return app
 
