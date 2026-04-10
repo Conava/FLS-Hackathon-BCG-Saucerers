@@ -21,7 +21,7 @@ function renderWithCitations(text: string): React.ReactNode[] {
   const parts = text.split(/(\[ref:\d+\])/g);
   return parts.map((part, i) => {
     const match = part.match(/^\[ref:(\d+)\]$/);
-    if (match) {
+    if (match && match[1]) {
       return <Citation key={i} label={match[1]} />;
     }
     return <React.Fragment key={i}>{part}</React.Fragment>;
