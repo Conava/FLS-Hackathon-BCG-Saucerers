@@ -436,6 +436,20 @@
             "description": "Hours of sleep the previous night",
             "title": "Sleep Hours"
           },
+          "sleep_quality": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Subjective sleep quality on a 1\u20135 Likert scale",
+            "title": "Sleep Quality"
+          },
           "water_glasses": {
             "anyOf": [
               {
@@ -449,6 +463,23 @@
             "description": "Number of ~250 ml glasses of water consumed",
             "title": "Water Glasses"
           },
+          "workout_intensity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "med",
+                  "high"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Workout intensity: low/med/high",
+            "title": "Workout Intensity"
+          },
           "workout_minutes": {
             "anyOf": [
               {
@@ -461,6 +492,26 @@
             ],
             "description": "Minutes of intentional movement or exercise",
             "title": "Workout Minutes"
+          },
+          "workout_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "walk",
+                  "run",
+                  "bike",
+                  "strength",
+                  "yoga",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Type of workout: walk/run/bike/strength/yoga/other",
+            "title": "Workout Type"
           }
         },
         "required": [
@@ -553,6 +604,18 @@
             "description": "Hours of sleep",
             "title": "Sleep Hours"
           },
+          "sleep_quality": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Subjective sleep quality on a 1\u20135 Likert scale",
+            "title": "Sleep Quality"
+          },
           "water_glasses": {
             "anyOf": [
               {
@@ -565,6 +628,23 @@
             "description": "Glasses of water consumed",
             "title": "Water Glasses"
           },
+          "workout_intensity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "med",
+                  "high"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Workout intensity: low/med/high",
+            "title": "Workout Intensity"
+          },
           "workout_minutes": {
             "anyOf": [
               {
@@ -576,6 +656,26 @@
             ],
             "description": "Minutes of movement",
             "title": "Workout Minutes"
+          },
+          "workout_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "walk",
+                  "run",
+                  "bike",
+                  "strength",
+                  "yoga",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Type of workout: walk/run/bike/strength/yoga/other",
+            "title": "Workout Type"
           }
         },
         "required": [
@@ -903,6 +1003,73 @@
           "patient_id"
         ],
         "title": "InsightsListOut",
+        "type": "object"
+      },
+      "ManualMealLogIn": {
+        "description": "Request body for the manual meal-log endpoint (no photo, no LLM call).\n\nThe caller supplies all macro values directly.  The endpoint persists a\n``MealLog`` row with a ``manual://<uuid>`` sentinel ``photo_uri`` so the\nexisting history list can render manual entries without breaking.",
+        "properties": {
+          "carbs_g": {
+            "description": "Carbohydrates in grams",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Carbs G",
+            "type": "number"
+          },
+          "fat_g": {
+            "description": "Fat in grams",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Fat G",
+            "type": "number"
+          },
+          "fiber_g": {
+            "default": 0.0,
+            "description": "Dietary fibre in grams",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Fiber G",
+            "type": "number"
+          },
+          "kcal": {
+            "description": "Total kilocalories",
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Kcal",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Plain-English meal name, e.g. 'Grilled chicken salad'",
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional free-text notes from the patient",
+            "title": "Notes"
+          },
+          "protein_g": {
+            "description": "Protein in grams",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Protein G",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "kcal",
+          "protein_g",
+          "carbs_g",
+          "fat_g"
+        ],
+        "title": "ManualMealLogIn",
         "type": "object"
       },
       "MealAnalysis": {
@@ -1370,6 +1537,36 @@
             "description": "One-line rationale",
             "title": "Rationale"
           },
+          "skip_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Human-readable reason provided when skipping today",
+            "title": "Skip Reason"
+          },
+          "skipped_today": {
+            "default": false,
+            "description": "Whether the action has been skipped today",
+            "title": "Skipped Today",
+            "type": "boolean"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Explicit display order (1-indexed); NULL rows sort last",
+            "title": "Sort Order"
+          },
           "streak_days": {
             "default": 0,
             "description": "Consecutive days this action has been completed",
@@ -1577,6 +1774,46 @@
           "created_at"
         ],
         "title": "ReferralResponse",
+        "type": "object"
+      },
+      "ReorderRequest": {
+        "description": "Inbound payload for reordering protocol actions.\n\n``action_ids`` must list ALL action ids for the patient's active protocol\nin the desired display order.  The endpoint assigns sort_order = position\n(1-indexed) for each entry.",
+        "properties": {
+          "action_ids": {
+            "description": "Action ids in the desired display order (all actions must be included)",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Action Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "action_ids"
+        ],
+        "title": "ReorderRequest",
+        "type": "object"
+      },
+      "SkipActionRequest": {
+        "description": "Inbound payload for skipping a protocol action today.",
+        "properties": {
+          "action_id": {
+            "description": "Primary key of the ProtocolAction to skip",
+            "title": "Action Id",
+            "type": "integer"
+          },
+          "reason": {
+            "description": "Human-readable reason for skipping today",
+            "maxLength": 200,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action_id",
+          "reason"
+        ],
+        "title": "SkipActionRequest",
         "type": "object"
       },
       "SmartNotificationRequest": {
@@ -2026,6 +2263,142 @@
         "summary": "Liveness probe",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/v1/admin/reseed": {
+      "post": {
+        "description": "Nuke-and-reload: delete ALL rows from every table, then seed from CSV.\n\nDesigned for demo resets. Deletes in FK-safe order (children before\nparents), then runs the full CSV ingest.  The delete and seed share one\ntransaction \u2014 a seed failure rolls back the deletes.\n\nReturns:\n    JSON object with ``patients_seeded``, ``ehr_records``,\n    ``wearable_days``, and ``duration_seconds``.\n\nRaises:\n    503: Data directory not found (volume not mounted).\n    500: Unexpected error during delete or ingest.",
+        "operationId": "reseed_v1_admin_reseed_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Reseed V1 Admin Reseed Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Summary of records loaded after reset"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete all data then reload from CSV (demo reset)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/seed": {
+      "post": {
+        "description": "Load all CSV patient data into the database.\n\nIdempotent: existing rows are upserted via ``session.merge()`` (Patient,\nLifestyleProfile) or cleared per-patient before re-insertion (EHRRecord,\nWearableDay, DailyLog, MealLog).  Running this endpoint multiple times on\nthe same CSV files leaves the database in the same state.\n\nReturns:\n    JSON object with ``patients_seeded``, ``ehr_records``,\n    ``wearable_days``, and ``duration_seconds``.\n\nRaises:\n    503: Data directory not found (volume not mounted).\n    500: Unexpected ingest error.",
+        "operationId": "seed_v1_admin_seed_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Seed V1 Admin Seed Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Summary of records loaded"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Load CSV data into the database (idempotent)",
+        "tags": [
+          "admin"
         ]
       }
     },
@@ -3190,6 +3563,92 @@
         ]
       }
     },
+    "/v1/patients/{patient_id}/meal-log/manual": {
+      "post": {
+        "description": "Persist a manual meal entry without a photo or LLM analysis.\n\nThe caller supplies all macro values directly.  A ``MealLog`` row is\ncreated with a ``manual://<uuid>`` sentinel ``photo_uri`` so the existing\nhistory endpoint returns manual entries alongside photo-based ones.\n\nNo LLM call is made \u2014 ``classification`` is set to ``\"manual\"`` and\n``longevity_swap`` is left empty.\n\nArgs:\n    patient_id: Path parameter identifying the patient.\n    body:       ``ManualMealLogIn`` JSON request body.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).\n\nReturns:\n    ``MealLogUploadResponse`` with HTTP 201.",
+        "operationId": "create_manual_meal_log_v1_patients__patient_id__meal_log_manual_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualMealLogIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealLogUploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Log a meal manually (no photo, no LLM call)",
+        "tags": [
+          "meal-log",
+          "meal-log"
+        ]
+      }
+    },
     "/v1/patients/{patient_id}/messages": {
       "get": {
         "description": "Return all messages in the patient's thread, chronological order.\n\nThe endpoint:\n1. Validates that the patient exists \u2014 returns 404 if not.\n2. Delegates to ``MessagesService.list`` which returns messages ordered\n   by ``created_at ASC`` (oldest first \u2014 natural conversation order).\n3. Maps each ``Message`` ORM instance to ``MessageOut``.\n\nIsolation guarantee:\n    The ``patient_id`` path parameter is the sole scope key.  No data from\n    other patients can appear in the response.\n\nArgs:\n    patient_id: Path parameter \u2014 the patient whose thread to retrieve.\n    session:    Injected ``AsyncSession`` (per-request).\n    _auth:      ``api_key_auth`` result (validates ``X-API-Key`` header).\n\nReturns:\n    ``MessageListOut`` with patient_id and messages list.\n\nRaises:\n    HTTPException 404: If ``patient_id`` does not exist in the database.",
@@ -3746,6 +4205,180 @@
           }
         },
         "summary": "Generate a weekly wellness protocol for a patient",
+        "tags": [
+          "protocol"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/protocol/reorder": {
+      "post": {
+        "description": "Assign sort_order to actions based on their position in ``action_ids``.\n\nEach id in ``action_ids`` is assigned sort_order = 1, 2, 3, \u2026 in the order\ngiven.  Any action not listed retains its current sort_order (callers\nshould include ALL action ids to produce a fully deterministic order).\n\nArgs:\n    patient_id: Path parameter.\n    body:       ``ReorderRequest`` with the desired action id order.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n\nReturns:\n    List of updated ``ProtocolActionOut`` in the new order.\n\nRaises:\n    HTTPException 404: If any action id does not belong to this patient.",
+        "operationId": "reorder_actions_v1_patients__patient_id__protocol_reorder_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProtocolActionOut"
+                  },
+                  "title": "Response Reorder Actions V1 Patients  Patient Id  Protocol Reorder Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reorder protocol actions by assigning sort_order from position in list",
+        "tags": [
+          "protocol"
+        ]
+      }
+    },
+    "/v1/patients/{patient_id}/protocol/skip-action": {
+      "post": {
+        "description": "Mark a ProtocolAction as skipped today and record the reason.\n\nSkip and complete are independent flags \u2014 skipping does NOT mark an action\nas complete, and completing clears the skip flag (handled in complete_action).\n\nArgs:\n    patient_id: Path parameter.\n    body:       ``SkipActionRequest`` with action_id and reason.\n    session:    Injected ``AsyncSession``.\n    _auth:      ``api_key_auth`` result.\n\nReturns:\n    ``ProtocolActionOut`` with the updated skipped_today/skip_reason fields.\n\nRaises:\n    HTTPException 404: If the action does not exist or belongs to a\n        different patient.",
+        "operationId": "skip_action_v1_patients__patient_id__protocol_skip_action_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "database_url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Database Url"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-api-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkipActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolActionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Skip a protocol action for today with a reason",
         "tags": [
           "protocol"
         ]
