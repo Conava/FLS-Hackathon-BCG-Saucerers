@@ -228,6 +228,45 @@ async with engine.begin() as conn:
 
 **How to prompt:** *"pgvector DDL (extension + HNSW index) runs as raw SQL after `create_all`, not via SQLAlchemy Index objects."*
 
+### 16. `dataclasses.field(default_factory=list)` for optional list fields on dataclasses
+
+Assistants default to `= None` or `= []` for list-typed fields on plain Python `@dataclass` classes.
+
+**Wrong — mutable default shared across instances:**
+```python
+@dataclass
+class PatientData:
+    daily_logs: list[DailyLog] = []   # shared across all instances — Python gotcha
+```
+
+**Wrong — forces None-guards at every call site:**
+```python
+@dataclass
+class PatientData:
+    daily_logs: list[DailyLog] | None = None
+```
+
+**Right:**
+```python
+import dataclasses
+
+@dataclasses.dataclass
+class PatientData:
+    daily_logs: list[DailyLog] = dataclasses.field(default_factory=list)
+```
+
+**How to prompt:** *"Use `dataclasses.field(default_factory=list)` for optional list fields on `@dataclass` classes. Not `= []` and not `= None`."*
+
+### 17. Vitality Outlook horizon ordering is ascending (3m ≤ 6m ≤ 12m)
+
+The capped-ceiling outlook model projects **more gain at longer horizons**, not less. Assistants may invert this (assuming a decay curve where the 3-month projection is highest).
+
+The formula is: `current + gap × adherence × streak_mult × horizon_factor(h)` with `horizon_factor = {3: 0.25, 6: 0.50, 12: 0.70}`. The 12-month bar is always the tallest.
+
+**In tests:** always assert `projections[3] <= projections[6] <= projections[12]`.
+
+**In UI copy:** the narrative is "hold your streak and your score will be X by month 12" — the 12-month value is the headline number. See `docs/10-vitality-formula.md` §5 for the full derivation.
+
 ## When in doubt
 
 Ask the assistant to show you the import statements and package versions it's assuming. If it names `google-generativeai`, `vertexai.generative_models`, Pydantic `class Config`, `session.query()`, or a `tailwind.config.js` — stop it. Repeat the golden-rule preamble. Try again.

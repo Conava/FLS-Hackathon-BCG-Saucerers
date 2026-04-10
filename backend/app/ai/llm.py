@@ -284,17 +284,32 @@ class GeminiProvider:
     through Vertex AI and billed to the GCP project.  Data stays in the
     ``location`` region (``europe-west3`` by default for EU data residency).
 
+    Two auth modes:
+      * Vertex AI (IAM / ADC) — pass ``project`` and ``location`` only. Uses
+        ``genai.Client(vertexai=True, ...)``. Requires service-account roles.
+      * Gemini API key (AI Studio) — pass ``api_key``. Uses
+        ``genai.Client(api_key=...)``. Simpler for hackathons / API-key access.
+
     Args:
-        project: GCP project ID, e.g. ``"my-longevity-project"``.
-        location: GCP region, e.g. ``"europe-west3"``.
+        project: GCP project ID (Vertex AI mode only).
+        location: GCP region (Vertex AI mode only).
+        api_key: Gemini API key. When provided, takes precedence over Vertex AI.
     """
 
-    def __init__(self, project: str, location: str) -> None:
-        self._client = genai.Client(
-            vertexai=True,
-            project=project,
-            location=location,
-        )
+    def __init__(
+        self,
+        project: str = "",
+        location: str = "europe-west3",
+        api_key: str | None = None,
+    ) -> None:
+        if api_key:
+            self._client = genai.Client(api_key=api_key)
+        else:
+            self._client = genai.Client(
+                vertexai=True,
+                project=project,
+                location=location,
+            )
 
     async def generate(
         self,
@@ -465,7 +480,8 @@ def get_llm_provider(settings: object) -> LLMProvider:
     if provider == "fake":
         return FakeLLMProvider()
     if provider == "gemini":
+        api_key: str | None = getattr(settings, "gemini_api_key", None)
         project: str = getattr(settings, "gcp_project", "") or ""
         location: str = getattr(settings, "gcp_location", "europe-west3")
-        return GeminiProvider(project=project, location=location)
+        return GeminiProvider(project=project, location=location, api_key=api_key)
     raise ValueError(f"Unknown llm_provider: {provider!r}. Expected 'fake' or 'gemini'.")

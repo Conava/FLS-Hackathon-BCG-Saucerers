@@ -14,7 +14,7 @@ export const AI_DISCLOSURE =
 /** All static UI strings, organized by screen/domain. */
 export const COPY = {
   app: {
-    title: "LongevityOS",
+    title: "Longevity+",
     tagline: "Your personal wellness companion",
   },
 
@@ -44,7 +44,7 @@ export const COPY = {
   onboarding: {
     steps: [
       {
-        title: "Welcome to LongevityOS",
+        title: "Welcome to Longevity+",
         body: "We'll help you build a clearer picture of your overall wellness.",
       },
       {

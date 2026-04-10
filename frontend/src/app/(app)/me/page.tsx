@@ -151,7 +151,7 @@ export default async function MePage() {
     <ScreenFrame>
       {/* ── 1. Header ─────────────────────────────────────────────────────── */}
       <PageHeader
-        title="Me"
+        title={profile?.name ? (profile.name.split(" ")[0] ?? "Me") : "Me"}
         subtitle="Your profile and data controls"
         mb={16}
       />

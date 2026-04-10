@@ -56,7 +56,7 @@ export function BookAppointmentSheet({
     try {
       await bookAppointment({
         title: title || `${pillar} Appointment`,
-        provider: provider || "LongevityOS Care",
+        provider: provider || "Longevity+ Care",
         location: pillar,
         starts_at: date
           ? new Date(date).toISOString()

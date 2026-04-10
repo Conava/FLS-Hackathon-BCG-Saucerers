@@ -10,6 +10,12 @@ export interface OutlookCurveProps {
   nowLabel?: string;
   /** Label for the final projected position */
   endLabel?: string;
+  /**
+   * Index into `points` that represents "now". Past points (index < nowIndex)
+   * are rendered with a dimmer stroke; future points render with the accent
+   * colour. Defaults to 0 (all-future curve, original behaviour).
+   */
+  nowIndex?: number;
 }
 
 /**
@@ -20,8 +26,10 @@ export function OutlookCurve({
   points,
   nowLabel = "Now",
   endLabel = "Projection",
+  nowIndex = 0,
 }: OutlookCurveProps) {
   if (points.length < 2) return null;
+  const nowIdx = Math.max(0, Math.min(points.length - 1, nowIndex));
 
   const W = 320;
   const H = 100;
@@ -55,8 +63,26 @@ export function OutlookCurve({
     ` L ${toX(points.length - 1)} ${H} L ${toX(0)} ${H} Z`;
 
   // points.length >= 2 is guaranteed by the early return above
-  const dotX = toX(0);
-  const dotY = toY(points[0] ?? 0);
+  const dotX = toX(nowIdx);
+  const dotY = toY(points[nowIdx] ?? 0);
+
+  // Build a separate path for just the past segment (index 0..nowIdx) so we
+  // can render it with a dimmer stroke to distinguish history from projection.
+  const pastPath =
+    nowIdx > 0
+      ? points
+          .slice(0, nowIdx + 1)
+          .map((v, i) => {
+            const x = toX(i);
+            const y = toY(v);
+            if (i === 0) return `M ${x} ${y}`;
+            const prevX = toX(i - 1);
+            const prevY = toY(points[i - 1] ?? v);
+            const cpX = (prevX + x) / 2;
+            return `C ${cpX} ${prevY} ${cpX} ${y} ${x} ${y}`;
+          })
+          .join(" ")
+      : "";
 
   return (
     <svg
@@ -85,7 +111,7 @@ export function OutlookCurve({
       {/* Gradient area fill */}
       <path d={areaD} fill="url(#outlook-fill)" />
 
-      {/* Stroke line */}
+      {/* Stroke line — full curve in accent colour */}
       <path
         d={pathD}
         fill="none"
@@ -94,6 +120,20 @@ export function OutlookCurve({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+
+      {/* Overlay the past segment with a dimmer stroke so history reads
+          clearly as "what already happened" vs the projection. */}
+      {pastPath && (
+        <path
+          d={pastPath}
+          fill="none"
+          stroke="var(--color-ink-2)"
+          strokeOpacity="0.5"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
 
       {/* Current dot */}
       <circle cx={dotX} cy={dotY} r="4" fill="var(--color-accent)" />

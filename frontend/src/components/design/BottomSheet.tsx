@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 export interface BottomSheetProps {
@@ -86,17 +85,19 @@ export function BottomSheet({
           </div>
 
           {title ? (
-            <DialogHeader>
-              <DialogTitle
-                id="bottom-sheet-title"
-                className="t-h2 text-ink text-left"
-              >
-                {title}
-              </DialogTitle>
-            </DialogHeader>
+            <DialogPrimitive.Title
+              id="bottom-sheet-title"
+              className="t-h2 text-ink text-left"
+            >
+              {title}
+            </DialogPrimitive.Title>
           ) : (
-            /* Visually-hidden title required by Radix Dialog for a11y */
-            <DialogTitle className="sr-only">Panel</DialogTitle>
+            /* Visually-hidden title required by Radix Dialog for a11y.
+               Uses sr-only utility class to keep the title accessible
+               without a visual footprint. */
+            <DialogPrimitive.Title className="sr-only">
+              Panel
+            </DialogPrimitive.Title>
           )}
 
           {children}

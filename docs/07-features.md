@@ -188,7 +188,7 @@ From our product thinking:
 Rehearsed until flawless. Every screen earns its spot by selling one pillar of the pitch.
 
 ### Setup (pre-demo, not on stage)
-Browser tabbed to the PWA. Rebecca's account pre-loaded: 40yo, Type 2 diabetes on Metformin, elevated HbA1c and fasting glucose, 5 nights of poor sleep, Apple Watch connected, onboarding survey completed, 6-day protocol streak.
+Browser tabbed to the PWA. Rebecca's account pre-loaded: 40yo, Type 2 diabetes on Metformin, 90 days into her longevity protocol. Labs showing positive arc: HbA1c 6.5% (down from 7.2%), SBP 132 mmHg (down from 142), LDL 2.9 mmol/L (down from 3.72). Apple Watch connected, onboarding survey completed, 14-day protocol streak, Vitality Score 79.3.
 
 ### 1. Onboarding story (0:00 – 0:20)
 *"Meet Rebecca. 40, part-time HR consultant in Hamburg. On her 40th birthday, a sting of back pain made her realise the second half of her life needed a different approach. She's a patient of our clinic network. Her doctor recommended the app during her next visit."*
@@ -221,7 +221,7 @@ Browser tabbed to the PWA. Rebecca's account pre-loaded: 40yo, Type 2 diabetes o
 ### 5. Records Q&A (1:25 – 1:50) — **the killer moment**
 *"Rebecca has a folder of PDFs she's never read. Let's fix that."*
 
-→ Show: *"What did my last blood test say about cholesterol?"* → Gemini 2.5 Pro pulls from indexed EHR via RAG, answers in plain language: *"Your last panel showed total cholesterol at 5.68 mmol/L and LDL at 3.72 mmol/L — both elevated, especially given your diabetes. Your HbA1c is 7.2%, above target despite Metformin. Here's the actual lab report."* → clickable citation opens the record.
+→ Show: *"What did my last blood test say about cholesterol?"* → Gemini 2.5 Pro pulls from indexed EHR via RAG, answers in plain language: *"Your latest panel shows LDL at 2.9 mmol/L — down from 3.72 mmol/L at presentation, now in the desirable range. Your HbA1c has improved to 6.5%, and your blood pressure is 132 mmHg systolic, down from 142. You're making real progress. Here's the actual lab report."* → clickable citation opens the record.
 
 **Selling:** the productivity leap. No other healthcare app does this. Records stays scoped strictly to provider data — distinct from Coach.
 

@@ -38,7 +38,13 @@ from app.db.session import get_session
 from app.models.meal_log import MealLog
 from app.repositories.meal_log_repo import MealLogRepository
 from app.schemas.ai_common import AI_DISCLAIMER, AIMeta
-from app.schemas.meal_log import ManualMealLogIn, MealAnalysis, MealLogListOut, MealLogOut, MealLogUploadResponse
+from app.schemas.meal_log import (
+    ManualMealLogIn,
+    MealAnalysis,
+    MealLogListOut,
+    MealLogOut,
+    MealLogUploadResponse,
+)
 from app.services.meal_vision import MealVisionService
 
 router = APIRouter(prefix="/patients", tags=["meal-log"])

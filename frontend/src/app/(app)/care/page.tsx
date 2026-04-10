@@ -117,9 +117,9 @@ export default async function CarePage() {
             specialty="Cardiology · Hamburg Altstadt · 2h ago"
             quote={
               clinicalReviewData?.notes ??
-              "I\u2019ve looked at the recent panel. Let\u2019s book an advanced lipid + CIMT for next week. Nothing urgent \u2014 but worth closing the loop given your family history."
+              "I've looked at the recent panel. Let's book an advanced lipid + CIMT for next week. Nothing urgent — but worth closing the loop given your family history."
             }
-            ctaLabel="Confirm follow-up \u00b7 Mon 14 Apr \u00b7 10:30"
+            ctaLabel="Confirm follow-up · Mon 14 Apr · 10:30"
           />
 
       {/* ── 3. Sub-tabs ─────────────────────────────────────── */}

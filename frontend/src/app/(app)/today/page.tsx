@@ -89,24 +89,54 @@ function computeStreak(protocol: ProtocolOut | null): number {
 }
 
 /**
- * Build outlook curve points from OutlookOut.
- * Generates 9 interpolated points for a smooth sparkline, or [] if no data.
- * Uses a slight S-curve easing so the line looks natural.
+ * Build outlook curve points combining past trend (from vitality.trend)
+ * and a future projection toward outlook.projected_score.
+ *
+ * Result layout:
+ *   [past_0, past_1, ..., past_n-1, now, future_1, ..., future_8]
+ *
+ * The returned `nowIndex` tells the renderer where "today" sits on the x-axis
+ * so past points render dimmer and future points render in accent colour.
+ *
+ * If vitality.trend is empty, falls back to a future-only 9-point S-curve
+ * (original behaviour).
  */
 function buildOutlookPoints(
   vitality: VitalityOut | null,
   outlook: OutlookOut | null,
-): number[] {
-  if (!vitality || !outlook) return [];
+): { points: number[]; nowIndex: number } {
+  if (!vitality || !outlook) return { points: [], nowIndex: 0 };
+
   const current = vitality.score;
   const projected = outlook.projected_score;
-  const numPoints = 9;
-  return Array.from({ length: numPoints }, (_, i) => {
-    const t = i / (numPoints - 1);
-    // Ease-in-out cubic: smooth S-curve from current to projected
+
+  // Vitality.trend is returned newest-first by the backend — reverse to
+  // oldest-first for plotting. Cap at 14 past points so the sparkline is
+  // legible (matches roughly a two-week lookback).
+  const rawTrend = vitality.trend ?? [];
+  const pastScores = rawTrend
+    .slice(0, 14)
+    .map((p) => p.score)
+    .reverse();
+
+  // Build 8 future points ramping from current → projected with ease-in-out.
+  // (The "now" point is shared with the end of the past segment.)
+  const futureCount = 8;
+  const futurePoints = Array.from({ length: futureCount }, (_, i) => {
+    const t = (i + 1) / futureCount;
     const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
     return current + (projected - current) * eased;
   });
+
+  if (pastScores.length === 0) {
+    // No past data — fall back to future-only 9-point S-curve.
+    const points = [current, ...futurePoints];
+    return { points, nowIndex: 0 };
+  }
+
+  const points = [...pastScores, current, ...futurePoints];
+  const nowIndex = pastScores.length;
+  return { points, nowIndex };
 }
 
 /**
@@ -227,7 +257,8 @@ export default async function TodayPage() {
   const score = vitality?.score ?? 0;
   const delta = vitality ? computeDelta(vitality) : 0;
   const streak = computeStreak(protocol);
-  const outlookPoints = buildOutlookPoints(vitality, outlook);
+  const { points: outlookPoints, nowIndex: outlookNowIndex } =
+    buildOutlookPoints(vitality, outlook);
   const actions = protocol?.actions ?? [];
   const urgentInsight = findUrgentInsight(insights);
   const insightsList = insights?.insights ?? [];
@@ -356,6 +387,7 @@ export default async function TodayPage() {
         {outlookPoints.length >= 2 && (
           <OutlookCurve
             points={outlookPoints}
+            nowIndex={outlookNowIndex}
             nowLabel={`Now · ${Math.round(score)}`}
             endLabel={`${
               outlook?.horizon_months === 6

@@ -32,7 +32,10 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["E501"]  # line-length enforced by ruff format, not ruff check
+ignore = [
+    "E501",  # line-length enforced by ruff format, not ruff check
+    "B009",  # getattr(Model, "col") is the required pattern under mypy strict — see CLAUDE.md lessons
+]
 
 [tool.mypy]
 python_version = "3.12"
