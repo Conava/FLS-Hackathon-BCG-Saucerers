@@ -29,6 +29,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import app.adapters.csv_source  # noqa: F401 — side-effect: @register("csv") fires
 from app.core.logging import get_logger
 from app.core.security import api_key_auth
 from app.db.session import get_session
